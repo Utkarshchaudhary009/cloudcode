@@ -428,6 +428,7 @@ export function TaskForm({
             <Textarea
               ref={textareaRef}
               id="prompt"
+              aria-label="Task prompt"
               placeholder="Describe what you want the AI agent to do..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -563,6 +564,7 @@ export function TaskForm({
                         <Button
                           variant="ghost"
                           size="sm"
+                          aria-label="Remove skip install option"
                           className="h-3 w-3 p-0 hover:bg-transparent"
                           onClick={(e) => {
                             e.stopPropagation()
@@ -579,6 +581,7 @@ export function TaskForm({
                         <Button
                           variant="ghost"
                           size="sm"
+                          aria-label="Remove max duration option"
                           className="h-3 w-3 p-0 hover:bg-transparent"
                           onClick={(e) => {
                             e.stopPropagation()
@@ -595,6 +598,7 @@ export function TaskForm({
                         <Button
                           variant="ghost"
                           size="sm"
+                          aria-label="Remove keep alive option"
                           className="h-3 w-3 p-0 hover:bg-transparent"
                           onClick={(e) => {
                             e.stopPropagation()
@@ -620,6 +624,7 @@ export function TaskForm({
                           type="button"
                           variant="ghost"
                           size="sm"
+                          aria-label="Toggle Agent Browser"
                           className="rounded-full h-8 w-8 p-0 relative"
                           onClick={() => updateEnableBrowser(!enableBrowser)}
                         >
@@ -640,6 +645,7 @@ export function TaskForm({
                           type="button"
                           variant="ghost"
                           size="sm"
+                          aria-label="Manage MCP Servers"
                           className="rounded-full h-8 w-8 p-0 relative"
                           onClick={() => setShowMcpServersDialog(true)}
                         >
@@ -667,6 +673,7 @@ export function TaskForm({
                               type="button"
                               variant="ghost"
                               size="sm"
+                              aria-label="Task Options"
                               className="rounded-full h-8 w-8 p-0 relative"
                             >
                               <Settings className="h-4 w-4" />
@@ -757,6 +764,7 @@ export function TaskForm({
 
                   <Button
                     type="submit"
+                    aria-label="Create task"
                     disabled={isSubmitting || !prompt.trim()}
                     size="sm"
                     className="rounded-full h-8 w-8 p-0"
