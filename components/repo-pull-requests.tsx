@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -30,12 +30,9 @@ import { Label } from '@/components/ui/label'
 import { GitPullRequest, Calendar, MessageSquare, MoreHorizontal, X, ListTodo } from 'lucide-react'
 import { toast } from 'sonner'
 import type { OpenCodeProviderId } from '@/lib/opencode/providers'
-import {
-  DEFAULT_OPENCODE_MODEL,
-  DEFAULT_OPENCODE_PROVIDER,
-  OPENCODE_PROVIDERS,
-  OPENCODE_PROVIDER_MODELS,
-} from '@/lib/opencode/providers'
+import { DEFAULT_OPENCODE_PROVIDER } from '@/lib/opencode/providers'
+import { useOpencodeCatalog } from './hooks/use-opencode-catalog'
+import { getDefaultOpenCodeModel, getOpenCodeProviderModels, resolveOpenCodeProvider } from '@/lib/opencode/catalog'
 
 function formatDistanceToNow(date: Date): string {
   const now = new Date()
@@ -74,6 +71,7 @@ interface RepoPullRequestsProps {
 
 export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
   const router = useRouter()
+  const catalog = useOpencodeCatalog()
   const [pullRequests, setPullRequests] = useState<PullRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -83,7 +81,7 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
   const [selectedPR, setSelectedPR] = useState<PullRequest | null>(null)
   const [prToClose, setPrToClose] = useState<number | null>(null)
   const [selectedAgent, setSelectedAgent] = useState<OpenCodeProviderId>(DEFAULT_OPENCODE_PROVIDER)
-  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_OPENCODE_MODEL[DEFAULT_OPENCODE_PROVIDER])
+  const [selectedModel, setSelectedModel] = useState<string>('')
   const [installDeps, setInstallDeps] = useState(false)
   const [maxDuration, setMaxDuration] = useState(300)
   const [keepAlive, setKeepAlive] = useState(false)
@@ -133,13 +131,34 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
     fetchPullRequests()
   }, [owner, repo])
 
+  // Initialize defaults when catalog loads
   useEffect(() => {
-    const providerModels = OPENCODE_PROVIDER_MODELS[selectedAgent as keyof typeof OPENCODE_PROVIDER_MODELS]
-    const defaultModel = DEFAULT_OPENCODE_MODEL[selectedAgent as keyof typeof DEFAULT_OPENCODE_MODEL]
-    if (providerModels && !providerModels.find((m) => m.value === selectedModel)) {
-      setSelectedModel(defaultModel)
+    if (catalog.providers.length > 0) {
+      const provider = resolveOpenCodeProvider(selectedAgent, catalog) as OpenCodeProviderId
+      if (provider !== selectedAgent) {
+        setSelectedAgent(provider)
+      }
+
+      const defaultModel = getDefaultOpenCodeModel(provider, catalog)
+      if (!selectedModel) {
+        setSelectedModel(defaultModel)
+      }
     }
-  }, [selectedAgent, selectedModel])
+  }, [catalog, selectedAgent, selectedModel])
+
+  // Update model when agent changes
+  useEffect(() => {
+    if (selectedAgent && catalog.providers.length > 0) {
+      const providerModels = getOpenCodeProviderModels(selectedAgent, catalog)
+      const defaultModel = getDefaultOpenCodeModel(selectedAgent, catalog)
+
+      if (providerModels && !providerModels.find((m) => m.value === selectedModel)) {
+        startTransition(() => {
+          setSelectedModel(defaultModel)
+        })
+      }
+    }
+  }, [selectedAgent, selectedModel, catalog])
 
   const handleCreateTaskFromPR = (pr: PullRequest) => {
     setSelectedPR(pr)
@@ -384,7 +403,7 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
                     <SelectValue placeholder="Select a provider" />
                   </SelectTrigger>
                   <SelectContent>
-                    {OPENCODE_PROVIDERS.map((provider) => (
+                    {catalog.providers.map((provider) => (
                       <SelectItem key={provider.value} value={provider.value}>
                         {provider.label}
                       </SelectItem>
@@ -399,7 +418,7 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
                     <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {OPENCODE_PROVIDER_MODELS[selectedAgent as keyof typeof OPENCODE_PROVIDER_MODELS]?.map((model) => (
+                    {getOpenCodeProviderModels(selectedAgent, catalog).map((model) => (
                       <SelectItem key={model.value} value={model.value}>
                         {model.label}
                       </SelectItem>

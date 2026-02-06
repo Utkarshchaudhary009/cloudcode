@@ -15,12 +15,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import type { OpenCodeProviderId } from '@/lib/opencode/providers'
-import {
-  DEFAULT_OPENCODE_MODEL,
-  DEFAULT_OPENCODE_PROVIDER,
-  OPENCODE_PROVIDERS,
-  OPENCODE_PROVIDER_MODELS,
-} from '@/lib/opencode/providers'
+import { DEFAULT_OPENCODE_PROVIDER } from '@/lib/opencode/providers'
+import { useOpencodeCatalog } from './hooks/use-opencode-catalog'
+import { getDefaultOpenCodeModel, getOpenCodeProviderModels, resolveOpenCodeProvider } from '@/lib/opencode/catalog'
 
 interface Commit {
   sha: string
@@ -65,18 +62,35 @@ export function RevertCommitDialog({
   onRevert,
   maxSandboxDuration = 300,
 }: RevertCommitDialogProps) {
+  const catalog = useOpencodeCatalog()
   const [selectedAgent, setSelectedAgent] = useState<OpenCodeProviderId>(DEFAULT_OPENCODE_PROVIDER)
-  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_OPENCODE_MODEL[DEFAULT_OPENCODE_PROVIDER])
+  const [selectedModel, setSelectedModel] = useState<string>('')
   const [installDependencies, setInstallDependencies] = useState(false)
   const [maxDuration, setMaxDuration] = useState(300)
   const [keepAlive, setKeepAlive] = useState(false)
   const [isReverting, setIsReverting] = useState(false)
 
+  // Initialize defaults when catalog loads
+  useEffect(() => {
+    if (catalog.providers.length > 0) {
+      const provider = resolveOpenCodeProvider(selectedAgent, catalog) as OpenCodeProviderId
+      if (provider !== selectedAgent) {
+        setSelectedAgent(provider)
+      }
+
+      const defaultModel = getDefaultOpenCodeModel(provider, catalog)
+      if (!selectedModel) {
+        setSelectedModel(defaultModel)
+      }
+    }
+  }, [catalog, selectedAgent, selectedModel])
+
   // Update model when agent changes
   useEffect(() => {
-    if (selectedAgent) {
-      const agentModels = OPENCODE_PROVIDER_MODELS[selectedAgent as keyof typeof OPENCODE_PROVIDER_MODELS]
-      const defaultModel = DEFAULT_OPENCODE_MODEL[selectedAgent as keyof typeof DEFAULT_OPENCODE_MODEL]
+    if (selectedAgent && catalog.providers.length > 0) {
+      const agentModels = getOpenCodeProviderModels(selectedAgent, catalog)
+      const defaultModel = getDefaultOpenCodeModel(selectedAgent, catalog)
+
       // Check if current model exists for the new agent, otherwise use default
       const modelExists = agentModels?.some((m) => m.value === selectedModel)
       if (!modelExists) {
@@ -86,7 +100,7 @@ export function RevertCommitDialog({
         })
       }
     }
-  }, [selectedAgent, selectedModel])
+  }, [selectedAgent, selectedModel, catalog])
 
   const handleRevert = () => {
     if (!commit) return
@@ -128,7 +142,7 @@ export function RevertCommitDialog({
                   <SelectValue placeholder="Select a provider" />
                 </SelectTrigger>
                 <SelectContent>
-                  {OPENCODE_PROVIDERS.map((provider) => (
+                  {catalog.providers.map((provider) => (
                     <SelectItem key={provider.value} value={provider.value}>
                       {provider.label}
                     </SelectItem>
@@ -143,7 +157,7 @@ export function RevertCommitDialog({
                   <SelectValue placeholder="Select a model" />
                 </SelectTrigger>
                 <SelectContent>
-                  {OPENCODE_PROVIDER_MODELS[selectedAgent as keyof typeof OPENCODE_PROVIDER_MODELS]?.map((model) => (
+                  {getOpenCodeProviderModels(selectedAgent, catalog).map((model) => (
                     <SelectItem key={model.value} value={model.value}>
                       {model.label}
                     </SelectItem>

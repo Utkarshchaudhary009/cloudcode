@@ -20,9 +20,9 @@ export type OpenCodeProviderCatalog = {
 
 export const buildStaticCatalog = (): OpenCodeProviderCatalog => ({
   source: 'static',
-  providers: OPENCODE_PROVIDERS,
-  models: OPENCODE_PROVIDER_MODELS,
-  defaults: DEFAULT_OPENCODE_MODEL,
+  providers: [],
+  models: {},
+  defaults: {},
   connected: [],
 })
 

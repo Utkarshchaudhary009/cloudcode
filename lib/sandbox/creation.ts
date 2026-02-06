@@ -8,7 +8,6 @@ import { redactSensitiveInfo } from '@/lib/utils/logging'
 import { TaskLogger } from '@/lib/utils/task-logger'
 import { detectPackageManager, installDependencies } from './package-manager'
 import { registerSandbox } from './sandbox-registry'
-import { isOpenCodeProvider } from '@/lib/opencode/providers'
 
 // Helper function to run command and log it
 async function runAndLogCommand(sandbox: Sandbox, command: string, args: string[], logger: TaskLogger, cwd?: string) {
@@ -584,7 +583,12 @@ fi
         await logger.info('Creating agent-browser skill for coding agent...')
 
         const agentType = config.selectedAgent || 'opencode'
-        const resolvedAgentType = isOpenCodeProvider(agentType) ? 'opencode' : agentType
+        // Check if agent is one of the known native agents (that have their own CLI)
+        // Otherwise treat it as an OpenCode provider (executed via opencode CLI)
+        // Note: 'gemini' was previously in OPENCODE_PROVIDERS so it resolved to 'opencode'.
+        // We preserve this behavior by not including it in the native list.
+        const nativeAgents = ['claude', 'cursor', 'codex', 'copilot']
+        const resolvedAgentType = nativeAgents.includes(agentType) ? agentType : 'opencode'
 
         // Skill content with YAML front matter (Claude format)
         const claudeSkillContent = `---
