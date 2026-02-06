@@ -13,13 +13,15 @@ interface ApiKeysDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-type Provider = 'openai' | 'gemini' | 'cursor' | 'anthropic' | 'aigateway'
+type Provider = 'openai' | 'gemini' | 'cursor' | 'anthropic' | 'aigateway' | 'groq' | 'openrouter'
 
 const PROVIDERS = [
   { id: 'aigateway' as Provider, name: 'AI Gateway', placeholder: 'gw_...' },
   { id: 'anthropic' as Provider, name: 'Anthropic', placeholder: 'sk-ant-...' },
   { id: 'openai' as Provider, name: 'OpenAI', placeholder: 'sk-...' },
   { id: 'gemini' as Provider, name: 'Gemini', placeholder: 'AIza...' },
+  { id: 'groq' as Provider, name: 'Groq', placeholder: 'gsk_...' },
+  { id: 'openrouter' as Provider, name: 'OpenRouter', placeholder: 'sk-or-...' },
   { id: 'cursor' as Provider, name: 'Cursor', placeholder: 'cur_...' },
 ]
 
@@ -30,6 +32,8 @@ export function ApiKeysDialog({ open, onOpenChange }: ApiKeysDialogProps) {
     cursor: '',
     anthropic: '',
     aigateway: '',
+    groq: '',
+    openrouter: '',
   })
   const [savedKeys, setSavedKeys] = useState<Set<Provider>>(new Set())
   const [clearedKeys, setClearedKeys] = useState<Set<Provider>>(new Set())
@@ -39,6 +43,8 @@ export function ApiKeysDialog({ open, onOpenChange }: ApiKeysDialogProps) {
     cursor: false,
     anthropic: false,
     aigateway: false,
+    groq: false,
+    openrouter: false,
   })
   const [loading, setLoading] = useState(false)
 

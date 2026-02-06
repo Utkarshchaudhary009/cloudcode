@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
         const aiBranchName = await generateBranchName({
           description: validatedData.prompt,
           repoName,
-          context: `${validatedData.selectedAgent} agent task`,
+          context: `${validatedData.selectedAgent} provider task`,
         })
 
         // Update task with AI-generated branch name
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
         const aiTitle = await generateTaskTitle({
           prompt: validatedData.prompt,
           repoName,
-          context: `${validatedData.selectedAgent} agent task`,
+          context: `${validatedData.selectedAgent} provider task`,
         })
 
         // Update task with AI-generated title
@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
           validatedData.prompt,
           validatedData.repoUrl || '',
           validatedData.maxDuration || maxSandboxDuration,
-          validatedData.selectedAgent || 'claude',
+          validatedData.selectedAgent || 'openai',
           validatedData.selectedModel,
           validatedData.installDependencies || false,
           validatedData.keepAlive || false,
@@ -254,7 +254,7 @@ async function processTaskWithTimeout(
   prompt: string,
   repoUrl: string,
   maxDuration: number,
-  selectedAgent: string = 'claude',
+  selectedAgent: string = 'openai',
   selectedModel?: string,
   installDependencies: boolean = false,
   keepAlive: boolean = false,
@@ -265,6 +265,8 @@ async function processTaskWithTimeout(
     CURSOR_API_KEY?: string
     ANTHROPIC_API_KEY?: string
     AI_GATEWAY_API_KEY?: string
+    GROQ_API_KEY?: string
+    OPENROUTER_API_KEY?: string
   },
   githubToken?: string | null,
   githubUser?: {
@@ -368,7 +370,7 @@ async function processTask(
   prompt: string,
   repoUrl: string,
   maxDuration: number,
-  selectedAgent: string = 'claude',
+  selectedAgent: string = 'openai',
   selectedModel?: string,
   installDependencies: boolean = false,
   keepAlive: boolean = false,
@@ -379,6 +381,8 @@ async function processTask(
     CURSOR_API_KEY?: string
     ANTHROPIC_API_KEY?: string
     AI_GATEWAY_API_KEY?: string
+    GROQ_API_KEY?: string
+    OPENROUTER_API_KEY?: string
   },
   githubToken?: string | null,
   githubUser?: {
@@ -590,7 +594,7 @@ async function processTask(
     const agentResult = await executeAgentInSandbox(
       sandbox,
       sanitizedPrompt,
-      selectedAgent as AgentType,
+      'opencode' as AgentType,
       logger,
       selectedModel,
       mcpServers,
@@ -652,7 +656,7 @@ async function processTask(
           commitMessage = await generateCommitMessage({
             description: prompt,
             repoName,
-            context: `${selectedAgent} agent task`,
+            context: `${selectedAgent} provider task`,
           })
         } else {
           commitMessage = createFallbackCommitMessage(prompt)

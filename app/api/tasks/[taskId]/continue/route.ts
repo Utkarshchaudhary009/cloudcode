@@ -99,7 +99,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ taskId
         task.repoUrl || '',
         task.branchName || '',
         task.maxDuration || maxSandboxDuration,
-        task.selectedAgent || 'claude',
+        task.selectedAgent || 'openai',
         task.selectedModel || undefined,
         task.installDependencies || false,
         userApiKeys,
@@ -121,7 +121,7 @@ async function continueTask(
   repoUrl: string,
   branchName: string,
   maxDuration: number,
-  selectedAgent: string = 'claude',
+  selectedAgent: string = 'openai',
   selectedModel?: string,
   installDependencies: boolean = false,
   apiKeys?: {
@@ -130,6 +130,8 @@ async function continueTask(
     CURSOR_API_KEY?: string
     ANTHROPIC_API_KEY?: string
     AI_GATEWAY_API_KEY?: string
+    GROQ_API_KEY?: string
+    OPENROUTER_API_KEY?: string
   },
   githubToken?: string | null,
   githubUser?: {
@@ -324,7 +326,7 @@ async function continueTask(
     const agentResult = await executeAgentInSandbox(
       sandbox,
       promptWithContext,
-      selectedAgent as AgentType,
+      'opencode' as AgentType,
       logger,
       selectedModel,
       mcpServers,
@@ -382,7 +384,7 @@ async function continueTask(
           commitMessage = await generateCommitMessage({
             description: prompt,
             repoName,
-            context: `${selectedAgent} agent follow-up`,
+            context: `${selectedAgent} provider follow-up`,
           })
         } else {
           commitMessage = createFallbackCommitMessage(prompt)

@@ -57,8 +57,14 @@ export async function executeOpenCodeInSandbox(
     await logger.info('Starting OpenCode agent execution...')
 
     // Check if we have required environment variables for OpenCode
-    if (!process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
-      const errorMsg = 'OpenAI API key or Anthropic API key is required for OpenCode agent'
+    if (
+      !process.env.OPENAI_API_KEY &&
+      !process.env.ANTHROPIC_API_KEY &&
+      !process.env.GEMINI_API_KEY &&
+      !process.env.GROQ_API_KEY &&
+      !process.env.OPENROUTER_API_KEY
+    ) {
+      const errorMsg = 'A provider API key is required for OpenCode agent'
       await logger.error(errorMsg)
       return {
         success: false,
@@ -282,6 +288,69 @@ EOF`
       }
     }
 
+    if (process.env.GEMINI_API_KEY) {
+      console.log('Configuring Gemini provider...')
+      if (logger) {
+        await logger.info('Configuring Gemini provider...')
+      }
+
+      const geminiAuthResult = await runCommandInSandbox(sandbox, 'sh', [
+        '-c',
+        `echo "${process.env.GEMINI_API_KEY}" | opencode auth add gemini`,
+      ])
+
+      if (!geminiAuthResult.success) {
+        console.warn('Failed to configure Gemini provider, but continuing...')
+        if (logger) {
+          await logger.info('Failed to configure Gemini provider, but continuing...')
+        }
+      } else {
+        authSetupCommands.push('Gemini provider configured')
+      }
+    }
+
+    if (process.env.GROQ_API_KEY) {
+      console.log('Configuring Groq provider...')
+      if (logger) {
+        await logger.info('Configuring Groq provider...')
+      }
+
+      const groqAuthResult = await runCommandInSandbox(sandbox, 'sh', [
+        '-c',
+        `echo "${process.env.GROQ_API_KEY}" | opencode auth add groq`,
+      ])
+
+      if (!groqAuthResult.success) {
+        console.warn('Failed to configure Groq provider, but continuing...')
+        if (logger) {
+          await logger.info('Failed to configure Groq provider, but continuing...')
+        }
+      } else {
+        authSetupCommands.push('Groq provider configured')
+      }
+    }
+
+    if (process.env.OPENROUTER_API_KEY) {
+      console.log('Configuring OpenRouter provider...')
+      if (logger) {
+        await logger.info('Configuring OpenRouter provider...')
+      }
+
+      const openRouterAuthResult = await runCommandInSandbox(sandbox, 'sh', [
+        '-c',
+        `echo "${process.env.OPENROUTER_API_KEY}" | opencode auth add openrouter`,
+      ])
+
+      if (!openRouterAuthResult.success) {
+        console.warn('Failed to configure OpenRouter provider, but continuing...')
+        if (logger) {
+          await logger.info('Failed to configure OpenRouter provider, but continuing...')
+        }
+      } else {
+        authSetupCommands.push('OpenRouter provider configured')
+      }
+    }
+
     // Initialize OpenCode for the project
     console.log('Initializing OpenCode for the project...')
     if (logger) {
@@ -307,6 +376,15 @@ EOF`
     }
     if (process.env.ANTHROPIC_API_KEY) {
       envVars.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
+    }
+    if (process.env.GEMINI_API_KEY) {
+      envVars.GEMINI_API_KEY = process.env.GEMINI_API_KEY
+    }
+    if (process.env.GROQ_API_KEY) {
+      envVars.GROQ_API_KEY = process.env.GROQ_API_KEY
+    }
+    if (process.env.OPENROUTER_API_KEY) {
+      envVars.OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
     }
 
     // Build environment variables string for shell command

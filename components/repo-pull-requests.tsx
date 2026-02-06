@@ -29,79 +29,13 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { GitPullRequest, Calendar, MessageSquare, MoreHorizontal, X, ListTodo } from 'lucide-react'
 import { toast } from 'sonner'
-import Claude from '@/components/logos/claude'
-import Codex from '@/components/logos/codex'
-import Copilot from '@/components/logos/copilot'
-import Cursor from '@/components/logos/cursor'
-import Gemini from '@/components/logos/gemini'
-import OpenCode from '@/components/logos/opencode'
-
-const CODING_AGENTS = [
-  { value: 'claude', label: 'Claude', icon: Claude },
-  { value: 'codex', label: 'Codex', icon: Codex },
-  { value: 'copilot', label: 'Copilot', icon: Copilot },
-  { value: 'cursor', label: 'Cursor', icon: Cursor },
-  { value: 'gemini', label: 'Gemini', icon: Gemini },
-  { value: 'opencode', label: 'opencode', icon: OpenCode },
-] as const
-
-const AGENT_MODELS = {
-  claude: [
-    { value: 'claude-sonnet-4-5', label: 'Sonnet 4.5' },
-    { value: 'claude-opus-4-5', label: 'Opus 4.5' },
-    { value: 'claude-haiku-4-5', label: 'Haiku 4.5' },
-  ],
-  codex: [
-    { value: 'openai/gpt-5.1', label: 'GPT-5.1' },
-    { value: 'openai/gpt-5.1-codex', label: 'GPT-5.1-Codex' },
-    { value: 'openai/gpt-5.1-codex-mini', label: 'GPT-5.1-Codex mini' },
-    { value: 'openai/gpt-5', label: 'GPT-5' },
-    { value: 'gpt-5-codex', label: 'GPT-5-Codex' },
-    { value: 'openai/gpt-5-mini', label: 'GPT-5 mini' },
-    { value: 'openai/gpt-5-nano', label: 'GPT-5 nano' },
-    { value: 'gpt-5-pro', label: 'GPT-5 pro' },
-    { value: 'openai/gpt-4.1', label: 'GPT-4.1' },
-  ],
-  copilot: [
-    { value: 'claude-sonnet-4.5', label: 'Sonnet 4.5' },
-    { value: 'claude-sonnet-4', label: 'Sonnet 4' },
-    { value: 'claude-haiku-4.5', label: 'Haiku 4.5' },
-    { value: 'gpt-5', label: 'GPT-5' },
-  ],
-  cursor: [
-    { value: 'auto', label: 'Auto' },
-    { value: 'composer-1', label: 'Composer' },
-    { value: 'sonnet-4.5', label: 'Sonnet 4.5' },
-    { value: 'sonnet-4.5-thinking', label: 'Sonnet 4.5 Thinking' },
-    { value: 'gpt-5', label: 'GPT-5' },
-    { value: 'gpt-5-codex', label: 'GPT-5 Codex' },
-    { value: 'opus-4.1', label: 'Opus 4.1' },
-    { value: 'grok', label: 'Grok' },
-  ],
-  gemini: [
-    { value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro Preview' },
-    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-  ],
-  opencode: [
-    { value: 'gpt-5', label: 'GPT-5' },
-    { value: 'gpt-5-mini', label: 'GPT-5 mini' },
-    { value: 'gpt-5-nano', label: 'GPT-5 nano' },
-    { value: 'gpt-4.1', label: 'GPT-4.1' },
-    { value: 'claude-sonnet-4-5', label: 'Sonnet 4.5' },
-    { value: 'claude-opus-4-5', label: 'Opus 4.5' },
-    { value: 'claude-haiku-4-5', label: 'Haiku 4.5' },
-  ],
-} as const
-
-const DEFAULT_MODELS = {
-  claude: 'claude-sonnet-4-5',
-  codex: 'openai/gpt-5.1',
-  copilot: 'claude-sonnet-4.5',
-  cursor: 'auto',
-  gemini: 'gemini-3-pro-preview',
-  opencode: 'gpt-5',
-} as const
+import type { OpenCodeProviderId } from '@/lib/opencode/providers'
+import {
+  DEFAULT_OPENCODE_MODEL,
+  DEFAULT_OPENCODE_PROVIDER,
+  OPENCODE_PROVIDERS,
+  OPENCODE_PROVIDER_MODELS,
+} from '@/lib/opencode/providers'
 
 function formatDistanceToNow(date: Date): string {
   const now = new Date()
@@ -148,8 +82,8 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
   const [showCloseDialog, setShowCloseDialog] = useState(false)
   const [selectedPR, setSelectedPR] = useState<PullRequest | null>(null)
   const [prToClose, setPrToClose] = useState<number | null>(null)
-  const [selectedAgent, setSelectedAgent] = useState('claude')
-  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODELS.claude)
+  const [selectedAgent, setSelectedAgent] = useState<OpenCodeProviderId>(DEFAULT_OPENCODE_PROVIDER)
+  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_OPENCODE_MODEL[DEFAULT_OPENCODE_PROVIDER])
   const [installDeps, setInstallDeps] = useState(false)
   const [maxDuration, setMaxDuration] = useState(300)
   const [keepAlive, setKeepAlive] = useState(false)
@@ -200,9 +134,9 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
   }, [owner, repo])
 
   useEffect(() => {
-    const agentModels = AGENT_MODELS[selectedAgent as keyof typeof AGENT_MODELS]
-    const defaultModel = DEFAULT_MODELS[selectedAgent as keyof typeof DEFAULT_MODELS]
-    if (agentModels && !agentModels.find((m) => m.value === selectedModel)) {
+    const providerModels = OPENCODE_PROVIDER_MODELS[selectedAgent as keyof typeof OPENCODE_PROVIDER_MODELS]
+    const defaultModel = DEFAULT_OPENCODE_MODEL[selectedAgent as keyof typeof DEFAULT_OPENCODE_MODEL]
+    if (providerModels && !providerModels.find((m) => m.value === selectedModel)) {
       setSelectedModel(defaultModel)
     }
   }, [selectedAgent, selectedModel])
@@ -444,18 +378,15 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
           <div className="py-4 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Agent</label>
-                <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+                <label className="text-sm font-medium mb-2 block">Provider</label>
+                <Select value={selectedAgent} onValueChange={(value) => setSelectedAgent(value as OpenCodeProviderId)}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select an agent" />
+                    <SelectValue placeholder="Select a provider" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CODING_AGENTS.map((agent) => (
-                      <SelectItem key={agent.value} value={agent.value}>
-                        <div className="flex items-center gap-2">
-                          <agent.icon className="w-4 h-4" />
-                          <span>{agent.label}</span>
-                        </div>
+                    {OPENCODE_PROVIDERS.map((provider) => (
+                      <SelectItem key={provider.value} value={provider.value}>
+                        {provider.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -468,7 +399,7 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
                     <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {AGENT_MODELS[selectedAgent as keyof typeof AGENT_MODELS]?.map((model) => (
+                    {OPENCODE_PROVIDER_MODELS[selectedAgent as keyof typeof OPENCODE_PROVIDER_MODELS]?.map((model) => (
                       <SelectItem key={model.value} value={model.value}>
                         {model.label}
                       </SelectItem>

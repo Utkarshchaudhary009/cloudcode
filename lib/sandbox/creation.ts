@@ -8,6 +8,7 @@ import { redactSensitiveInfo } from '@/lib/utils/logging'
 import { TaskLogger } from '@/lib/utils/task-logger'
 import { detectPackageManager, installDependencies } from './package-manager'
 import { registerSandbox } from './sandbox-registry'
+import { isOpenCodeProvider } from '@/lib/opencode/providers'
 
 // Helper function to run command and log it
 async function runAndLogCommand(sandbox: Sandbox, command: string, args: string[], logger: TaskLogger, cwd?: string) {
@@ -582,7 +583,8 @@ fi
         // Create the agent-browser skill file based on the selected agent
         await logger.info('Creating agent-browser skill for coding agent...')
 
-        const agentType = config.selectedAgent || 'claude'
+        const agentType = config.selectedAgent || 'opencode'
+        const resolvedAgentType = isOpenCodeProvider(agentType) ? 'opencode' : agentType
 
         // Skill content with YAML front matter (Claude format)
         const claudeSkillContent = `---
@@ -689,7 +691,7 @@ Key commands: open, snapshot -i, click, fill, type, press, get text/value/title/
 
         let skillInstalled = false
 
-        if (agentType === 'claude') {
+        if (resolvedAgentType === 'claude') {
           // Claude: Use .claude/skills directory
           const skillDir = '/home/vercel-sandbox/.claude/skills/agent-browser'
           const createSkillDir = await runCommandInSandbox(sandbox, 'mkdir', ['-p', skillDir])
@@ -700,7 +702,7 @@ SKILL_EOF`
             const writeSkill = await runCommandInSandbox(sandbox, 'sh', ['-c', writeSkillCmd])
             skillInstalled = writeSkill.success
           }
-        } else if (agentType === 'gemini') {
+        } else if (resolvedAgentType === 'gemini') {
           // Gemini: Use .gemini directory with AGENTS.md
           const geminiDir = '/home/vercel-sandbox/.gemini'
           const createDir = await runCommandInSandbox(sandbox, 'mkdir', ['-p', geminiDir])
@@ -713,7 +715,7 @@ SKILL_EOF`
             const writeSkill = await runCommandInSandbox(sandbox, 'sh', ['-c', writeCmd])
             skillInstalled = writeSkill.success
           }
-        } else if (agentType === 'cursor') {
+        } else if (resolvedAgentType === 'cursor') {
           // Cursor: Use .cursor/rules directory
           const cursorDir = '/home/vercel-sandbox/.cursor/rules'
           const createDir = await runCommandInSandbox(sandbox, 'mkdir', ['-p', cursorDir])
@@ -730,7 +732,7 @@ SKILL_EOF`
             const writeSkill = await runCommandInSandbox(sandbox, 'sh', ['-c', writeCmd])
             skillInstalled = writeSkill.success
           }
-        } else if (agentType === 'codex') {
+        } else if (resolvedAgentType === 'codex') {
           // Codex: Use AGENTS.md in home directory
           const writeCmd = `cat > /home/vercel-sandbox/AGENTS.md << 'SKILL_EOF'
 # Browser Automation
@@ -739,7 +741,7 @@ ${genericInstructions}
 SKILL_EOF`
           const writeSkill = await runCommandInSandbox(sandbox, 'sh', ['-c', writeCmd])
           skillInstalled = writeSkill.success
-        } else if (agentType === 'copilot') {
+        } else if (resolvedAgentType === 'copilot') {
           // Copilot: Use .github/copilot-instructions.md
           const ghDir = '/home/vercel-sandbox/.github'
           const createDir = await runCommandInSandbox(sandbox, 'mkdir', ['-p', ghDir])
@@ -752,7 +754,7 @@ SKILL_EOF`
             const writeSkill = await runCommandInSandbox(sandbox, 'sh', ['-c', writeCmd])
             skillInstalled = writeSkill.success
           }
-        } else if (agentType === 'opencode') {
+        } else if (resolvedAgentType === 'opencode') {
           // OpenCode: Use AGENTS.md in home directory
           const writeCmd = `cat > /home/vercel-sandbox/AGENTS.md << 'SKILL_EOF'
 # Browser Automation
