@@ -26,7 +26,11 @@ export function validateEnvironmentVariables(
   const hasGemini = apiKeys?.GEMINI_API_KEY || process.env.GEMINI_API_KEY
   const hasGroq = apiKeys?.GROQ_API_KEY || process.env.GROQ_API_KEY
   const hasOpenRouter = apiKeys?.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
-  const hasVercel = apiKeys?.VERCEL_API_KEY || process.env.VERCEL_API_KEY || apiKeys?.AI_GATEWAY_API_KEY
+  const hasVercel =
+    apiKeys?.VERCEL_API_KEY ||
+    process.env.VERCEL_API_KEY ||
+    apiKeys?.AI_GATEWAY_API_KEY ||
+    process.env.AI_GATEWAY_API_KEY
   const hasSynthetic = apiKeys?.SYNTHETIC_API_KEY || process.env.SYNTHETIC_API_KEY
   const hasZai = apiKeys?.ZAI_API_KEY || process.env.ZAI_API_KEY
   const hasHuggingFace = apiKeys?.HF_TOKEN || process.env.HF_TOKEN
@@ -91,11 +95,21 @@ export function validateEnvironmentVariables(
         errors.push('VERTEXAI_PROJECT is required for OpenCode with Vertex AI.')
       }
       break
-    case 'bedrock':
+    case 'bedrock': {
+      const hasAwsSecret = process.env.AWS_SECRET_ACCESS_KEY
+      const hasAwsRegion = process.env.AWS_DEFAULT_REGION
+
       if (!hasBedrock) {
         errors.push('AWS_ACCESS_KEY_ID is required for OpenCode with Amazon Bedrock.')
       }
+      if (!hasAwsSecret) {
+        errors.push('AWS_SECRET_ACCESS_KEY is required for OpenCode with Amazon Bedrock.')
+      }
+      if (!hasAwsRegion) {
+        errors.push('AWS_DEFAULT_REGION is required for OpenCode with Amazon Bedrock.')
+      }
       break
+    }
     case 'azure':
       if (!hasAzure) {
         errors.push('AZURE_OPENAI_API_KEY is required for OpenCode with Azure OpenAI.')

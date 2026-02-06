@@ -160,22 +160,30 @@ export async function executeOpenCodeInSandbox(
       await logger.success('OpenCode CLI verified successfully')
     }
 
+    // Configure OpenCode settings (MCP servers and providers)
+    await logger.info('Configuring OpenCode settings...')
+
+    // Create OpenCode opencode.json configuration file
+    // Define types for configuration
+    type MCPConfig =
+      | { type: 'local'; command: string[]; enabled: boolean; environment?: Record<string, string> }
+      | { type: 'remote'; url: string; enabled: boolean; headers?: Record<string, string> }
+
+    type ProviderConfig = { apiKey?: string; baseUrl?: string }
+
+    const opencodeConfig: {
+      $schema: string
+      mcp: Record<string, MCPConfig>
+      providers: Record<string, ProviderConfig>
+    } = {
+      $schema: 'https://opencode.ai/config.json',
+      mcp: {},
+      providers: {},
+    }
+
     // Configure MCP servers if provided
     if (mcpServers && mcpServers.length > 0) {
       await logger.info('Configuring MCP servers')
-
-      // Create OpenCode opencode.json configuration file
-      const opencodeConfig: {
-        $schema: string
-        mcp: Record<
-          string,
-          | { type: 'local'; command: string[]; enabled: boolean; environment?: Record<string, string> }
-          | { type: 'remote'; url: string; enabled: boolean; headers?: Record<string, string> }
-        >
-      } = {
-        $schema: 'https://opencode.ai/config.json',
-        mcp: {},
-      }
 
       for (const server of mcpServers) {
         const serverName = server.name.toLowerCase().replace(/[^a-z0-9]/g, '-')
@@ -225,348 +233,95 @@ export async function executeOpenCodeInSandbox(
           await logger.info('Added remote MCP server')
         }
       }
-
-      // Write the opencode.json file to the OpenCode config directory (not project directory)
-      const opencodeConfigJson = JSON.stringify(opencodeConfig, null, 2)
-      const createConfigCmd = `mkdir -p ~/.opencode && cat > ~/.opencode/config.json << 'EOF'
-${opencodeConfigJson}
-EOF`
-
-      await logger.info('Creating OpenCode MCP configuration file...')
-      const configResult = await runCommandInSandbox(sandbox, 'sh', ['-c', createConfigCmd])
-
-      if (configResult.success) {
-        await logger.info('OpenCode configuration file (~/.opencode/config.json) created successfully')
-
-        // Verify the file was created (without logging sensitive contents)
-        const verifyConfig = await runCommandInSandbox(sandbox, 'test', ['-f', '~/.opencode/config.json'])
-        if (verifyConfig.success) {
-          await logger.info('OpenCode MCP configuration verified')
-        }
-      } else {
-        await logger.info('Warning: Failed to create OpenCode configuration file')
-      }
     }
 
-    // Set up authentication for OpenCode
-    // OpenCode supports multiple providers, we'll configure the available ones
-    const authSetupCommands: string[] = []
+    // Configure Providers (Authentication) via config file
+    // This avoids passing secrets via command arguments
 
+    // OpenAI and OpenAI-Compatible
     if (process.env.OPENAI_API_KEY) {
-      console.log('Configuring OpenAI provider...')
-      if (logger) {
-        await logger.info('Configuring OpenAI provider...')
+      opencodeConfig.providers.openai = {
+        apiKey: process.env.OPENAI_API_KEY,
+        ...(process.env.OPENAI_BASE_URL ? { baseUrl: process.env.OPENAI_BASE_URL } : {}),
       }
-
-      // Use opencode auth to configure OpenAI
-      const openaiAuthResult = await runCommandInSandbox(sandbox, 'sh', [
-        '-c',
-        `echo "${process.env.OPENAI_API_KEY}" | opencode auth add openai`,
-      ])
-
-      if (!openaiAuthResult.success) {
-        console.warn('Failed to configure OpenAI provider, but continuing...')
-        if (logger) {
-          await logger.info('Failed to configure OpenAI provider, but continuing...')
-        }
-      } else {
-        authSetupCommands.push('OpenAI provider configured')
-      }
+      await logger.info('Configured OpenAI provider (via config)')
     }
 
+    // Anthropic and Anthropic-Compatible
     if (process.env.ANTHROPIC_API_KEY) {
-      console.log('Configuring Anthropic provider...')
-      if (logger) {
-        await logger.info('Configuring Anthropic provider...')
+      opencodeConfig.providers.anthropic = {
+        apiKey: process.env.ANTHROPIC_API_KEY,
+        ...(process.env.ANTHROPIC_BASE_URL ? { baseUrl: process.env.ANTHROPIC_BASE_URL } : {}),
       }
-
-      // Use opencode auth to configure Anthropic
-      const anthropicAuthResult = await runCommandInSandbox(sandbox, 'sh', [
-        '-c',
-        `echo "${process.env.ANTHROPIC_API_KEY}" | opencode auth add anthropic`,
-      ])
-
-      if (!anthropicAuthResult.success) {
-        console.warn('Failed to configure Anthropic provider, but continuing...')
-        if (logger) {
-          await logger.info('Failed to configure Anthropic provider, but continuing...')
-        }
-      } else {
-        authSetupCommands.push('Anthropic provider configured')
-      }
+      await logger.info('Configured Anthropic provider (via config)')
     }
 
+    // Other providers
     if (process.env.GEMINI_API_KEY) {
-      console.log('Configuring Gemini provider...')
-      if (logger) {
-        await logger.info('Configuring Gemini provider...')
-      }
-
-      const geminiAuthResult = await runCommandInSandbox(sandbox, 'sh', [
-        '-c',
-        `echo "${process.env.GEMINI_API_KEY}" | opencode auth add gemini`,
-      ])
-
-      if (!geminiAuthResult.success) {
-        console.warn('Failed to configure Gemini provider, but continuing...')
-        if (logger) {
-          await logger.info('Failed to configure Gemini provider, but continuing...')
-        }
-      } else {
-        authSetupCommands.push('Gemini provider configured')
-      }
+      opencodeConfig.providers.gemini = { apiKey: process.env.GEMINI_API_KEY }
+      await logger.info('Configured Gemini provider (via config)')
     }
-
     if (process.env.GROQ_API_KEY) {
-      console.log('Configuring Groq provider...')
-      if (logger) {
-        await logger.info('Configuring Groq provider...')
-      }
-
-      const groqAuthResult = await runCommandInSandbox(sandbox, 'sh', [
-        '-c',
-        `echo "${process.env.GROQ_API_KEY}" | opencode auth add groq`,
-      ])
-
-      if (!groqAuthResult.success) {
-        console.warn('Failed to configure Groq provider, but continuing...')
-        if (logger) {
-          await logger.info('Failed to configure Groq provider, but continuing...')
-        }
-      } else {
-        authSetupCommands.push('Groq provider configured')
-      }
+      opencodeConfig.providers.groq = { apiKey: process.env.GROQ_API_KEY }
+      await logger.info('Configured Groq provider (via config)')
     }
-
     if (process.env.OPENROUTER_API_KEY) {
-      console.log('Configuring OpenRouter provider...')
-      if (logger) {
-        await logger.info('Configuring OpenRouter provider...')
-      }
-
-      const openRouterAuthResult = await runCommandInSandbox(sandbox, 'sh', [
-        '-c',
-        `echo "${process.env.OPENROUTER_API_KEY}" | opencode auth add openrouter`,
-      ])
-
-      if (!openRouterAuthResult.success) {
-        console.warn('Failed to configure OpenRouter provider, but continuing...')
-        if (logger) {
-          await logger.info('Failed to configure OpenRouter provider, but continuing...')
-        }
-      } else {
-        authSetupCommands.push('OpenRouter provider configured')
-      }
+      opencodeConfig.providers.openrouter = { apiKey: process.env.OPENROUTER_API_KEY }
+      await logger.info('Configured OpenRouter provider (via config)')
     }
-
     if (process.env.VERCEL_API_KEY) {
-      console.log('Configuring Vercel AI Gateway provider...')
-      if (logger) {
-        await logger.info('Configuring Vercel AI Gateway provider...')
-      }
-
-      const vercelAuthResult = await runCommandInSandbox(sandbox, 'sh', [
-        '-c',
-        `echo "${process.env.VERCEL_API_KEY}" | opencode auth add vercel`,
-      ])
-
-      if (!vercelAuthResult.success) {
-        console.warn('Failed to configure Vercel AI Gateway provider, but continuing...')
-        if (logger) {
-          await logger.info('Failed to configure Vercel AI Gateway provider, but continuing...')
-        }
-      } else {
-        authSetupCommands.push('Vercel AI Gateway provider configured')
-      }
+      opencodeConfig.providers.vercel = { apiKey: process.env.VERCEL_API_KEY }
+      await logger.info('Configured Vercel AI Gateway provider (via config)')
     }
-
     if (process.env.SYNTHETIC_API_KEY) {
-      console.log('Configuring Synthetic provider...')
-      if (logger) {
-        await logger.info('Configuring Synthetic provider...')
-      }
-
-      const syntheticAuthResult = await runCommandInSandbox(sandbox, 'sh', [
-        '-c',
-        `echo "${process.env.SYNTHETIC_API_KEY}" | opencode auth add synthetic`,
-      ])
-
-      if (!syntheticAuthResult.success) {
-        console.warn('Failed to configure Synthetic provider, but continuing...')
-        if (logger) {
-          await logger.info('Failed to configure Synthetic provider, but continuing...')
-        }
-      } else {
-        authSetupCommands.push('Synthetic provider configured')
-      }
+      opencodeConfig.providers.synthetic = { apiKey: process.env.SYNTHETIC_API_KEY }
+      await logger.info('Configured Synthetic provider (via config)')
     }
-
     if (process.env.ZAI_API_KEY) {
-      console.log('Configuring Z.ai provider...')
-      if (logger) {
-        await logger.info('Configuring Z.ai provider...')
-      }
-
-      const zaiAuthResult = await runCommandInSandbox(sandbox, 'sh', [
-        '-c',
-        `echo "${process.env.ZAI_API_KEY}" | opencode auth add zai`,
-      ])
-
-      if (!zaiAuthResult.success) {
-        console.warn('Failed to configure Z.ai provider, but continuing...')
-        if (logger) {
-          await logger.info('Failed to configure Z.ai provider, but continuing...')
-        }
-      } else {
-        authSetupCommands.push('Z.ai provider configured')
-      }
+      opencodeConfig.providers.zai = { apiKey: process.env.ZAI_API_KEY }
+      await logger.info('Configured Z.ai provider (via config)')
     }
-
     if (process.env.HF_TOKEN) {
-      console.log('Configuring Hugging Face provider...')
-      if (logger) {
-        await logger.info('Configuring Hugging Face provider...')
-      }
-
-      const hfAuthResult = await runCommandInSandbox(sandbox, 'sh', [
-        '-c',
-        `echo "${process.env.HF_TOKEN}" | opencode auth add huggingface`,
-      ])
-
-      if (!hfAuthResult.success) {
-        console.warn('Failed to configure Hugging Face provider, but continuing...')
-        if (logger) {
-          await logger.info('Failed to configure Hugging Face provider, but continuing...')
-        }
-      } else {
-        authSetupCommands.push('Hugging Face provider configured')
-      }
+      opencodeConfig.providers.huggingface = { apiKey: process.env.HF_TOKEN }
+      await logger.info('Configured Hugging Face provider (via config)')
     }
-
     if (process.env.CEREBRAS_API_KEY) {
-      console.log('Configuring Cerebras provider...')
-      if (logger) {
-        await logger.info('Configuring Cerebras provider...')
-      }
-
-      const cerebrasAuthResult = await runCommandInSandbox(sandbox, 'sh', [
-        '-c',
-        `echo "${process.env.CEREBRAS_API_KEY}" | opencode auth add cerebras`,
-      ])
-
-      if (!cerebrasAuthResult.success) {
-        console.warn('Failed to configure Cerebras provider, but continuing...')
-        if (logger) {
-          await logger.info('Failed to configure Cerebras provider, but continuing...')
-        }
-      } else {
-        authSetupCommands.push('Cerebras provider configured')
-      }
+      opencodeConfig.providers.cerebras = { apiKey: process.env.CEREBRAS_API_KEY }
+      await logger.info('Configured Cerebras provider (via config)')
     }
-
     if (process.env.VERTEXAI_PROJECT) {
-      console.log('Configuring Vertex AI provider...')
-      if (logger) {
-        await logger.info('Configuring Vertex AI provider...')
-      }
-
-      const vertexAuthResult = await runCommandInSandbox(sandbox, 'sh', [
-        '-c',
-        `echo "${process.env.VERTEXAI_PROJECT}" | opencode auth add vertexai`,
-      ])
-
-      if (!vertexAuthResult.success) {
-        console.warn('Failed to configure Vertex AI provider, but continuing...')
-        if (logger) {
-          await logger.info('Failed to configure Vertex AI provider, but continuing...')
-        }
-      } else {
-        authSetupCommands.push('Vertex AI provider configured')
-      }
+      opencodeConfig.providers.vertexai = { apiKey: process.env.VERTEXAI_PROJECT }
+      await logger.info('Configured Vertex AI provider (via config)')
     }
-
     if (process.env.AWS_ACCESS_KEY_ID) {
-      console.log('Configuring Amazon Bedrock provider...')
-      if (logger) {
-        await logger.info('Configuring Amazon Bedrock provider...')
-      }
-
-      const bedrockAuthResult = await runCommandInSandbox(sandbox, 'sh', [
-        '-c',
-        `echo "${process.env.AWS_ACCESS_KEY_ID}" | opencode auth add bedrock`,
-      ])
-
-      if (!bedrockAuthResult.success) {
-        console.warn('Failed to configure Amazon Bedrock provider, but continuing...')
-        if (logger) {
-          await logger.info('Failed to configure Amazon Bedrock provider, but continuing...')
-        }
-      } else {
-        authSetupCommands.push('Amazon Bedrock provider configured')
-      }
+      opencodeConfig.providers.bedrock = { apiKey: process.env.AWS_ACCESS_KEY_ID }
+      await logger.info('Configured Amazon Bedrock provider (via config)')
     }
-
     if (process.env.AZURE_OPENAI_API_KEY) {
-      console.log('Configuring Azure OpenAI provider...')
-      if (logger) {
-        await logger.info('Configuring Azure OpenAI provider...')
-      }
-
-      const azureAuthResult = await runCommandInSandbox(sandbox, 'sh', [
-        '-c',
-        `echo "${process.env.AZURE_OPENAI_API_KEY}" | opencode auth add azure`,
-      ])
-
-      if (!azureAuthResult.success) {
-        console.warn('Failed to configure Azure OpenAI provider, but continuing...')
-        if (logger) {
-          await logger.info('Failed to configure Azure OpenAI provider, but continuing...')
-        }
-      } else {
-        authSetupCommands.push('Azure OpenAI provider configured')
-      }
+      opencodeConfig.providers.azure = { apiKey: process.env.AZURE_OPENAI_API_KEY }
+      await logger.info('Configured Azure OpenAI provider (via config)')
     }
 
-    if (process.env.OPENAI_API_KEY) {
-      console.log('Configuring OpenAI Compatible provider...')
-      if (logger) {
-        await logger.info('Configuring OpenAI Compatible provider...')
+    // Write the opencode.json file to the OpenCode config directory (not project directory)
+    const opencodeConfigJson = JSON.stringify(opencodeConfig, null, 2)
+    const createConfigCmd = `mkdir -p ~/.opencode && cat > ~/.opencode/config.json << 'EOF'
+${opencodeConfigJson}
+EOF
+chmod 600 ~/.opencode/config.json`
+
+    await logger.info('Creating OpenCode configuration file...')
+    const configResult = await runCommandInSandbox(sandbox, 'sh', ['-c', createConfigCmd])
+
+    if (configResult.success) {
+      await logger.info('OpenCode configuration file (~/.opencode/config.json) created successfully')
+
+      // Verify the file was created (without logging sensitive contents)
+      const verifyConfig = await runCommandInSandbox(sandbox, 'test', ['-f', '~/.opencode/config.json'])
+      if (verifyConfig.success) {
+        await logger.info('OpenCode configuration verified')
       }
-
-      const openaiCompatAuthResult = await runCommandInSandbox(sandbox, 'sh', [
-        '-c',
-        `echo "${process.env.OPENAI_API_KEY}" | opencode auth add openai-compat`,
-      ])
-
-      if (!openaiCompatAuthResult.success) {
-        console.warn('Failed to configure OpenAI Compatible provider, but continuing...')
-        if (logger) {
-          await logger.info('Failed to configure OpenAI Compatible provider, but continuing...')
-        }
-      } else {
-        authSetupCommands.push('OpenAI Compatible provider configured')
-      }
-    }
-
-    if (process.env.ANTHROPIC_API_KEY) {
-      console.log('Configuring Anthropic Compatible provider...')
-      if (logger) {
-        await logger.info('Configuring Anthropic Compatible provider...')
-      }
-
-      const anthropicCompatAuthResult = await runCommandInSandbox(sandbox, 'sh', [
-        '-c',
-        `echo "${process.env.ANTHROPIC_API_KEY}" | opencode auth add anthropic-compat`,
-      ])
-
-      if (!anthropicCompatAuthResult.success) {
-        console.warn('Failed to configure Anthropic Compatible provider, but continuing...')
-        if (logger) {
-          await logger.info('Failed to configure Anthropic Compatible provider, but continuing...')
-        }
-      } else {
-        authSetupCommands.push('Anthropic Compatible provider configured')
-      }
+    } else {
+      await logger.info('Warning: Failed to create OpenCode configuration file')
     }
 
     // Initialize OpenCode for the project
@@ -585,54 +340,6 @@ EOF`
         opencodeCmdToUse = `${globalBinPath}/opencode`
       }
     }
-
-    // Set up environment variables for the OpenCode execution
-    const envVars: Record<string, string> = {}
-
-    if (process.env.OPENAI_API_KEY) {
-      envVars.OPENAI_API_KEY = process.env.OPENAI_API_KEY
-    }
-    if (process.env.ANTHROPIC_API_KEY) {
-      envVars.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
-    }
-    if (process.env.GEMINI_API_KEY) {
-      envVars.GEMINI_API_KEY = process.env.GEMINI_API_KEY
-    }
-    if (process.env.GROQ_API_KEY) {
-      envVars.GROQ_API_KEY = process.env.GROQ_API_KEY
-    }
-    if (process.env.OPENROUTER_API_KEY) {
-      envVars.OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
-    }
-    if (process.env.VERCEL_API_KEY) {
-      envVars.VERCEL_API_KEY = process.env.VERCEL_API_KEY
-    }
-    if (process.env.SYNTHETIC_API_KEY) {
-      envVars.SYNTHETIC_API_KEY = process.env.SYNTHETIC_API_KEY
-    }
-    if (process.env.ZAI_API_KEY) {
-      envVars.ZAI_API_KEY = process.env.ZAI_API_KEY
-    }
-    if (process.env.HF_TOKEN) {
-      envVars.HF_TOKEN = process.env.HF_TOKEN
-    }
-    if (process.env.CEREBRAS_API_KEY) {
-      envVars.CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY
-    }
-    if (process.env.VERTEXAI_PROJECT) {
-      envVars.VERTEXAI_PROJECT = process.env.VERTEXAI_PROJECT
-    }
-    if (process.env.AWS_ACCESS_KEY_ID) {
-      envVars.AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID
-    }
-    if (process.env.AZURE_OPENAI_API_KEY) {
-      envVars.AZURE_OPENAI_API_KEY = process.env.AZURE_OPENAI_API_KEY
-    }
-
-    // Build environment variables string for shell command
-    const envPrefix = Object.entries(envVars)
-      .map(([key, value]) => `${key}="${value}"`)
-      .join(' ')
 
     console.log('Executing OpenCode using the run command for non-interactive mode...')
     if (logger) {
@@ -663,7 +370,7 @@ EOF`
       }
     }
 
-    const fullCommand = `${envPrefix} ${opencodeCmdToUse} run${modelFlag}${sessionFlags} "${instruction}"`
+    const fullCommand = `${opencodeCmdToUse} run${modelFlag}${sessionFlags} "${instruction}"`
 
     // Log the command we're about to execute (with redacted API keys)
     const redactedCommand = fullCommand.replace(/API_KEY="[^"]*"/g, 'API_KEY="[REDACTED]"')
