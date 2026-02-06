@@ -17,6 +17,7 @@ export function validateEnvironmentVariables(
     VERTEXAI_PROJECT?: string
     AWS_ACCESS_KEY_ID?: string
     AZURE_OPENAI_API_KEY?: string
+    ZEN_API_KEY?: string
   },
 ) {
   const errors: string[] = []
@@ -26,7 +27,11 @@ export function validateEnvironmentVariables(
   const hasGemini = apiKeys?.GEMINI_API_KEY || process.env.GEMINI_API_KEY
   const hasGroq = apiKeys?.GROQ_API_KEY || process.env.GROQ_API_KEY
   const hasOpenRouter = apiKeys?.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
-  const hasVercel = apiKeys?.VERCEL_API_KEY || process.env.VERCEL_API_KEY || apiKeys?.AI_GATEWAY_API_KEY
+  const hasVercel =
+    apiKeys?.VERCEL_API_KEY ||
+    process.env.VERCEL_API_KEY ||
+    apiKeys?.AI_GATEWAY_API_KEY ||
+    process.env.AI_GATEWAY_API_KEY
   const hasSynthetic = apiKeys?.SYNTHETIC_API_KEY || process.env.SYNTHETIC_API_KEY
   const hasZai = apiKeys?.ZAI_API_KEY || process.env.ZAI_API_KEY
   const hasHuggingFace = apiKeys?.HF_TOKEN || process.env.HF_TOKEN
@@ -34,6 +39,7 @@ export function validateEnvironmentVariables(
   const hasVertex = apiKeys?.VERTEXAI_PROJECT || process.env.VERTEXAI_PROJECT
   const hasBedrock = apiKeys?.AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID
   const hasAzure = apiKeys?.AZURE_OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY
+  const hasZen = apiKeys?.ZEN_API_KEY || process.env.ZEN_API_KEY
 
   switch (selectedAgent) {
     case 'openai':
@@ -91,14 +97,29 @@ export function validateEnvironmentVariables(
         errors.push('VERTEXAI_PROJECT is required for OpenCode with Vertex AI.')
       }
       break
-    case 'bedrock':
+    case 'bedrock': {
+      const hasAwsSecret = process.env.AWS_SECRET_ACCESS_KEY
+      const hasAwsRegion = process.env.AWS_DEFAULT_REGION
+
       if (!hasBedrock) {
         errors.push('AWS_ACCESS_KEY_ID is required for OpenCode with Amazon Bedrock.')
       }
+      if (!hasAwsSecret) {
+        errors.push('AWS_SECRET_ACCESS_KEY is required for OpenCode with Amazon Bedrock.')
+      }
+      if (!hasAwsRegion) {
+        errors.push('AWS_DEFAULT_REGION is required for OpenCode with Amazon Bedrock.')
+      }
       break
+    }
     case 'azure':
       if (!hasAzure) {
         errors.push('AZURE_OPENAI_API_KEY is required for OpenCode with Azure OpenAI.')
+      }
+      break
+    case 'zen':
+      if (!hasZen) {
+        errors.push('ZEN_API_KEY is required for OpenCode with Zen.')
       }
       break
     case 'openai-compat':
@@ -125,7 +146,8 @@ export function validateEnvironmentVariables(
         !hasCerebras &&
         !hasVertex &&
         !hasBedrock &&
-        !hasAzure
+        !hasAzure &&
+        !hasZen
       ) {
         errors.push('A provider API key is required for OpenCode.')
       }
