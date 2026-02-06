@@ -25,13 +25,9 @@ import { taskPromptAtom } from '@/lib/atoms/task'
 import { lastSelectedAgentAtom, lastSelectedModelAtomFamily } from '@/lib/atoms/agent-selection'
 import { githubReposAtomFamily } from '@/lib/atoms/github-cache'
 import { useSearchParams } from 'next/navigation'
-import {
-  DEFAULT_OPENCODE_MODEL,
-  DEFAULT_OPENCODE_PROVIDER,
-  OPENCODE_PROVIDERS,
-  OPENCODE_PROVIDER_MODELS,
-  normalizeOpenCodeProvider,
-} from '@/lib/opencode/providers'
+import { DEFAULT_OPENCODE_PROVIDER } from '@/lib/opencode/providers'
+import { getOpenCodeProviderModels, resolveOpenCodeModel, resolveOpenCodeProvider } from '@/lib/opencode/catalog'
+import { useOpencodeCatalog } from '@/components/hooks/use-opencode-catalog'
 
 interface GitHubRepo {
   name: string
@@ -63,7 +59,7 @@ interface TaskFormProps {
   maxSandboxDuration?: number
 }
 
-type Provider = (typeof OPENCODE_PROVIDERS)[number]['value']
+type Provider = string
 
 export function TaskForm({
   onSubmit,
@@ -78,10 +74,13 @@ export function TaskForm({
 }: TaskFormProps) {
   const [prompt, setPrompt] = useAtom(taskPromptAtom)
   const [savedAgent, setSavedAgent] = useAtom(lastSelectedAgentAtom)
-  const [selectedAgent, setSelectedAgent] = useState<Provider>(
-    normalizeOpenCodeProvider(savedAgent || DEFAULT_OPENCODE_PROVIDER),
+  const catalog = useOpencodeCatalog()
+  const [selectedAgent, setSelectedAgent] = useState<Provider>(() =>
+    resolveOpenCodeProvider(savedAgent || DEFAULT_OPENCODE_PROVIDER, catalog),
   )
-  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_OPENCODE_MODEL[selectedAgent])
+  const [selectedModel, setSelectedModel] = useState<string>(() =>
+    resolveOpenCodeModel(resolveOpenCodeProvider(savedAgent || DEFAULT_OPENCODE_PROVIDER, catalog), catalog),
+  )
   const [repos, setRepos] = useAtom(githubReposAtomFamily(selectedOwner))
   const [, setLoadingRepos] = useState(false)
 
@@ -141,24 +140,27 @@ export function TaskForm({
 
   // Get URL search params
   const searchParams = useSearchParams()
+  const hasInitializedRef = useRef(false)
 
   // Load saved provider, model, and options on mount, and focus the prompt input
   useEffect(() => {
+    if (hasInitializedRef.current) return
+
     // Check URL params first
     const urlAgent = searchParams?.get('provider') || searchParams?.get('agent')
     const urlModel = searchParams?.get('model')
 
-    if (urlAgent && OPENCODE_PROVIDERS.some((provider) => provider.value === urlAgent)) {
+    if (urlAgent && catalog.providers.some((provider) => provider.value === urlAgent)) {
       setSelectedAgent(urlAgent as Provider)
       if (urlModel) {
-        const providerModels = OPENCODE_PROVIDER_MODELS[urlAgent as keyof typeof OPENCODE_PROVIDER_MODELS]
+        const providerModels = getOpenCodeProviderModels(urlAgent, catalog)
         if (providerModels?.some((model) => model.value === urlModel)) {
           setSelectedModel(urlModel)
         }
       }
     } else if (savedAgent) {
       // Fall back to saved provider from Jotai atom
-      if (OPENCODE_PROVIDERS.some((provider) => provider.value === savedAgent)) {
+      if (catalog.providers.some((provider) => provider.value === savedAgent)) {
         setSelectedAgent(savedAgent as Provider)
       }
     }
@@ -169,6 +171,7 @@ export function TaskForm({
     if (textareaRef.current) {
       textareaRef.current.focus()
     }
+    hasInitializedRef.current = true
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -180,18 +183,14 @@ export function TaskForm({
   // Update model when provider changes
   useEffect(() => {
     if (selectedAgent) {
-      // Load saved model for this provider or use default
-      const providerModels = OPENCODE_PROVIDER_MODELS[selectedAgent as keyof typeof OPENCODE_PROVIDER_MODELS]
-      if (savedModel && providerModels?.some((model) => model.value === savedModel)) {
-        setSelectedModel(savedModel)
-      } else {
-        const defaultModel = DEFAULT_OPENCODE_MODEL[selectedAgent]
-        if (defaultModel) {
-          setSelectedModel(defaultModel)
-        }
+      const providerModels = getOpenCodeProviderModels(selectedAgent, catalog)
+      const preferredModel = providerModels.some((model) => model.value === selectedModel) ? selectedModel : savedModel
+      const resolvedModel = resolveOpenCodeModel(selectedAgent, catalog, preferredModel)
+      if (resolvedModel && resolvedModel !== selectedModel) {
+        setSelectedModel(resolvedModel)
       }
     }
-  }, [selectedAgent, savedModel])
+  }, [selectedAgent, savedModel, selectedModel, catalog])
 
   // Fetch repositories when owner changes
   useEffect(() => {
@@ -346,7 +345,7 @@ export function TaskForm({
                     <SelectValue placeholder="Provider">
                       {selectedAgent &&
                         (() => {
-                          const provider = OPENCODE_PROVIDERS.find((item) => item.value === selectedAgent)
+                          const provider = catalog.providers.find((item) => item.value === selectedAgent)
                           return provider ? (
                             <div className="flex items-center gap-2">
                               <span className="hidden sm:inline">{provider.label}</span>
@@ -357,7 +356,7 @@ export function TaskForm({
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {OPENCODE_PROVIDERS.map((provider) => (
+                    {catalog.providers.map((provider) => (
                       <SelectItem key={provider.value} value={provider.value}>
                         {provider.label}
                       </SelectItem>
@@ -379,7 +378,7 @@ export function TaskForm({
                     <SelectValue placeholder="Model" className="truncate" />
                   </SelectTrigger>
                   <SelectContent>
-                    {OPENCODE_PROVIDER_MODELS[selectedAgent as keyof typeof OPENCODE_PROVIDER_MODELS]?.map((model) => (
+                    {getOpenCodeProviderModels(selectedAgent, catalog).map((model) => (
                       <SelectItem key={model.value} value={model.value}>
                         {model.label}
                       </SelectItem>

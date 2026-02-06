@@ -264,6 +264,7 @@ These API keys can be set globally (fallback for all users) or left unset to req
 - `NPM_TOKEN`: For private npm packages
 - `MAX_SANDBOX_DURATION`: Default maximum sandbox duration in minutes (default: `300` = 5 hours)
 - `MAX_MESSAGES_PER_DAY`: Maximum number of tasks + follow-ups per user per day (default: `5`)
+- `OPENCODE_SERVER_URL`: Base URL for an OpenCode server (enables dynamic provider/model discovery in the UI)
 
 ### 4. Set up OAuth Applications
 
@@ -554,4 +555,3 @@ Confirm that:
 - **Users must connect GitHub** (if they signed in with Vercel) to access repositories
 - **API keys** can now be per-user - users can override global API keys in their profile
 - **Breaking API changes**: If you have external integrations calling your API, they'll need to be updated to include authentication
-

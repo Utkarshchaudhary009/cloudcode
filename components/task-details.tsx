@@ -36,15 +36,15 @@ import { cn } from '@/lib/utils'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
 import { OpenCode } from '@/components/logos'
+import { DEFAULT_OPENCODE_PROVIDER } from '@/lib/opencode/providers'
 import {
-  DEFAULT_OPENCODE_MODEL,
-  DEFAULT_OPENCODE_PROVIDER,
-  OPENCODE_PROVIDERS,
-  OPENCODE_PROVIDER_LABELS,
-  OPENCODE_PROVIDER_MODELS,
-  getOpenCodeModelLabel,
-  normalizeOpenCodeProvider,
-} from '@/lib/opencode/providers'
+  getOpenCodeModelLabelFromCatalog,
+  getOpenCodeProviderLabel,
+  getOpenCodeProviderModels,
+  resolveOpenCodeModel,
+  resolveOpenCodeProvider,
+} from '@/lib/opencode/catalog'
+import { useOpencodeCatalog } from '@/components/hooks/use-opencode-catalog'
 import { useTasks } from '@/components/app-layout'
 import {
   getShowFilesPane,
@@ -124,10 +124,11 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
   const [showTryAgainDialog, setShowTryAgainDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isTryingAgain, setIsTryingAgain] = useState(false)
-  const [selectedAgent, setSelectedAgent] = useState(task.selectedAgent || DEFAULT_OPENCODE_PROVIDER)
-  const [selectedModel, setSelectedModel] = useState<string>(
-    task.selectedModel ||
-      DEFAULT_OPENCODE_MODEL[normalizeOpenCodeProvider(task.selectedAgent || DEFAULT_OPENCODE_PROVIDER)],
+  const catalog = useOpencodeCatalog()
+  const initialProvider = resolveOpenCodeProvider(task.selectedAgent || DEFAULT_OPENCODE_PROVIDER, catalog)
+  const [selectedAgent, setSelectedAgent] = useState(initialProvider)
+  const [selectedModel, setSelectedModel] = useState<string>(() =>
+    resolveOpenCodeModel(initialProvider, catalog, task.selectedModel),
   )
   const [tryAgainInstallDeps, setTryAgainInstallDeps] = useState(task.installDependencies || false)
   const [tryAgainMaxDuration, setTryAgainMaxDuration] = useState(task.maxDuration || maxSandboxDuration)
@@ -176,20 +177,22 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
 
   // Initialize model correctly on mount and when provider changes in Try Again dialog
   useEffect(() => {
-    const provider = normalizeOpenCodeProvider(selectedAgent)
-    const taskModel = task.selectedModel
-
-    // Check if the task's model exists in the provider's model list
-    const providerModels = OPENCODE_PROVIDER_MODELS[provider]
-    const modelExists = providerModels?.some((m) => m.value === taskModel)
-
-    // Use task model if it exists for the provider, otherwise use default
-    const correctModel = modelExists && taskModel ? taskModel : DEFAULT_OPENCODE_MODEL[provider]
-
-    if (correctModel !== selectedModel) {
-      setSelectedModel(correctModel)
+    const resolvedProvider = resolveOpenCodeProvider(selectedAgent, catalog)
+    if (resolvedProvider !== selectedAgent) {
+      setSelectedAgent(resolvedProvider)
+      return
     }
-  }, [selectedAgent, task.selectedModel, selectedModel])
+
+    const providerModels = getOpenCodeProviderModels(resolvedProvider, catalog)
+    const preferredModel = providerModels.some((model) => model.value === selectedModel)
+      ? selectedModel
+      : task.selectedModel
+    const resolvedModel = resolveOpenCodeModel(resolvedProvider, catalog, preferredModel)
+
+    if (resolvedModel && resolvedModel !== selectedModel) {
+      setSelectedModel(resolvedModel)
+    }
+  }, [catalog, selectedAgent, selectedModel, task.selectedModel])
 
   // File search state
   const [fileSearchQuery, setFileSearchQuery] = useState('')
@@ -610,15 +613,13 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
   }, [task.id, task.sandboxUrl])
 
   const getProviderLabel = (provider: string | null) => {
-    if (!provider) return null
-    const normalized = normalizeOpenCodeProvider(provider)
-    return OPENCODE_PROVIDER_LABELS[normalized]
+    return getOpenCodeProviderLabel(provider, catalog)
   }
 
   // Get readable model name
   const getModelName = (modelId: string | null, provider: string | null) => {
     if (!modelId || !provider) return modelId
-    return getOpenCodeModelLabel(provider, modelId)
+    return getOpenCodeModelLabelFromCatalog(provider, modelId, catalog)
   }
 
   // Function to determine which icon to show for a connector
@@ -1022,15 +1023,6 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
 
     previousStatusRef.current = currentStatus
   }, [task.status, optimisticStatus])
-
-  // Update model when provider changes
-  useEffect(() => {
-    if (selectedAgent) {
-      const provider = normalizeOpenCodeProvider(selectedAgent)
-      const defaultModel = DEFAULT_OPENCODE_MODEL[provider]
-      setSelectedModel(defaultModel)
-    }
-  }, [selectedAgent])
 
   // Scroll active tab into view when it changes
   useEffect(() => {
@@ -2387,7 +2379,7 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
                     <SelectValue placeholder="Select a provider" />
                   </SelectTrigger>
                   <SelectContent>
-                    {OPENCODE_PROVIDERS.map((provider) => (
+                    {catalog.providers.map((provider) => (
                       <SelectItem key={provider.value} value={provider.value}>
                         {provider.label}
                       </SelectItem>
@@ -2402,7 +2394,7 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
                     <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {OPENCODE_PROVIDER_MODELS[selectedAgent as keyof typeof OPENCODE_PROVIDER_MODELS]?.map((model) => (
+                    {getOpenCodeProviderModels(selectedAgent, catalog).map((model) => (
                       <SelectItem key={model.value} value={model.value}>
                         {model.label}
                       </SelectItem>
