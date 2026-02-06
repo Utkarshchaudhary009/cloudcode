@@ -14,6 +14,7 @@ export type OpenCodeProviderId =
   | 'azure'
   | 'openai-compat'
   | 'anthropic-compat'
+  | 'zen'
 
 export const OPENCODE_PROVIDERS = [
   { value: 'openai', label: 'OpenAI' },
@@ -31,6 +32,7 @@ export const OPENCODE_PROVIDERS = [
   { value: 'azure', label: 'Azure OpenAI' },
   { value: 'openai-compat', label: 'OpenAI Compatible' },
   { value: 'anthropic-compat', label: 'Anthropic Compatible' },
+  { value: 'zen', label: 'Zen' },
 ] as const satisfies Array<{ value: OpenCodeProviderId; label: string }>
 
 export const OPENCODE_PROVIDER_MODELS: Record<OpenCodeProviderId, Array<{ value: string; label: string }>> = {
@@ -71,6 +73,7 @@ export const OPENCODE_PROVIDER_MODELS: Record<OpenCodeProviderId, Array<{ value:
   azure: [{ value: 'auto', label: 'Auto' }],
   'openai-compat': [{ value: 'auto', label: 'Auto' }],
   'anthropic-compat': [{ value: 'auto', label: 'Auto' }],
+  zen: [{ value: 'zen-free', label: 'Zen Free' }],
 }
 
 export const DEFAULT_OPENCODE_PROVIDER: OpenCodeProviderId = 'openai'
@@ -91,6 +94,7 @@ export const DEFAULT_OPENCODE_MODEL: Record<OpenCodeProviderId, string> = {
   azure: 'auto',
   'openai-compat': 'auto',
   'anthropic-compat': 'auto',
+  zen: 'zen-free',
 }
 
 export const OPENCODE_PROVIDER_LABELS: Record<OpenCodeProviderId, string> = {
@@ -109,6 +113,7 @@ export const OPENCODE_PROVIDER_LABELS: Record<OpenCodeProviderId, string> = {
   azure: 'Azure OpenAI',
   'openai-compat': 'OpenAI Compatible',
   'anthropic-compat': 'Anthropic Compatible',
+  zen: 'Zen',
 }
 
 export const isOpenCodeProvider = (value: string | null | undefined): value is OpenCodeProviderId => {

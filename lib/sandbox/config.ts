@@ -17,6 +17,7 @@ export function validateEnvironmentVariables(
     VERTEXAI_PROJECT?: string
     AWS_ACCESS_KEY_ID?: string
     AZURE_OPENAI_API_KEY?: string
+    ZEN_API_KEY?: string
   },
 ) {
   const errors: string[] = []
@@ -38,6 +39,7 @@ export function validateEnvironmentVariables(
   const hasVertex = apiKeys?.VERTEXAI_PROJECT || process.env.VERTEXAI_PROJECT
   const hasBedrock = apiKeys?.AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID
   const hasAzure = apiKeys?.AZURE_OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY
+  const hasZen = apiKeys?.ZEN_API_KEY || process.env.ZEN_API_KEY
 
   switch (selectedAgent) {
     case 'openai':
@@ -115,6 +117,11 @@ export function validateEnvironmentVariables(
         errors.push('AZURE_OPENAI_API_KEY is required for OpenCode with Azure OpenAI.')
       }
       break
+    case 'zen':
+      if (!hasZen) {
+        errors.push('ZEN_API_KEY is required for OpenCode with Zen.')
+      }
+      break
     case 'openai-compat':
       if (!hasOpenAI) {
         errors.push('OPENAI_API_KEY is required for OpenCode with OpenAI Compatible.')
@@ -139,7 +146,8 @@ export function validateEnvironmentVariables(
         !hasCerebras &&
         !hasVertex &&
         !hasBedrock &&
-        !hasAzure
+        !hasAzure &&
+        !hasZen
       ) {
         errors.push('A provider API key is required for OpenCode.')
       }

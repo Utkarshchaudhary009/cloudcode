@@ -70,7 +70,8 @@ export async function executeOpenCodeInSandbox(
       !process.env.CEREBRAS_API_KEY &&
       !process.env.VERTEXAI_PROJECT &&
       !process.env.AWS_ACCESS_KEY_ID &&
-      !process.env.AZURE_OPENAI_API_KEY
+      !process.env.AZURE_OPENAI_API_KEY &&
+      !process.env.ZEN_API_KEY
     ) {
       const errorMsg = 'A provider API key is required for OpenCode agent'
       await logger.error(errorMsg)
@@ -300,6 +301,10 @@ export async function executeOpenCodeInSandbox(
     if (process.env.AZURE_OPENAI_API_KEY) {
       opencodeConfig.providers.azure = { apiKey: process.env.AZURE_OPENAI_API_KEY }
       await logger.info('Configured Azure OpenAI provider (via config)')
+    }
+    if (process.env.ZEN_API_KEY) {
+      opencodeConfig.providers.zen = { apiKey: process.env.ZEN_API_KEY }
+      await logger.info('Configured Zen provider (via config)')
     }
 
     // Write the opencode.json file to the OpenCode config directory (not project directory)
