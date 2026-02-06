@@ -6,7 +6,7 @@ import { eq, and } from 'drizzle-orm'
 import { getServerSession } from '@/lib/session/get-server-session'
 import { decrypt } from '@/lib/crypto'
 
-type Provider = 'openai' | 'gemini' | 'cursor' | 'anthropic' | 'aigateway'
+type Provider = 'openai' | 'gemini' | 'cursor' | 'anthropic' | 'aigateway' | 'groq' | 'openrouter'
 
 /**
  * Get API keys for the currently authenticated user
@@ -18,6 +18,8 @@ export async function getUserApiKeys(): Promise<{
   CURSOR_API_KEY: string | undefined
   ANTHROPIC_API_KEY: string | undefined
   AI_GATEWAY_API_KEY: string | undefined
+  GROQ_API_KEY: string | undefined
+  OPENROUTER_API_KEY: string | undefined
 }> {
   const session = await getServerSession()
 
@@ -28,6 +30,8 @@ export async function getUserApiKeys(): Promise<{
     CURSOR_API_KEY: process.env.CURSOR_API_KEY,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
+    GROQ_API_KEY: process.env.GROQ_API_KEY,
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
   }
 
   if (!session?.user?.id) {
@@ -56,6 +60,12 @@ export async function getUserApiKeys(): Promise<{
         case 'aigateway':
           apiKeys.AI_GATEWAY_API_KEY = decryptedValue
           break
+        case 'groq':
+          apiKeys.GROQ_API_KEY = decryptedValue
+          break
+        case 'openrouter':
+          apiKeys.OPENROUTER_API_KEY = decryptedValue
+          break
       }
     })
   } catch (error) {
@@ -80,6 +90,8 @@ export async function getUserApiKey(provider: Provider): Promise<string | undefi
     cursor: process.env.CURSOR_API_KEY,
     anthropic: process.env.ANTHROPIC_API_KEY,
     aigateway: process.env.AI_GATEWAY_API_KEY,
+    groq: process.env.GROQ_API_KEY,
+    openrouter: process.env.OPENROUTER_API_KEY,
   }
 
   if (!session?.user?.id) {

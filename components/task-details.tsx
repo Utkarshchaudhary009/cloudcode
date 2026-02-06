@@ -35,7 +35,16 @@ import {
 import { cn } from '@/lib/utils'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
-import { Claude, Codex, Copilot, Cursor, Gemini, OpenCode } from '@/components/logos'
+import { OpenCode } from '@/components/logos'
+import {
+  DEFAULT_OPENCODE_MODEL,
+  DEFAULT_OPENCODE_PROVIDER,
+  OPENCODE_PROVIDERS,
+  OPENCODE_PROVIDER_LABELS,
+  OPENCODE_PROVIDER_MODELS,
+  getOpenCodeModelLabel,
+  normalizeOpenCodeProvider,
+} from '@/lib/opencode/providers'
 import { useTasks } from '@/components/app-layout'
 import {
   getShowFilesPane,
@@ -103,73 +112,6 @@ interface DiffData {
   language: string
 }
 
-const CODING_AGENTS = [
-  { value: 'claude', label: 'Claude', icon: Claude },
-  { value: 'codex', label: 'Codex', icon: Codex },
-  { value: 'copilot', label: 'Copilot', icon: Copilot },
-  { value: 'cursor', label: 'Cursor', icon: Cursor },
-  { value: 'gemini', label: 'Gemini', icon: Gemini },
-  { value: 'opencode', label: 'opencode', icon: OpenCode },
-] as const
-
-const AGENT_MODELS = {
-  claude: [
-    { value: 'claude-sonnet-4-5', label: 'Sonnet 4.5' },
-    { value: 'claude-opus-4-5', label: 'Opus 4.5' },
-    { value: 'claude-haiku-4-5', label: 'Haiku 4.5' },
-  ],
-  codex: [
-    { value: 'openai/gpt-5.1', label: 'GPT-5.1' },
-    { value: 'openai/gpt-5.1-codex', label: 'GPT-5.1-Codex' },
-    { value: 'openai/gpt-5.1-codex-mini', label: 'GPT-5.1-Codex mini' },
-    { value: 'openai/gpt-5', label: 'GPT-5' },
-    { value: 'gpt-5-codex', label: 'GPT-5-Codex' },
-    { value: 'openai/gpt-5-mini', label: 'GPT-5 mini' },
-    { value: 'openai/gpt-5-nano', label: 'GPT-5 nano' },
-    { value: 'gpt-5-pro', label: 'GPT-5 pro' },
-    { value: 'openai/gpt-4.1', label: 'GPT-4.1' },
-  ],
-  copilot: [
-    { value: 'claude-sonnet-4.5', label: 'Sonnet 4.5' },
-    { value: 'claude-sonnet-4', label: 'Sonnet 4' },
-    { value: 'claude-haiku-4.5', label: 'Haiku 4.5' },
-    { value: 'gpt-5', label: 'GPT-5' },
-  ],
-  cursor: [
-    { value: 'auto', label: 'Auto' },
-    { value: 'composer-1', label: 'Composer' },
-    { value: 'sonnet-4.5', label: 'Sonnet 4.5' },
-    { value: 'sonnet-4.5-thinking', label: 'Sonnet 4.5 Thinking' },
-    { value: 'gpt-5', label: 'GPT-5' },
-    { value: 'gpt-5-codex', label: 'GPT-5 Codex' },
-    { value: 'opus-4.1', label: 'Opus 4.1' },
-    { value: 'grok', label: 'Grok' },
-  ],
-  gemini: [
-    { value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro Preview' },
-    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-  ],
-  opencode: [
-    { value: 'gpt-5', label: 'GPT-5' },
-    { value: 'gpt-5-mini', label: 'GPT-5 Mini' },
-    { value: 'gpt-5-nano', label: 'GPT-5 Nano' },
-    { value: 'gpt-4.1', label: 'GPT-4.1' },
-    { value: 'claude-sonnet-4-5', label: 'Sonnet 4.5' },
-    { value: 'claude-opus-4-5', label: 'Opus 4.5' },
-    { value: 'claude-haiku-4-5', label: 'Haiku 4.5' },
-  ],
-} as const
-
-const DEFAULT_MODELS = {
-  claude: 'claude-sonnet-4-5',
-  codex: 'openai/gpt-5.1',
-  copilot: 'claude-sonnet-4.5',
-  cursor: 'auto',
-  gemini: 'gemini-3-pro-preview',
-  opencode: 'gpt-5',
-} as const
-
 export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps) {
   const [optimisticStatus, setOptimisticStatus] = useState<Task['status'] | null>(null)
   const [mcpServers, setMcpServers] = useState<Connector[]>([])
@@ -182,9 +124,10 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
   const [showTryAgainDialog, setShowTryAgainDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isTryingAgain, setIsTryingAgain] = useState(false)
-  const [selectedAgent, setSelectedAgent] = useState(task.selectedAgent || 'claude')
+  const [selectedAgent, setSelectedAgent] = useState(task.selectedAgent || DEFAULT_OPENCODE_PROVIDER)
   const [selectedModel, setSelectedModel] = useState<string>(
-    task.selectedModel || DEFAULT_MODELS[(task.selectedAgent as keyof typeof DEFAULT_MODELS) || 'claude'],
+    task.selectedModel ||
+      DEFAULT_OPENCODE_MODEL[normalizeOpenCodeProvider(task.selectedAgent || DEFAULT_OPENCODE_PROVIDER)],
   )
   const [tryAgainInstallDeps, setTryAgainInstallDeps] = useState(task.installDependencies || false)
   const [tryAgainMaxDuration, setTryAgainMaxDuration] = useState(task.maxDuration || maxSandboxDuration)
@@ -231,17 +174,17 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
   const healthyCountRef = useRef<number>(0)
   const lastHealthStatusRef = useRef<string | null>(null)
 
-  // Initialize model correctly on mount and when agent changes in Try Again dialog
+  // Initialize model correctly on mount and when provider changes in Try Again dialog
   useEffect(() => {
-    const agent = selectedAgent as keyof typeof DEFAULT_MODELS
+    const provider = normalizeOpenCodeProvider(selectedAgent)
     const taskModel = task.selectedModel
 
-    // Check if the task's model exists in the agent's model list
-    const agentModels = AGENT_MODELS[agent]
-    const modelExists = agentModels?.some((m) => m.value === taskModel)
+    // Check if the task's model exists in the provider's model list
+    const providerModels = OPENCODE_PROVIDER_MODELS[provider]
+    const modelExists = providerModels?.some((m) => m.value === taskModel)
 
-    // Use task model if it exists for the agent, otherwise use default
-    const correctModel = modelExists && taskModel ? taskModel : DEFAULT_MODELS[agent]
+    // Use task model if it exists for the provider, otherwise use default
+    const correctModel = modelExists && taskModel ? taskModel : DEFAULT_OPENCODE_MODEL[provider]
 
     if (correctModel !== selectedModel) {
       setSelectedModel(correctModel)
@@ -666,82 +609,16 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
     }
   }, [task.id, task.sandboxUrl])
 
-  const getAgentLogo = (agent: string | null) => {
-    if (!agent) return null
-
-    switch (agent.toLowerCase()) {
-      case 'claude':
-        return Claude
-      case 'codex':
-        return Codex
-      case 'copilot':
-        return Copilot
-      case 'cursor':
-        return Cursor
-      case 'gemini':
-        return Gemini
-      case 'opencode':
-        return OpenCode
-      default:
-        return null
-    }
-  }
-
-  // Model mappings for all agents
-  const AGENT_MODELS: Record<string, Array<{ value: string; label: string }>> = {
-    claude: [
-      { value: 'claude-sonnet-4-5', label: 'Sonnet 4.5' },
-      { value: 'claude-opus-4-5', label: 'Opus 4.5' },
-      { value: 'claude-haiku-4-5', label: 'Haiku 4.5' },
-    ],
-    codex: [
-      { value: 'openai/gpt-5', label: 'GPT-5' },
-      { value: 'gpt-5-codex', label: 'GPT-5-Codex' },
-      { value: 'openai/gpt-5-mini', label: 'GPT-5 mini' },
-      { value: 'openai/gpt-5-nano', label: 'GPT-5 nano' },
-      { value: 'gpt-5-pro', label: 'GPT-5 pro' },
-      { value: 'openai/gpt-4.1', label: 'GPT-4.1' },
-    ],
-    copilot: [
-      { value: 'claude-sonnet-4.5', label: 'Sonnet 4.5' },
-      { value: 'claude-sonnet-4', label: 'Sonnet 4' },
-      { value: 'claude-haiku-4.5', label: 'Haiku 4.5' },
-      { value: 'gpt-5', label: 'GPT-5' },
-    ],
-    cursor: [
-      { value: 'auto', label: 'Auto' },
-      { value: 'sonnet-4.5', label: 'Sonnet 4.5' },
-      { value: 'sonnet-4.5-thinking', label: 'Sonnet 4.5 Thinking' },
-      { value: 'gpt-5', label: 'GPT-5' },
-      { value: 'gpt-5-codex', label: 'GPT-5 Codex' },
-      { value: 'opus-4.1', label: 'Opus 4.1' },
-      { value: 'grok', label: 'Grok' },
-    ],
-    gemini: [
-      { value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro Preview' },
-      { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-      { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-    ],
-    opencode: [
-      { value: 'gpt-5', label: 'GPT-5' },
-      { value: 'gpt-5-mini', label: 'GPT-5 mini' },
-      { value: 'gpt-5-nano', label: 'GPT-5 nano' },
-      { value: 'gpt-4.1', label: 'GPT-4.1' },
-      { value: 'claude-sonnet-4-5', label: 'Sonnet 4.5' },
-      { value: 'claude-opus-4-5', label: 'Opus 4.5' },
-      { value: 'claude-haiku-4-5', label: 'Haiku 4.5' },
-    ],
+  const getProviderLabel = (provider: string | null) => {
+    if (!provider) return null
+    const normalized = normalizeOpenCodeProvider(provider)
+    return OPENCODE_PROVIDER_LABELS[normalized]
   }
 
   // Get readable model name
-  const getModelName = (modelId: string | null, agent: string | null) => {
-    if (!modelId || !agent) return modelId
-
-    const agentModels = AGENT_MODELS[agent.toLowerCase()]
-    if (!agentModels) return modelId
-
-    const model = agentModels.find((m) => m.value === modelId)
-    return model ? model.label : modelId
+  const getModelName = (modelId: string | null, provider: string | null) => {
+    if (!modelId || !provider) return modelId
+    return getOpenCodeModelLabel(provider, modelId)
   }
 
   // Function to determine which icon to show for a connector
@@ -1146,14 +1023,12 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
     previousStatusRef.current = currentStatus
   }, [task.status, optimisticStatus])
 
-  // Update model when agent changes
+  // Update model when provider changes
   useEffect(() => {
     if (selectedAgent) {
-      const agentModels = AGENT_MODELS[selectedAgent as keyof typeof AGENT_MODELS]
-      const defaultModel = DEFAULT_MODELS[selectedAgent as keyof typeof DEFAULT_MODELS]
-      if (defaultModel && agentModels) {
-        setSelectedModel(defaultModel)
-      }
+      const provider = normalizeOpenCodeProvider(selectedAgent)
+      const defaultModel = DEFAULT_OPENCODE_MODEL[provider]
+      setSelectedModel(defaultModel)
     }
   }, [selectedAgent])
 
@@ -1544,7 +1419,7 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
                   const params = new URLSearchParams()
                   if (owner) params.set('owner', owner)
                   if (repo) params.set('repo', repo)
-                  if (task.selectedAgent) params.set('agent', task.selectedAgent)
+                  if (task.selectedAgent) params.set('provider', task.selectedAgent)
                   if (task.selectedModel) params.set('model', task.selectedModel)
 
                   router.push(`/?${params.toString()}`)
@@ -1620,14 +1495,13 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
             </div>
           )}
 
-          {/* Agent */}
+          {/* Provider */}
           {(task.selectedAgent || task.selectedModel) && (
             <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
-              {task.selectedAgent &&
-                (() => {
-                  const AgentLogo = getAgentLogo(task.selectedAgent)
-                  return AgentLogo ? <AgentLogo className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" /> : null
-                })()}
+              {task.selectedAgent && <OpenCode className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />}
+              {task.selectedAgent && (
+                <span className="text-muted-foreground whitespace-nowrap">{getProviderLabel(task.selectedAgent)}</span>
+              )}
               {task.selectedModel && (
                 <span className="text-muted-foreground whitespace-nowrap">
                   {getModelName(task.selectedModel, task.selectedAgent)}
@@ -2507,18 +2381,15 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
           <div className="py-4 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Agent</label>
+                <label className="text-sm font-medium mb-2 block">Provider</label>
                 <Select value={selectedAgent} onValueChange={setSelectedAgent}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select an agent" />
+                    <SelectValue placeholder="Select a provider" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CODING_AGENTS.map((agent) => (
-                      <SelectItem key={agent.value} value={agent.value}>
-                        <div className="flex items-center gap-2">
-                          <agent.icon className="w-4 h-4" />
-                          <span>{agent.label}</span>
-                        </div>
+                    {OPENCODE_PROVIDERS.map((provider) => (
+                      <SelectItem key={provider.value} value={provider.value}>
+                        {provider.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -2531,7 +2402,7 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
                     <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {AGENT_MODELS[selectedAgent as keyof typeof AGENT_MODELS]?.map((model) => (
+                    {OPENCODE_PROVIDER_MODELS[selectedAgent as keyof typeof OPENCODE_PROVIDER_MODELS]?.map((model) => (
                       <SelectItem key={model.value} value={model.value}>
                         {model.label}
                       </SelectItem>

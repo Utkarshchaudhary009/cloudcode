@@ -13,6 +13,8 @@ export interface SandboxConfig {
     CURSOR_API_KEY?: string
     ANTHROPIC_API_KEY?: string
     AI_GATEWAY_API_KEY?: string
+    GROQ_API_KEY?: string
+    OPENROUTER_API_KEY?: string
   }
   timeout?: string
   ports?: number[]
