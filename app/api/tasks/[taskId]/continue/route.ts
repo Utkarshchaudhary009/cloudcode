@@ -132,6 +132,14 @@ async function continueTask(
     AI_GATEWAY_API_KEY?: string
     GROQ_API_KEY?: string
     OPENROUTER_API_KEY?: string
+    VERCEL_API_KEY?: string
+    SYNTHETIC_API_KEY?: string
+    ZAI_API_KEY?: string
+    HF_TOKEN?: string
+    CEREBRAS_API_KEY?: string
+    VERTEXAI_PROJECT?: string
+    AWS_ACCESS_KEY_ID?: string
+    AZURE_OPENAI_API_KEY?: string
   },
   githubToken?: string | null,
   githubUser?: {

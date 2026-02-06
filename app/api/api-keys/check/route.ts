@@ -1,7 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserApiKey } from '@/lib/api-keys/user-keys'
 
-type Provider = 'openai' | 'gemini' | 'cursor' | 'anthropic' | 'aigateway' | 'groq' | 'openrouter'
+type Provider =
+  | 'openai'
+  | 'gemini'
+  | 'cursor'
+  | 'anthropic'
+  | 'aigateway'
+  | 'groq'
+  | 'openrouter'
+  | 'vercel'
+  | 'synthetic'
+  | 'zai'
+  | 'huggingface'
+  | 'cerebras'
+  | 'vertexai'
+  | 'bedrock'
+  | 'azure'
+  | 'openai-compat'
+  | 'anthropic-compat'
 
 const PROVIDER_LABELS: Record<Provider, string> = {
   openai: 'OpenAI',
@@ -11,6 +28,16 @@ const PROVIDER_LABELS: Record<Provider, string> = {
   aigateway: 'AI Gateway',
   groq: 'Groq',
   openrouter: 'OpenRouter',
+  vercel: 'Vercel AI Gateway',
+  synthetic: 'Synthetic',
+  zai: 'Z.ai',
+  huggingface: 'Hugging Face',
+  cerebras: 'Cerebras',
+  vertexai: 'Vertex AI',
+  bedrock: 'Amazon Bedrock',
+  azure: 'Azure OpenAI',
+  'openai-compat': 'OpenAI Compatible',
+  'anthropic-compat': 'Anthropic Compatible',
 }
 
 export async function GET(req: NextRequest) {
