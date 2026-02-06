@@ -1,4 +1,19 @@
-export type OpenCodeProviderId = 'openai' | 'anthropic' | 'gemini' | 'groq' | 'openrouter'
+export type OpenCodeProviderId =
+  | 'openai'
+  | 'anthropic'
+  | 'gemini'
+  | 'groq'
+  | 'openrouter'
+  | 'vercel'
+  | 'synthetic'
+  | 'zai'
+  | 'huggingface'
+  | 'cerebras'
+  | 'vertexai'
+  | 'bedrock'
+  | 'azure'
+  | 'openai-compat'
+  | 'anthropic-compat'
 
 export const OPENCODE_PROVIDERS = [
   { value: 'openai', label: 'OpenAI' },
@@ -6,6 +21,16 @@ export const OPENCODE_PROVIDERS = [
   { value: 'gemini', label: 'Gemini' },
   { value: 'groq', label: 'Groq' },
   { value: 'openrouter', label: 'OpenRouter' },
+  { value: 'vercel', label: 'Vercel AI Gateway' },
+  { value: 'synthetic', label: 'Synthetic' },
+  { value: 'zai', label: 'Z.ai' },
+  { value: 'huggingface', label: 'Hugging Face' },
+  { value: 'cerebras', label: 'Cerebras' },
+  { value: 'vertexai', label: 'Vertex AI' },
+  { value: 'bedrock', label: 'Amazon Bedrock' },
+  { value: 'azure', label: 'Azure OpenAI' },
+  { value: 'openai-compat', label: 'OpenAI Compatible' },
+  { value: 'anthropic-compat', label: 'Anthropic Compatible' },
 ] as const satisfies Array<{ value: OpenCodeProviderId; label: string }>
 
 export const OPENCODE_PROVIDER_MODELS: Record<OpenCodeProviderId, Array<{ value: string; label: string }>> = {
@@ -36,6 +61,16 @@ export const OPENCODE_PROVIDER_MODELS: Record<OpenCodeProviderId, Array<{ value:
     { value: 'openai/gpt-4.1', label: 'GPT-4.1' },
     { value: 'anthropic/claude-3.5-sonnet', label: 'Claude 3.5 Sonnet' },
   ],
+  vercel: [{ value: 'auto', label: 'Auto' }],
+  synthetic: [{ value: 'auto', label: 'Auto' }],
+  zai: [{ value: 'auto', label: 'Auto' }],
+  huggingface: [{ value: 'auto', label: 'Auto' }],
+  cerebras: [{ value: 'auto', label: 'Auto' }],
+  vertexai: [{ value: 'auto', label: 'Auto' }],
+  bedrock: [{ value: 'auto', label: 'Auto' }],
+  azure: [{ value: 'auto', label: 'Auto' }],
+  'openai-compat': [{ value: 'auto', label: 'Auto' }],
+  'anthropic-compat': [{ value: 'auto', label: 'Auto' }],
 }
 
 export const DEFAULT_OPENCODE_PROVIDER: OpenCodeProviderId = 'openai'
@@ -46,6 +81,16 @@ export const DEFAULT_OPENCODE_MODEL: Record<OpenCodeProviderId, string> = {
   gemini: 'gemini-2.5-pro',
   groq: 'llama-3.1-70b',
   openrouter: 'openrouter/auto',
+  vercel: 'auto',
+  synthetic: 'auto',
+  zai: 'auto',
+  huggingface: 'auto',
+  cerebras: 'auto',
+  vertexai: 'auto',
+  bedrock: 'auto',
+  azure: 'auto',
+  'openai-compat': 'auto',
+  'anthropic-compat': 'auto',
 }
 
 export const OPENCODE_PROVIDER_LABELS: Record<OpenCodeProviderId, string> = {
@@ -54,6 +99,16 @@ export const OPENCODE_PROVIDER_LABELS: Record<OpenCodeProviderId, string> = {
   gemini: 'Gemini',
   groq: 'Groq',
   openrouter: 'OpenRouter',
+  vercel: 'Vercel AI Gateway',
+  synthetic: 'Synthetic',
+  zai: 'Z.ai',
+  huggingface: 'Hugging Face',
+  cerebras: 'Cerebras',
+  vertexai: 'Vertex AI',
+  bedrock: 'Amazon Bedrock',
+  azure: 'Azure OpenAI',
+  'openai-compat': 'OpenAI Compatible',
+  'anthropic-compat': 'Anthropic Compatible',
 }
 
 export const isOpenCodeProvider = (value: string | null | undefined): value is OpenCodeProviderId => {

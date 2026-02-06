@@ -9,6 +9,14 @@ export function validateEnvironmentVariables(
     AI_GATEWAY_API_KEY?: string
     GROQ_API_KEY?: string
     OPENROUTER_API_KEY?: string
+    VERCEL_API_KEY?: string
+    SYNTHETIC_API_KEY?: string
+    ZAI_API_KEY?: string
+    HF_TOKEN?: string
+    CEREBRAS_API_KEY?: string
+    VERTEXAI_PROJECT?: string
+    AWS_ACCESS_KEY_ID?: string
+    AZURE_OPENAI_API_KEY?: string
   },
 ) {
   const errors: string[] = []
@@ -18,6 +26,14 @@ export function validateEnvironmentVariables(
   const hasGemini = apiKeys?.GEMINI_API_KEY || process.env.GEMINI_API_KEY
   const hasGroq = apiKeys?.GROQ_API_KEY || process.env.GROQ_API_KEY
   const hasOpenRouter = apiKeys?.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
+  const hasVercel = apiKeys?.VERCEL_API_KEY || process.env.VERCEL_API_KEY || apiKeys?.AI_GATEWAY_API_KEY
+  const hasSynthetic = apiKeys?.SYNTHETIC_API_KEY || process.env.SYNTHETIC_API_KEY
+  const hasZai = apiKeys?.ZAI_API_KEY || process.env.ZAI_API_KEY
+  const hasHuggingFace = apiKeys?.HF_TOKEN || process.env.HF_TOKEN
+  const hasCerebras = apiKeys?.CEREBRAS_API_KEY || process.env.CEREBRAS_API_KEY
+  const hasVertex = apiKeys?.VERTEXAI_PROJECT || process.env.VERTEXAI_PROJECT
+  const hasBedrock = apiKeys?.AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID
+  const hasAzure = apiKeys?.AZURE_OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY
 
   switch (selectedAgent) {
     case 'openai':
@@ -45,8 +61,72 @@ export function validateEnvironmentVariables(
         errors.push('OPENROUTER_API_KEY is required for OpenCode with OpenRouter.')
       }
       break
+    case 'vercel':
+      if (!hasVercel) {
+        errors.push('VERCEL_API_KEY is required for OpenCode with Vercel AI Gateway.')
+      }
+      break
+    case 'synthetic':
+      if (!hasSynthetic) {
+        errors.push('SYNTHETIC_API_KEY is required for OpenCode with Synthetic.')
+      }
+      break
+    case 'zai':
+      if (!hasZai) {
+        errors.push('ZAI_API_KEY is required for OpenCode with Z.ai.')
+      }
+      break
+    case 'huggingface':
+      if (!hasHuggingFace) {
+        errors.push('HF_TOKEN is required for OpenCode with Hugging Face.')
+      }
+      break
+    case 'cerebras':
+      if (!hasCerebras) {
+        errors.push('CEREBRAS_API_KEY is required for OpenCode with Cerebras.')
+      }
+      break
+    case 'vertexai':
+      if (!hasVertex) {
+        errors.push('VERTEXAI_PROJECT is required for OpenCode with Vertex AI.')
+      }
+      break
+    case 'bedrock':
+      if (!hasBedrock) {
+        errors.push('AWS_ACCESS_KEY_ID is required for OpenCode with Amazon Bedrock.')
+      }
+      break
+    case 'azure':
+      if (!hasAzure) {
+        errors.push('AZURE_OPENAI_API_KEY is required for OpenCode with Azure OpenAI.')
+      }
+      break
+    case 'openai-compat':
+      if (!hasOpenAI) {
+        errors.push('OPENAI_API_KEY is required for OpenCode with OpenAI Compatible.')
+      }
+      break
+    case 'anthropic-compat':
+      if (!hasAnthropic) {
+        errors.push('ANTHROPIC_API_KEY is required for OpenCode with Anthropic Compatible.')
+      }
+      break
     default:
-      if (!hasOpenAI && !hasAnthropic && !hasGemini && !hasGroq && !hasOpenRouter) {
+      if (
+        !hasOpenAI &&
+        !hasAnthropic &&
+        !hasGemini &&
+        !hasGroq &&
+        !hasOpenRouter &&
+        !hasVercel &&
+        !hasSynthetic &&
+        !hasZai &&
+        !hasHuggingFace &&
+        !hasCerebras &&
+        !hasVertex &&
+        !hasBedrock &&
+        !hasAzure
+      ) {
         errors.push('A provider API key is required for OpenCode.')
       }
       break

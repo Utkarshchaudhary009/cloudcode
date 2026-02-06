@@ -6,7 +6,24 @@ import { eq, and } from 'drizzle-orm'
 import { getServerSession } from '@/lib/session/get-server-session'
 import { decrypt } from '@/lib/crypto'
 
-type Provider = 'openai' | 'gemini' | 'cursor' | 'anthropic' | 'aigateway' | 'groq' | 'openrouter'
+type Provider =
+  | 'openai'
+  | 'gemini'
+  | 'cursor'
+  | 'anthropic'
+  | 'aigateway'
+  | 'groq'
+  | 'openrouter'
+  | 'vercel'
+  | 'synthetic'
+  | 'zai'
+  | 'huggingface'
+  | 'cerebras'
+  | 'vertexai'
+  | 'bedrock'
+  | 'azure'
+  | 'openai-compat'
+  | 'anthropic-compat'
 
 /**
  * Get API keys for the currently authenticated user
@@ -20,6 +37,14 @@ export async function getUserApiKeys(): Promise<{
   AI_GATEWAY_API_KEY: string | undefined
   GROQ_API_KEY: string | undefined
   OPENROUTER_API_KEY: string | undefined
+  VERCEL_API_KEY: string | undefined
+  SYNTHETIC_API_KEY: string | undefined
+  ZAI_API_KEY: string | undefined
+  HF_TOKEN: string | undefined
+  CEREBRAS_API_KEY: string | undefined
+  VERTEXAI_PROJECT: string | undefined
+  AWS_ACCESS_KEY_ID: string | undefined
+  AZURE_OPENAI_API_KEY: string | undefined
 }> {
   const session = await getServerSession()
 
@@ -32,6 +57,14 @@ export async function getUserApiKeys(): Promise<{
     AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
     GROQ_API_KEY: process.env.GROQ_API_KEY,
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    VERCEL_API_KEY: process.env.VERCEL_API_KEY,
+    SYNTHETIC_API_KEY: process.env.SYNTHETIC_API_KEY,
+    ZAI_API_KEY: process.env.ZAI_API_KEY,
+    HF_TOKEN: process.env.HF_TOKEN,
+    CEREBRAS_API_KEY: process.env.CEREBRAS_API_KEY,
+    VERTEXAI_PROJECT: process.env.VERTEXAI_PROJECT,
+    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+    AZURE_OPENAI_API_KEY: process.env.AZURE_OPENAI_API_KEY,
   }
 
   if (!session?.user?.id) {
@@ -66,6 +99,36 @@ export async function getUserApiKeys(): Promise<{
         case 'openrouter':
           apiKeys.OPENROUTER_API_KEY = decryptedValue
           break
+        case 'vercel':
+          apiKeys.VERCEL_API_KEY = decryptedValue
+          break
+        case 'synthetic':
+          apiKeys.SYNTHETIC_API_KEY = decryptedValue
+          break
+        case 'zai':
+          apiKeys.ZAI_API_KEY = decryptedValue
+          break
+        case 'huggingface':
+          apiKeys.HF_TOKEN = decryptedValue
+          break
+        case 'cerebras':
+          apiKeys.CEREBRAS_API_KEY = decryptedValue
+          break
+        case 'vertexai':
+          apiKeys.VERTEXAI_PROJECT = decryptedValue
+          break
+        case 'bedrock':
+          apiKeys.AWS_ACCESS_KEY_ID = decryptedValue
+          break
+        case 'azure':
+          apiKeys.AZURE_OPENAI_API_KEY = decryptedValue
+          break
+        case 'openai-compat':
+          apiKeys.OPENAI_API_KEY = decryptedValue
+          break
+        case 'anthropic-compat':
+          apiKeys.ANTHROPIC_API_KEY = decryptedValue
+          break
       }
     })
   } catch (error) {
@@ -92,6 +155,16 @@ export async function getUserApiKey(provider: Provider): Promise<string | undefi
     aigateway: process.env.AI_GATEWAY_API_KEY,
     groq: process.env.GROQ_API_KEY,
     openrouter: process.env.OPENROUTER_API_KEY,
+    vercel: process.env.VERCEL_API_KEY,
+    synthetic: process.env.SYNTHETIC_API_KEY,
+    zai: process.env.ZAI_API_KEY,
+    huggingface: process.env.HF_TOKEN,
+    cerebras: process.env.CEREBRAS_API_KEY,
+    vertexai: process.env.VERTEXAI_PROJECT,
+    bedrock: process.env.AWS_ACCESS_KEY_ID,
+    azure: process.env.AZURE_OPENAI_API_KEY,
+    'openai-compat': process.env.OPENAI_API_KEY,
+    'anthropic-compat': process.env.ANTHROPIC_API_KEY,
   }
 
   if (!session?.user?.id) {

@@ -62,7 +62,15 @@ export async function executeOpenCodeInSandbox(
       !process.env.ANTHROPIC_API_KEY &&
       !process.env.GEMINI_API_KEY &&
       !process.env.GROQ_API_KEY &&
-      !process.env.OPENROUTER_API_KEY
+      !process.env.OPENROUTER_API_KEY &&
+      !process.env.VERCEL_API_KEY &&
+      !process.env.SYNTHETIC_API_KEY &&
+      !process.env.ZAI_API_KEY &&
+      !process.env.HF_TOKEN &&
+      !process.env.CEREBRAS_API_KEY &&
+      !process.env.VERTEXAI_PROJECT &&
+      !process.env.AWS_ACCESS_KEY_ID &&
+      !process.env.AZURE_OPENAI_API_KEY
     ) {
       const errorMsg = 'A provider API key is required for OpenCode agent'
       await logger.error(errorMsg)
@@ -351,6 +359,216 @@ EOF`
       }
     }
 
+    if (process.env.VERCEL_API_KEY) {
+      console.log('Configuring Vercel AI Gateway provider...')
+      if (logger) {
+        await logger.info('Configuring Vercel AI Gateway provider...')
+      }
+
+      const vercelAuthResult = await runCommandInSandbox(sandbox, 'sh', [
+        '-c',
+        `echo "${process.env.VERCEL_API_KEY}" | opencode auth add vercel`,
+      ])
+
+      if (!vercelAuthResult.success) {
+        console.warn('Failed to configure Vercel AI Gateway provider, but continuing...')
+        if (logger) {
+          await logger.info('Failed to configure Vercel AI Gateway provider, but continuing...')
+        }
+      } else {
+        authSetupCommands.push('Vercel AI Gateway provider configured')
+      }
+    }
+
+    if (process.env.SYNTHETIC_API_KEY) {
+      console.log('Configuring Synthetic provider...')
+      if (logger) {
+        await logger.info('Configuring Synthetic provider...')
+      }
+
+      const syntheticAuthResult = await runCommandInSandbox(sandbox, 'sh', [
+        '-c',
+        `echo "${process.env.SYNTHETIC_API_KEY}" | opencode auth add synthetic`,
+      ])
+
+      if (!syntheticAuthResult.success) {
+        console.warn('Failed to configure Synthetic provider, but continuing...')
+        if (logger) {
+          await logger.info('Failed to configure Synthetic provider, but continuing...')
+        }
+      } else {
+        authSetupCommands.push('Synthetic provider configured')
+      }
+    }
+
+    if (process.env.ZAI_API_KEY) {
+      console.log('Configuring Z.ai provider...')
+      if (logger) {
+        await logger.info('Configuring Z.ai provider...')
+      }
+
+      const zaiAuthResult = await runCommandInSandbox(sandbox, 'sh', [
+        '-c',
+        `echo "${process.env.ZAI_API_KEY}" | opencode auth add zai`,
+      ])
+
+      if (!zaiAuthResult.success) {
+        console.warn('Failed to configure Z.ai provider, but continuing...')
+        if (logger) {
+          await logger.info('Failed to configure Z.ai provider, but continuing...')
+        }
+      } else {
+        authSetupCommands.push('Z.ai provider configured')
+      }
+    }
+
+    if (process.env.HF_TOKEN) {
+      console.log('Configuring Hugging Face provider...')
+      if (logger) {
+        await logger.info('Configuring Hugging Face provider...')
+      }
+
+      const hfAuthResult = await runCommandInSandbox(sandbox, 'sh', [
+        '-c',
+        `echo "${process.env.HF_TOKEN}" | opencode auth add huggingface`,
+      ])
+
+      if (!hfAuthResult.success) {
+        console.warn('Failed to configure Hugging Face provider, but continuing...')
+        if (logger) {
+          await logger.info('Failed to configure Hugging Face provider, but continuing...')
+        }
+      } else {
+        authSetupCommands.push('Hugging Face provider configured')
+      }
+    }
+
+    if (process.env.CEREBRAS_API_KEY) {
+      console.log('Configuring Cerebras provider...')
+      if (logger) {
+        await logger.info('Configuring Cerebras provider...')
+      }
+
+      const cerebrasAuthResult = await runCommandInSandbox(sandbox, 'sh', [
+        '-c',
+        `echo "${process.env.CEREBRAS_API_KEY}" | opencode auth add cerebras`,
+      ])
+
+      if (!cerebrasAuthResult.success) {
+        console.warn('Failed to configure Cerebras provider, but continuing...')
+        if (logger) {
+          await logger.info('Failed to configure Cerebras provider, but continuing...')
+        }
+      } else {
+        authSetupCommands.push('Cerebras provider configured')
+      }
+    }
+
+    if (process.env.VERTEXAI_PROJECT) {
+      console.log('Configuring Vertex AI provider...')
+      if (logger) {
+        await logger.info('Configuring Vertex AI provider...')
+      }
+
+      const vertexAuthResult = await runCommandInSandbox(sandbox, 'sh', [
+        '-c',
+        `echo "${process.env.VERTEXAI_PROJECT}" | opencode auth add vertexai`,
+      ])
+
+      if (!vertexAuthResult.success) {
+        console.warn('Failed to configure Vertex AI provider, but continuing...')
+        if (logger) {
+          await logger.info('Failed to configure Vertex AI provider, but continuing...')
+        }
+      } else {
+        authSetupCommands.push('Vertex AI provider configured')
+      }
+    }
+
+    if (process.env.AWS_ACCESS_KEY_ID) {
+      console.log('Configuring Amazon Bedrock provider...')
+      if (logger) {
+        await logger.info('Configuring Amazon Bedrock provider...')
+      }
+
+      const bedrockAuthResult = await runCommandInSandbox(sandbox, 'sh', [
+        '-c',
+        `echo "${process.env.AWS_ACCESS_KEY_ID}" | opencode auth add bedrock`,
+      ])
+
+      if (!bedrockAuthResult.success) {
+        console.warn('Failed to configure Amazon Bedrock provider, but continuing...')
+        if (logger) {
+          await logger.info('Failed to configure Amazon Bedrock provider, but continuing...')
+        }
+      } else {
+        authSetupCommands.push('Amazon Bedrock provider configured')
+      }
+    }
+
+    if (process.env.AZURE_OPENAI_API_KEY) {
+      console.log('Configuring Azure OpenAI provider...')
+      if (logger) {
+        await logger.info('Configuring Azure OpenAI provider...')
+      }
+
+      const azureAuthResult = await runCommandInSandbox(sandbox, 'sh', [
+        '-c',
+        `echo "${process.env.AZURE_OPENAI_API_KEY}" | opencode auth add azure`,
+      ])
+
+      if (!azureAuthResult.success) {
+        console.warn('Failed to configure Azure OpenAI provider, but continuing...')
+        if (logger) {
+          await logger.info('Failed to configure Azure OpenAI provider, but continuing...')
+        }
+      } else {
+        authSetupCommands.push('Azure OpenAI provider configured')
+      }
+    }
+
+    if (process.env.OPENAI_API_KEY) {
+      console.log('Configuring OpenAI Compatible provider...')
+      if (logger) {
+        await logger.info('Configuring OpenAI Compatible provider...')
+      }
+
+      const openaiCompatAuthResult = await runCommandInSandbox(sandbox, 'sh', [
+        '-c',
+        `echo "${process.env.OPENAI_API_KEY}" | opencode auth add openai-compat`,
+      ])
+
+      if (!openaiCompatAuthResult.success) {
+        console.warn('Failed to configure OpenAI Compatible provider, but continuing...')
+        if (logger) {
+          await logger.info('Failed to configure OpenAI Compatible provider, but continuing...')
+        }
+      } else {
+        authSetupCommands.push('OpenAI Compatible provider configured')
+      }
+    }
+
+    if (process.env.ANTHROPIC_API_KEY) {
+      console.log('Configuring Anthropic Compatible provider...')
+      if (logger) {
+        await logger.info('Configuring Anthropic Compatible provider...')
+      }
+
+      const anthropicCompatAuthResult = await runCommandInSandbox(sandbox, 'sh', [
+        '-c',
+        `echo "${process.env.ANTHROPIC_API_KEY}" | opencode auth add anthropic-compat`,
+      ])
+
+      if (!anthropicCompatAuthResult.success) {
+        console.warn('Failed to configure Anthropic Compatible provider, but continuing...')
+        if (logger) {
+          await logger.info('Failed to configure Anthropic Compatible provider, but continuing...')
+        }
+      } else {
+        authSetupCommands.push('Anthropic Compatible provider configured')
+      }
+    }
+
     // Initialize OpenCode for the project
     console.log('Initializing OpenCode for the project...')
     if (logger) {
@@ -385,6 +603,30 @@ EOF`
     }
     if (process.env.OPENROUTER_API_KEY) {
       envVars.OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
+    }
+    if (process.env.VERCEL_API_KEY) {
+      envVars.VERCEL_API_KEY = process.env.VERCEL_API_KEY
+    }
+    if (process.env.SYNTHETIC_API_KEY) {
+      envVars.SYNTHETIC_API_KEY = process.env.SYNTHETIC_API_KEY
+    }
+    if (process.env.ZAI_API_KEY) {
+      envVars.ZAI_API_KEY = process.env.ZAI_API_KEY
+    }
+    if (process.env.HF_TOKEN) {
+      envVars.HF_TOKEN = process.env.HF_TOKEN
+    }
+    if (process.env.CEREBRAS_API_KEY) {
+      envVars.CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY
+    }
+    if (process.env.VERTEXAI_PROJECT) {
+      envVars.VERTEXAI_PROJECT = process.env.VERTEXAI_PROJECT
+    }
+    if (process.env.AWS_ACCESS_KEY_ID) {
+      envVars.AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID
+    }
+    if (process.env.AZURE_OPENAI_API_KEY) {
+      envVars.AZURE_OPENAI_API_KEY = process.env.AZURE_OPENAI_API_KEY
     }
 
     // Build environment variables string for shell command

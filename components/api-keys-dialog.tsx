@@ -13,7 +13,24 @@ interface ApiKeysDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-type Provider = 'openai' | 'gemini' | 'cursor' | 'anthropic' | 'aigateway' | 'groq' | 'openrouter'
+type Provider =
+  | 'openai'
+  | 'gemini'
+  | 'cursor'
+  | 'anthropic'
+  | 'aigateway'
+  | 'groq'
+  | 'openrouter'
+  | 'vercel'
+  | 'synthetic'
+  | 'zai'
+  | 'huggingface'
+  | 'cerebras'
+  | 'vertexai'
+  | 'bedrock'
+  | 'azure'
+  | 'openai-compat'
+  | 'anthropic-compat'
 
 const PROVIDERS = [
   { id: 'aigateway' as Provider, name: 'AI Gateway', placeholder: 'gw_...' },
@@ -22,6 +39,16 @@ const PROVIDERS = [
   { id: 'gemini' as Provider, name: 'Gemini', placeholder: 'AIza...' },
   { id: 'groq' as Provider, name: 'Groq', placeholder: 'gsk_...' },
   { id: 'openrouter' as Provider, name: 'OpenRouter', placeholder: 'sk-or-...' },
+  { id: 'vercel' as Provider, name: 'Vercel AI Gateway', placeholder: 'vercel_...' },
+  { id: 'synthetic' as Provider, name: 'Synthetic', placeholder: 'synthetic_...' },
+  { id: 'zai' as Provider, name: 'Z.ai', placeholder: 'zai_...' },
+  { id: 'huggingface' as Provider, name: 'Hugging Face', placeholder: 'hf_...' },
+  { id: 'cerebras' as Provider, name: 'Cerebras', placeholder: 'csk_...' },
+  { id: 'vertexai' as Provider, name: 'Vertex AI', placeholder: 'vertex_...' },
+  { id: 'bedrock' as Provider, name: 'Amazon Bedrock', placeholder: 'aws_...' },
+  { id: 'azure' as Provider, name: 'Azure OpenAI', placeholder: 'azure_...' },
+  { id: 'openai-compat' as Provider, name: 'OpenAI Compatible', placeholder: 'compat_...' },
+  { id: 'anthropic-compat' as Provider, name: 'Anthropic Compatible', placeholder: 'compat_...' },
   { id: 'cursor' as Provider, name: 'Cursor', placeholder: 'cur_...' },
 ]
 
@@ -34,6 +61,16 @@ export function ApiKeysDialog({ open, onOpenChange }: ApiKeysDialogProps) {
     aigateway: '',
     groq: '',
     openrouter: '',
+    vercel: '',
+    synthetic: '',
+    zai: '',
+    huggingface: '',
+    cerebras: '',
+    vertexai: '',
+    bedrock: '',
+    azure: '',
+    'openai-compat': '',
+    'anthropic-compat': '',
   })
   const [savedKeys, setSavedKeys] = useState<Set<Provider>>(new Set())
   const [clearedKeys, setClearedKeys] = useState<Set<Provider>>(new Set())
@@ -45,6 +82,16 @@ export function ApiKeysDialog({ open, onOpenChange }: ApiKeysDialogProps) {
     aigateway: false,
     groq: false,
     openrouter: false,
+    vercel: false,
+    synthetic: false,
+    zai: false,
+    huggingface: false,
+    cerebras: false,
+    vertexai: false,
+    bedrock: false,
+    azure: false,
+    'openai-compat': false,
+    'anthropic-compat': false,
   })
   const [loading, setLoading] = useState(false)
 
