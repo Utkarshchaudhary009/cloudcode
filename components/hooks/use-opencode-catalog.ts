@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { toast } from 'sonner'
 import { buildStaticCatalog, type OpenCodeProviderCatalog } from '@/lib/opencode/catalog'
 
@@ -26,6 +26,9 @@ export const useOpencodeCatalog = () => {
     return buildStaticCatalog()
   })
 
+  // Track if we had cached data on mount to avoid flashing errors during refresh
+  const hasCachedRef = useRef(catalog.providers.length > 0)
+
   useEffect(() => {
     let active = true
 
@@ -44,7 +47,7 @@ export const useOpencodeCatalog = () => {
         // Check if we received valid data
         if (data.providers.length === 0) {
           // Only show error if we also don't have cached data
-          if (catalog.providers.length === 0) {
+          if (!hasCachedRef.current) {
             toast.error('Provider catalog is empty', {
               description: 'Could not retrieve available AI providers. Please check your connection or configuration.'
             })
@@ -66,7 +69,7 @@ export const useOpencodeCatalog = () => {
         console.error('Error loading catalog:', error)
 
         // Only show toast if we don't have cached data to fall back on
-        if (catalog.providers.length === 0) {
+        if (!hasCachedRef.current) {
           toast.error('Failed to load providers', {
             description: 'Could not connect to the provider catalog service.'
           })
@@ -79,7 +82,7 @@ export const useOpencodeCatalog = () => {
     return () => {
       active = false
     }
-  }, [catalog.providers.length]) // Add dependency to check current state length for error logic
+  }, []) // Empty dependency array to prevent re-fetching
 
   return catalog
 }
