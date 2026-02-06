@@ -52,6 +52,7 @@ export async function executeOpenCodeInSandbox(
   isResumed?: boolean,
   sessionId?: string,
 ): Promise<AgentExecutionResult> {
+  const authSetupCommands: string[] = []
   try {
     // Executing OpenCode with instruction
     await logger.info('Starting OpenCode agent execution...')
