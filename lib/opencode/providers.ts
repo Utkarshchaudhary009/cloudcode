@@ -120,17 +120,3 @@ export const isOpenCodeProvider = (value: string | null | undefined): value is O
   if (!value) return false
   return OPENCODE_PROVIDERS.some((provider) => provider.value === value)
 }
-
-export const normalizeOpenCodeProvider = (value: string | null | undefined): OpenCodeProviderId => {
-  if (isOpenCodeProvider(value)) {
-    return value
-  }
-  return DEFAULT_OPENCODE_PROVIDER
-}
-
-export const getOpenCodeModelLabel = (provider: string | null | undefined, modelId: string | null | undefined) => {
-  if (!modelId) return modelId || ''
-  const resolvedProvider = normalizeOpenCodeProvider(provider)
-  const model = OPENCODE_PROVIDER_MODELS[resolvedProvider].find((entry) => entry.value === modelId)
-  return model?.label || modelId
-}
