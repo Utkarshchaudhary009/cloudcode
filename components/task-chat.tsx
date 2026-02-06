@@ -72,7 +72,7 @@ export function TaskChat({ taskId, task }: TaskChatProps) {
   const previousMessageCountRef = useRef(0)
   const previousMessagesHashRef = useRef('')
   const wasAtBottomRef = useRef(true)
-  const [activeTab, setActiveTab] = useState<'chat' | 'comments' | 'actions' | 'deployments'>('chat')
+  const [activeTab, setActiveTab] = useState<'chat' | 'comments' | 'actions' | 'deployments' | 'opencode'>('chat')
   const [prComments, setPrComments] = useState<PRComment[]>([])
   const [loadingComments, setLoadingComments] = useState(false)
   const [commentsError, setCommentsError] = useState<string | null>(null)
@@ -82,6 +82,20 @@ export function TaskChat({ taskId, task }: TaskChatProps) {
   const [deployment, setDeployment] = useState<DeploymentInfo | null>(null)
   const [loadingDeployment, setLoadingDeployment] = useState(false)
   const [deploymentError, setDeploymentError] = useState<string | null>(null)
+  const [opencodeStatus, setOpencodeStatus] = useState<{ type: 'idle' | 'busy' | 'retry'; attempt?: number } | null>(
+    null,
+  )
+  const [opencodeMessages, setOpencodeMessages] = useState<
+    Array<{ id: string; role: string; createdAt: number; text: string }>
+  >([])
+  const [opencodeDiffs, setOpencodeDiffs] = useState<
+    Array<{ file: string; additions: number; deletions: number; before: string; after: string }>
+  >([])
+  const [opencodeAvailable, setOpencodeAvailable] = useState(false)
+  const [loadingOpencode, setLoadingOpencode] = useState(false)
+  const [opencodeError, setOpencodeError] = useState<string | null>(null)
+  const [opencodeInput, setOpencodeInput] = useState('')
+  const [isSendingOpencode, setIsSendingOpencode] = useState(false)
   const [userMessageHeights, setUserMessageHeights] = useState<Record<string, number>>({})
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const [overflowingMessages, setOverflowingMessages] = useState<Set<string>>(new Set())
@@ -91,6 +105,7 @@ export function TaskChat({ taskId, task }: TaskChatProps) {
   const commentsLoadedRef = useRef(false)
   const actionsLoadedRef = useRef(false)
   const deploymentLoadedRef = useRef(false)
+  const opencodeLoadedRef = useRef(false)
 
   const isNearBottom = () => {
     const container = scrollContainerRef.current
@@ -237,6 +252,138 @@ export function TaskChat({ taskId, task }: TaskChatProps) {
     [taskId],
   )
 
+  const fetchOpencodeStatus = useCallback(
+    async (showLoading = true) => {
+      if (!task.agentSessionId) return
+
+      if (opencodeLoadedRef.current && showLoading) return
+
+      if (showLoading) {
+        setLoadingOpencode(true)
+      }
+      setOpencodeError(null)
+
+      try {
+        const response = await fetch(`/api/tasks/${taskId}/opencode/status`)
+        const data = await response.json()
+
+        if (response.ok && data.available) {
+          setOpencodeStatus(data.status || null)
+          setOpencodeAvailable(true)
+          opencodeLoadedRef.current = true
+        } else if (response.ok && !data.available) {
+          setOpencodeAvailable(false)
+        } else {
+          setOpencodeError(data.error || 'Failed to fetch session status')
+        }
+      } catch {
+        setOpencodeError('Failed to fetch session status')
+      } finally {
+        if (showLoading) {
+          setLoadingOpencode(false)
+        }
+      }
+    },
+    [taskId, task.agentSessionId],
+  )
+
+  const fetchOpencodeMessages = useCallback(
+    async (showLoading = true) => {
+      if (!task.agentSessionId) return
+
+      if (showLoading) {
+        setLoadingOpencode(true)
+      }
+      setOpencodeError(null)
+
+      try {
+        const response = await fetch(`/api/tasks/${taskId}/opencode/messages`)
+        const data = await response.json()
+
+        if (response.ok && data.available) {
+          setOpencodeMessages(data.messages || [])
+          setOpencodeAvailable(true)
+        } else if (response.ok && !data.available) {
+          setOpencodeAvailable(false)
+        } else {
+          setOpencodeError(data.error || 'Failed to fetch session messages')
+        }
+      } catch {
+        setOpencodeError('Failed to fetch session messages')
+      } finally {
+        if (showLoading) {
+          setLoadingOpencode(false)
+        }
+      }
+    },
+    [taskId, task.agentSessionId],
+  )
+
+  const fetchOpencodeDiffs = useCallback(
+    async (showLoading = true) => {
+      if (!task.agentSessionId) return
+
+      if (showLoading) {
+        setLoadingOpencode(true)
+      }
+      setOpencodeError(null)
+
+      try {
+        const response = await fetch(`/api/tasks/${taskId}/opencode/diff`)
+        const data = await response.json()
+
+        if (response.ok && data.available) {
+          setOpencodeDiffs(data.diffs || [])
+          setOpencodeAvailable(true)
+        } else if (response.ok && !data.available) {
+          setOpencodeAvailable(false)
+        } else {
+          setOpencodeError(data.error || 'Failed to fetch session diff')
+        }
+      } catch {
+        setOpencodeError('Failed to fetch session diff')
+      } finally {
+        if (showLoading) {
+          setLoadingOpencode(false)
+        }
+      }
+    },
+    [taskId, task.agentSessionId],
+  )
+
+  const handleSendOpencode = async () => {
+    if (!opencodeInput.trim()) return
+
+    setIsSendingOpencode(true)
+
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/opencode/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: opencodeInput }),
+      })
+      const data = await response.json()
+
+      if (response.ok && data.available) {
+        setOpencodeInput('')
+        await fetchOpencodeStatus(false)
+        await fetchOpencodeMessages(false)
+        await fetchOpencodeDiffs(false)
+        if (data.queued) {
+          toast.success('OpenCode request queued')
+        } else {
+          toast.success('OpenCode request sent')
+        }
+      } else {
+        toast.error('Failed to send OpenCode input')
+      }
+    } catch {
+      toast.error('Failed to send OpenCode input')
+    } finally {
+      setIsSendingOpencode(false)
+    }
+  }
+
   const handleRefresh = useCallback(() => {
     switch (activeTab) {
       case 'chat':
@@ -258,8 +405,25 @@ export function TaskChat({ taskId, task }: TaskChatProps) {
         deploymentLoadedRef.current = false
         fetchDeployment()
         break
+      case 'opencode':
+        opencodeLoadedRef.current = false
+        fetchOpencodeStatus()
+        fetchOpencodeMessages()
+        fetchOpencodeDiffs()
+        break
     }
-  }, [activeTab, task.prNumber, task.branchName, fetchMessages, fetchPRComments, fetchCheckRuns, fetchDeployment])
+  }, [
+    activeTab,
+    task.prNumber,
+    task.branchName,
+    fetchMessages,
+    fetchPRComments,
+    fetchCheckRuns,
+    fetchDeployment,
+    fetchOpencodeStatus,
+    fetchOpencodeMessages,
+    fetchOpencodeDiffs,
+  ])
 
   useEffect(() => {
     fetchMessages(true) // Show loading on initial fetch
@@ -296,11 +460,27 @@ export function TaskChat({ taskId, task }: TaskChatProps) {
           deploymentLoadedRef.current = false
           fetchDeployment(false) // Don't show loading on auto-refresh
           break
+        case 'opencode':
+          opencodeLoadedRef.current = false
+          fetchOpencodeStatus(false)
+          fetchOpencodeMessages(false)
+          fetchOpencodeDiffs(false)
+          break
       }
     }, refreshInterval)
 
     return () => clearInterval(interval)
-  }, [activeTab, task.prNumber, task.branchName, fetchPRComments, fetchCheckRuns, fetchDeployment])
+  }, [
+    activeTab,
+    task.prNumber,
+    task.branchName,
+    fetchPRComments,
+    fetchCheckRuns,
+    fetchDeployment,
+    fetchOpencodeStatus,
+    fetchOpencodeMessages,
+    fetchOpencodeDiffs,
+  ])
 
   // Reset cache and refetch when PR number changes (PR created/updated)
   useEffect(() => {
@@ -342,6 +522,15 @@ export function TaskChat({ taskId, task }: TaskChatProps) {
       fetchDeployment()
     }
   }, [activeTab, fetchDeployment])
+
+  // Fetch OpenCode session data when tab switches to OpenCode
+  useEffect(() => {
+    if (activeTab === 'opencode') {
+      fetchOpencodeStatus()
+      fetchOpencodeMessages()
+      fetchOpencodeDiffs()
+    }
+  }, [activeTab, fetchOpencodeStatus, fetchOpencodeMessages, fetchOpencodeDiffs])
 
   // Track scroll position to maintain scroll at bottom when content updates
   useEffect(() => {
@@ -604,6 +793,13 @@ export function TaskChat({ taskId, task }: TaskChatProps) {
     toast.success('Comment added to chat input')
   }
 
+  const handleOpencodeKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSendOpencode()
+    }
+  }
+
   // Use a non-narrowed variable for tab button comparisons
   const currentTab = activeTab as string
 
@@ -664,6 +860,120 @@ export function TaskChat({ taskId, task }: TaskChatProps) {
                   </div>
                 </div>
               </a>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    if (activeTab === 'opencode') {
+      const statusLabel = opencodeStatus?.type ? opencodeStatus.type.toUpperCase() : 'UNKNOWN'
+      const statusColor =
+        opencodeStatus?.type === 'busy'
+          ? 'bg-amber-500/10 text-amber-500'
+          : opencodeStatus?.type === 'retry'
+            ? 'bg-orange-500/10 text-orange-500'
+            : opencodeStatus?.type === 'idle'
+              ? 'bg-green-500/10 text-green-500'
+              : 'bg-muted text-muted-foreground'
+
+      return (
+        <div className="flex-1 overflow-y-auto pb-4">
+          {!task.agentSessionId ? (
+            <div className="flex items-center justify-center h-full text-center text-muted-foreground px-4">
+              <div className="text-sm md:text-base">No OpenCode session available for this task.</div>
+            </div>
+          ) : loadingOpencode ? (
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : opencodeError ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <p className="text-destructive mb-2 text-xs md:text-sm">{opencodeError}</p>
+              </div>
+            </div>
+          ) : !opencodeAvailable ? (
+            <div className="flex items-center justify-center h-full text-center text-muted-foreground px-4">
+              <div className="text-sm md:text-base">OpenCode server data is not available.</div>
+            </div>
+          ) : (
+            <div className="space-y-4 px-2">
+              <div className="rounded-md border p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-semibold">Session Status</div>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${statusColor}`}>{statusLabel}</span>
+                </div>
+                {opencodeStatus?.type === 'retry' && opencodeStatus.attempt ? (
+                  <div className="text-xs text-muted-foreground">Retry attempt: {opencodeStatus.attempt}</div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">
+                    {opencodeStatus?.type === 'busy'
+                      ? 'OpenCode is currently processing.'
+                      : opencodeStatus?.type === 'idle'
+                        ? 'OpenCode is ready for input.'
+                        : 'OpenCode status is unknown.'}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-md border p-3 space-y-2">
+                <div className="text-xs font-semibold">Recent Messages</div>
+                {opencodeMessages.length === 0 ? (
+                  <div className="text-xs text-muted-foreground">No messages received yet.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {opencodeMessages.slice(-6).map((message) => (
+                      <div key={message.id} className="text-xs">
+                        <div className="flex items-center justify-between text-muted-foreground mb-1">
+                          <span className="uppercase">{message.role}</span>
+                          <span>{new Date(message.createdAt).toLocaleTimeString()}</span>
+                        </div>
+                        <div className="text-foreground whitespace-pre-wrap">{message.text || 'No text content'}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-md border p-3 space-y-2">
+                <div className="text-xs font-semibold">Session Diff</div>
+                {opencodeDiffs.length === 0 ? (
+                  <div className="text-xs text-muted-foreground">No diff available.</div>
+                ) : (
+                  <div className="space-y-2">
+                    {opencodeDiffs.map((diff) => (
+                      <div key={diff.file} className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="truncate">{diff.file}</span>
+                        <span className="flex items-center gap-2">
+                          <span className="text-green-500">+{diff.additions}</span>
+                          <span className="text-red-500">-{diff.deletions}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-md border p-3 space-y-2">
+                <div className="text-xs font-semibold">Send to OpenCode</div>
+                <Textarea
+                  value={opencodeInput}
+                  onChange={(e) => setOpencodeInput(e.target.value)}
+                  onKeyDown={handleOpencodeKeyDown}
+                  placeholder="Type a prompt or use /command syntax"
+                  className="w-full min-h-[60px] max-h-[140px] resize-none text-xs"
+                  disabled={isSendingOpencode}
+                />
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] text-muted-foreground">
+                    Use /command to run an OpenCode command. Busy sessions are queued automatically.
+                  </p>
+                  <Button size="sm" onClick={handleSendOpencode} disabled={!opencodeInput.trim() || isSendingOpencode}>
+                    {isSendingOpencode ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Send'}
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -1259,6 +1569,14 @@ export function TaskChat({ taskId, task }: TaskChatProps) {
             }`}
           >
             Deployments
+          </button>
+          <button
+            onClick={() => setActiveTab('opencode')}
+            className={`text-sm font-semibold px-2 py-1 rounded transition-colors whitespace-nowrap flex-shrink-0 ${
+              currentTab === 'opencode' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            OpenCode
           </button>
         </div>
         <Button variant="ghost" size="sm" onClick={handleRefresh} className="h-6 w-6 p-0 flex-shrink-0" title="Refresh">

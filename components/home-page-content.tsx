@@ -30,6 +30,8 @@ import { sessionAtom } from '@/lib/atoms/session'
 import { githubConnectionAtom, githubConnectionInitializedAtom } from '@/lib/atoms/github-connection'
 import { OpenRepoUrlDialog } from '@/components/open-repo-url-dialog'
 import { MultiRepoDialog } from '@/components/multi-repo-dialog'
+import { resolveOpenCodeModel, resolveOpenCodeProvider } from '@/lib/opencode/catalog'
+import { useOpencodeCatalog } from '@/components/hooks/use-opencode-catalog'
 
 interface HomePageContentProps {
   initialSelectedOwner?: string
@@ -67,6 +69,7 @@ export function HomePageContent({
   const searchParams = useSearchParams()
   const { refreshTasks, addTaskOptimistically } = useTasks()
   const setTaskPrompt = useSetAtom(taskPromptAtom)
+  const catalog = useOpencodeCatalog()
 
   // Multi-repo mode state
   const multiRepoMode = useAtomValue(multiRepoModeAtom)
@@ -226,11 +229,16 @@ export function HomePageContent({
         return
       }
 
+      const savedProvider = localStorage.getItem('last-selected-provider')
+      const resolvedProvider = resolveOpenCodeProvider(savedProvider, catalog)
+      const savedModel = localStorage.getItem(`last-selected-model-${resolvedProvider}`)
+      const resolvedModel = resolveOpenCodeModel(resolvedProvider, catalog, savedModel) || savedModel || 'auto'
+
       const taskData = {
         prompt: 'Work on this repository',
         repoUrl: repoUrl,
-        selectedAgent: localStorage.getItem('last-selected-provider') || 'openai',
-        selectedModel: localStorage.getItem('last-selected-model-openai') || 'gpt-5',
+        selectedAgent: resolvedProvider,
+        selectedModel: resolvedModel,
         installDependencies: true,
         maxDuration: 300,
         keepAlive: false,

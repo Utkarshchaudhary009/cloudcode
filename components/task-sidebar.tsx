@@ -29,7 +29,8 @@ import { PRStatusIcon } from '@/components/pr-status-icon'
 import { PRCheckStatus } from '@/components/pr-check-status'
 import { githubConnectionAtom } from '@/lib/atoms/github-connection'
 
-import { getOpenCodeModelLabel, normalizeOpenCodeProvider, OPENCODE_PROVIDER_LABELS } from '@/lib/opencode/providers'
+import { getOpenCodeModelLabelFromCatalog, getOpenCodeProviderLabel } from '@/lib/opencode/catalog'
+import { useOpencodeCatalog } from '@/components/hooks/use-opencode-catalog'
 
 interface TaskSidebarProps {
   tasks: Task[]
@@ -54,6 +55,7 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
   const { refreshTasks, toggleSidebar } = useTasks()
   const session = useAtomValue(sessionAtom)
   const githubConnection = useAtomValue(githubConnectionAtom)
+  const catalog = useOpencodeCatalog()
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleteCompleted, setDeleteCompleted] = useState(true)
@@ -294,14 +296,10 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
 
   const getHumanFriendlyModelName = (provider: string | null, model: string | null) => {
     if (!provider || !model) return model
-    return getOpenCodeModelLabel(provider, model)
+    return getOpenCodeModelLabelFromCatalog(provider, model, catalog)
   }
 
-  const getProviderLabel = (provider: string | null) => {
-    if (!provider) return null
-    const normalized = normalizeOpenCodeProvider(provider)
-    return OPENCODE_PROVIDER_LABELS[normalized]
-  }
+  const getProviderLabel = (provider: string | null) => getOpenCodeProviderLabel(provider, catalog)
 
   // Show logged out state if no user is authenticated
   if (!session.user) {
