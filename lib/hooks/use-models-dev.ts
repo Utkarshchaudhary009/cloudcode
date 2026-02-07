@@ -12,7 +12,7 @@ const CACHE_KEY = 'models-dev-cache-v2'
 const CACHE_TTL_MS = 1000 * 60 * 60 * 24
 
 const MODELS_DEV_PROVIDER_ID_MAP: Record<string, OpenCodeProviderId> = {
-  zenmux: 'zen',
+  opencode: 'zen',
 }
 
 export type ModelsDevProviderOption = {
@@ -93,7 +93,10 @@ const resolveProviderId = (providerId: string) => {
 const extractProviders = (data: unknown): Array<{ id: OpenCodeProviderId; label: string; logoId: string }> => {
   if (!data || typeof data !== 'object') return []
   const record = data as Record<string, unknown>
-  const providersValue = record.providers
+  let providersValue = record.providers
+  if (!providersValue) {
+    providersValue = record
+  }
   if (Array.isArray(providersValue)) {
     return providersValue
       .map((provider) => {
@@ -152,14 +155,15 @@ const extractModels = (data: unknown): Array<{ id: string; providerId: string; l
   if (!data || typeof data !== 'object') return []
   const record = data as Record<string, unknown>
   const modelsValue = record.models
-  const normalizeModel = (id: string, entry: Record<string, unknown>) => {
+  const normalizeModel = (id: string, entry: Record<string, unknown>, parentProviderId?: string) => {
     const rawProvider =
       normalizeLabel(entry.provider, '') ||
       normalizeLabel(entry.providerId, '') ||
       normalizeLabel(entry.provider_id, '') ||
       normalizeLabel(entry.vendor, '') ||
       normalizeLabel(entry.organization, '')
-    const providerId = rawProvider || (id.includes('/') ? id.split('/')[0] : '')
+    const providerId =
+      rawProvider || (id.includes('/') ? id.split('/')[0] : '') || parentProviderId || ''
     const label = normalizeLabel(
       entry.name,
       normalizeLabel(entry.displayName, normalizeLabel(entry.display_name, normalizeLabel(entry.label, id))),
@@ -183,7 +187,25 @@ const extractModels = (data: unknown): Array<{ id: string; providerId: string; l
       return normalizeModel(id, entry)
     })
   }
-  return []
+
+  // Fallback for new schema where models are nested under providers
+  const allModels: Array<{ id: string; providerId: string; label: string }> = []
+  Object.entries(record).forEach(([pKey, pValue]) => {
+    if (!pValue || typeof pValue !== 'object') return
+    const providerModels = (pValue as Record<string, unknown>).models
+
+    if (providerModels && typeof providerModels === 'object' && !Array.isArray(providerModels)) {
+      Object.entries(providerModels as Record<string, unknown>).forEach(([mId, mValue]) => {
+        const mEntry = mValue && typeof mValue === 'object' ? (mValue as Record<string, unknown>) : {}
+        const normalized = normalizeModel(mId, mEntry, pKey)
+        if (normalized.id) {
+          allModels.push(normalized)
+        }
+      })
+    }
+  })
+
+  return allModels
 }
 
 const buildCatalogFromData = (data: unknown): ModelsDevCache => {
