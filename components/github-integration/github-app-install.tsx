@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Github, ExternalLink, CheckCircle2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { Badge } from '@/components/ui/badge'
 
 export function GitHubAppInstall() {
   const [repoUrl, setRepoUrl] = useState('')
@@ -35,8 +37,8 @@ export function GitHubAppInstall() {
 
       setInstalled(true)
     } catch (error) {
-      console.error('Error installing GitHub App:', error)
-      alert('Failed to install GitHub App. Please try again.')
+      console.error('Error installing GitHub App')
+      toast.error('Failed to install GitHub App')
     } finally {
       setLoading(false)
     }
@@ -46,62 +48,67 @@ export function GitHubAppInstall() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">GitHub Integration</h1>
-        <p className="text-muted-foreground">Connect your repositories for automatic PR reviews</p>
+        <p className="text-muted-foreground">Subscribe repositories to automated PR reviews with the GitHub App.</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Github className="h-5 w-5" />
-            GitHub App Installation
+            GitHub App Subscription
           </CardTitle>
-          <CardDescription>Install the GitHub App to enable automatic code reviews on pull requests</CardDescription>
+          <CardDescription>Install the GitHub App to enable automatic code reviews on pull requests.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {!installed ? (
             <>
-              <form onSubmit={handleInstall} className="space-y-4">
-                <div>
-                  <Label htmlFor="repoUrl">Repository URL</Label>
-                  <Input
-                    id="repoUrl"
-                    value={repoUrl}
-                    onChange={(e) => setRepoUrl(e.target.value)}
-                    placeholder="https://github.com/owner/repo"
-                    required
-                  />
+              <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+                <form onSubmit={handleInstall} className="space-y-4">
+                  <div>
+                    <Label htmlFor="repoUrl">Repository URL</Label>
+                    <Input
+                      id="repoUrl"
+                      value={repoUrl}
+                      onChange={(e) => setRepoUrl(e.target.value)}
+                      placeholder="https://github.com/owner/repo"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch id="autoReviewEnabled" checked={autoReviewEnabled} onCheckedChange={setAutoReviewEnabled} />
+                    <Label htmlFor="autoReviewEnabled">Enable automatic PR reviews</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch id="reviewOnDraft" checked={reviewOnDraft} onCheckedChange={setReviewOnDraft} />
+                    <Label htmlFor="reviewOnDraft">Review draft PRs</Label>
+                  </div>
+
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? (
+                      'Installing...'
+                    ) : (
+                      <>
+                        <Github className="h-4 w-4 mr-2" />
+                        Install GitHub App
+                      </>
+                    )}
+                  </Button>
+                </form>
+
+                <div className="rounded-md border bg-muted/40 p-4 space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">What you get</p>
+                    <p className="text-xs text-muted-foreground">A streamlined PR review workflow.</p>
+                  </div>
+                  <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                    <li>Automatic reviews triggered on new pull requests</li>
+                    <li>Rule-based findings and actionable summaries</li>
+                    <li>Configurable coverage for draft PRs</li>
+                    <li>Review history centralized in the Reviews tab</li>
+                  </ol>
                 </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch id="autoReviewEnabled" checked={autoReviewEnabled} onCheckedChange={setAutoReviewEnabled} />
-                  <Label htmlFor="autoReviewEnabled">Enable automatic PR reviews</Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch id="reviewOnDraft" checked={reviewOnDraft} onCheckedChange={setReviewOnDraft} />
-                  <Label htmlFor="reviewOnDraft">Review draft PRs</Label>
-                </div>
-
-                <Button type="submit" disabled={loading} className="w-full">
-                  {loading ? (
-                    'Installing...'
-                  ) : (
-                    <>
-                      <Github className="h-4 w-4 mr-2" />
-                      Install GitHub App
-                    </>
-                  )}
-                </Button>
-              </form>
-
-              <div className="rounded-md bg-muted p-4">
-                <p className="text-sm font-medium mb-2">How it works</p>
-                <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Install the GitHub App on your repository</li>
-                  <li>Configure review rules in your settings</li>
-                  <li>Open a pull request to trigger automatic review</li>
-                  <li>Review findings will be posted as PR comments</li>
-                </ol>
               </div>
             </>
           ) : (
@@ -109,7 +116,12 @@ export function GitHubAppInstall() {
               <CheckCircle2 className="h-12 w-12 text-green-600 mx-auto mb-4" />
               <p className="text-lg font-semibold mb-2">GitHub App Installed</p>
               <p className="text-sm text-muted-foreground mb-4">Automatic PR reviews are enabled for {repoUrl}</p>
-              <Button variant="outline" onClick={() => setInstalled(false)}>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Badge variant="secondary">Active</Badge>
+                <Badge variant="outline">{autoReviewEnabled ? 'Auto reviews on' : 'Auto reviews off'}</Badge>
+                <Badge variant="outline">{reviewOnDraft ? 'Draft reviews on' : 'Draft reviews off'}</Badge>
+              </div>
+              <Button variant="outline" onClick={() => setInstalled(false)} className="mt-4">
                 Install Another Repository
               </Button>
             </div>

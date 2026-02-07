@@ -7,92 +7,25 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { Eye, EyeOff } from 'lucide-react'
+import { API_KEY_PROVIDERS, type ApiKeyProviderId } from '@/lib/api-keys/providers'
 
 interface ApiKeysDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-type Provider =
-  | 'openai'
-  | 'gemini'
-  | 'cursor'
-  | 'anthropic'
-  | 'aigateway'
-  | 'groq'
-  | 'openrouter'
-  | 'vercel'
-  | 'synthetic'
-  | 'zai'
-  | 'huggingface'
-  | 'cerebras'
-  | 'vertexai'
-  | 'bedrock'
-  | 'azure'
-  | 'openai-compat'
-  | 'anthropic-compat'
+type Provider = ApiKeyProviderId
 
-const PROVIDERS = [
-  { id: 'aigateway' as Provider, name: 'AI Gateway', placeholder: 'gw_...' },
-  { id: 'anthropic' as Provider, name: 'Anthropic', placeholder: 'sk-ant-...' },
-  { id: 'openai' as Provider, name: 'OpenAI', placeholder: 'sk-...' },
-  { id: 'gemini' as Provider, name: 'Gemini', placeholder: 'AIza...' },
-  { id: 'groq' as Provider, name: 'Groq', placeholder: 'gsk_...' },
-  { id: 'openrouter' as Provider, name: 'OpenRouter', placeholder: 'sk-or-...' },
-  { id: 'vercel' as Provider, name: 'Vercel AI Gateway', placeholder: 'vercel_...' },
-  { id: 'synthetic' as Provider, name: 'Synthetic', placeholder: 'synthetic_...' },
-  { id: 'zai' as Provider, name: 'Z.ai', placeholder: 'zai_...' },
-  { id: 'huggingface' as Provider, name: 'Hugging Face', placeholder: 'hf_...' },
-  { id: 'cerebras' as Provider, name: 'Cerebras', placeholder: 'csk_...' },
-  { id: 'vertexai' as Provider, name: 'Vertex AI', placeholder: 'vertex_...' },
-  { id: 'bedrock' as Provider, name: 'Amazon Bedrock', placeholder: 'aws_...' },
-  { id: 'azure' as Provider, name: 'Azure OpenAI', placeholder: 'azure_...' },
-  { id: 'openai-compat' as Provider, name: 'OpenAI Compatible', placeholder: 'compat_...' },
-  { id: 'anthropic-compat' as Provider, name: 'Anthropic Compatible', placeholder: 'compat_...' },
-  { id: 'cursor' as Provider, name: 'Cursor', placeholder: 'cur_...' },
-]
+const PROVIDERS = API_KEY_PROVIDERS
+
+const buildEmptyRecord = <T,>(value: T) =>
+  Object.fromEntries(PROVIDERS.map((provider) => [provider.id, value])) as Record<Provider, T>
 
 export function ApiKeysDialog({ open, onOpenChange }: ApiKeysDialogProps) {
-  const [apiKeys, setApiKeys] = useState<Record<Provider, string>>({
-    openai: '',
-    gemini: '',
-    cursor: '',
-    anthropic: '',
-    aigateway: '',
-    groq: '',
-    openrouter: '',
-    vercel: '',
-    synthetic: '',
-    zai: '',
-    huggingface: '',
-    cerebras: '',
-    vertexai: '',
-    bedrock: '',
-    azure: '',
-    'openai-compat': '',
-    'anthropic-compat': '',
-  })
+  const [apiKeys, setApiKeys] = useState<Record<Provider, string>>(() => buildEmptyRecord(''))
   const [savedKeys, setSavedKeys] = useState<Set<Provider>>(new Set())
   const [clearedKeys, setClearedKeys] = useState<Set<Provider>>(new Set())
-  const [showKeys, setShowKeys] = useState<Record<Provider, boolean>>({
-    openai: false,
-    gemini: false,
-    cursor: false,
-    anthropic: false,
-    aigateway: false,
-    groq: false,
-    openrouter: false,
-    vercel: false,
-    synthetic: false,
-    zai: false,
-    huggingface: false,
-    cerebras: false,
-    vertexai: false,
-    bedrock: false,
-    azure: false,
-    'openai-compat': false,
-    'anthropic-compat': false,
-  })
+  const [showKeys, setShowKeys] = useState<Record<Provider, boolean>>(() => buildEmptyRecord(false))
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -109,12 +42,14 @@ export function ApiKeysDialog({ open, onOpenChange }: ApiKeysDialogProps) {
       if (data.success) {
         const saved = new Set<Provider>()
         data.apiKeys.forEach((key: { provider: Provider }) => {
-          saved.add(key.provider)
+          if (PROVIDERS.some((provider) => provider.id === key.provider)) {
+            saved.add(key.provider)
+          }
         })
         setSavedKeys(saved)
       }
     } catch (error) {
-      console.error('Error fetching API keys:', error)
+      console.error('Error fetching API keys')
     }
   }
 
@@ -152,7 +87,7 @@ export function ApiKeysDialog({ open, onOpenChange }: ApiKeysDialogProps) {
         toast.error(error.error || 'Failed to save API key')
       }
     } catch (error) {
-      console.error('Error saving API key:', error)
+      console.error('Error saving API key')
       toast.error('Failed to save API key')
     } finally {
       setLoading(false)
@@ -183,7 +118,7 @@ export function ApiKeysDialog({ open, onOpenChange }: ApiKeysDialogProps) {
         toast.error(error.error || 'Failed to delete API key')
       }
     } catch (error) {
-      console.error('Error deleting API key:', error)
+      console.error('Error deleting API key')
       toast.error('Failed to delete API key')
     } finally {
       setLoading(false)
@@ -216,7 +151,7 @@ export function ApiKeysDialog({ open, onOpenChange }: ApiKeysDialogProps) {
         toast.error(error.error || 'Failed to clear API key')
       }
     } catch (error) {
-      console.error('Error clearing API key:', error)
+      console.error('Error clearing API key')
       toast.error('Failed to clear API key')
     } finally {
       setLoading(false)

@@ -3,7 +3,7 @@
 import { Task } from '@/lib/db/schema'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { AlertCircle, Plus, Trash2, GitBranch, Loader2, Search, X, Clock, FileSearch, Settings } from 'lucide-react'
+import { AlertCircle, Plus, Trash2, GitBranch, Loader2, Search, X, Clock, Settings, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useTasks } from '@/components/app-layout'
@@ -36,7 +37,7 @@ interface TaskSidebarProps {
   width?: number
 }
 
-type TabType = 'tasks' | 'repos'
+type TabType = 'tasks' | 'repos' | 'reviews'
 
 interface GitHubRepoInfo {
   name: string
@@ -47,6 +48,15 @@ interface GitHubRepoInfo {
   clone_url: string
   updated_at: string
   language?: string
+}
+
+interface ReviewInfo {
+  id: string
+  prTitle?: string
+  repoUrl?: string
+  prNumber?: number
+  status?: 'completed' | 'in_progress' | 'error' | string
+  summary?: string | null
 }
 
 export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
@@ -61,6 +71,9 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
   const [deleteFailed, setDeleteFailed] = useState(true)
   const [deleteStopped, setDeleteStopped] = useState(true)
   const [activeTab, setActiveTab] = useState<TabType>('tasks')
+  const [reviews, setReviews] = useState<ReviewInfo[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [reviewsInitialized, setReviewsInitialized] = useState(false)
 
   // State for repos from API
   const [repos, setRepos] = useState<GitHubRepoInfo[]>([])
@@ -145,7 +158,7 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
       setSearchHasMore(data.has_more)
       setSearchPage(page)
     } catch (error) {
-      console.error('Error searching repos:', error)
+      console.error('Error searching repos')
     } finally {
       setSearchLoading(false)
     }
@@ -191,7 +204,7 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
         setReposPage(page)
         setReposInitialized(true)
       } catch (error) {
-        console.error('Error fetching repos:', error)
+        console.error('Error fetching repos')
       } finally {
         setReposLoading(false)
       }
@@ -215,6 +228,33 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
       setReposInitialized(false)
     }
   }, [githubConnection.connected])
+
+  const fetchReviews = useCallback(async () => {
+    if (reviewsLoading) return
+
+    setReviewsLoading(true)
+    try {
+      const response = await fetch('/api/reviews')
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch reviews')
+      }
+
+      const data = await response.json()
+      setReviews(data.reviews || [])
+      setReviewsInitialized(true)
+    } catch (error) {
+      console.error('Error fetching reviews')
+    } finally {
+      setReviewsLoading(false)
+    }
+  }, [reviewsLoading])
+
+  useEffect(() => {
+    if (activeTab === 'reviews' && session.user && !reviewsInitialized && !reviewsLoading) {
+      fetchReviews()
+    }
+  }, [activeTab, session.user, reviewsInitialized, reviewsLoading, fetchReviews])
 
   // Infinite scroll observer
   useEffect(() => {
@@ -286,7 +326,7 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
         toast.error(error.error || 'Failed to delete tasks')
       }
     } catch (error) {
-      console.error('Error deleting tasks:', error)
+      console.error('Error deleting tasks')
       toast.error('Failed to delete tasks')
     } finally {
       setIsDeleting(false)
@@ -301,10 +341,112 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
   // Show logged out state if no user is authenticated
   if (!session.user) {
     return (
-      <div
-        className="h-full border-r bg-muted px-2 md:px-3 pt-3 md:pt-5.5 pb-3 md:pb-4 overflow-y-auto flex flex-col"
-        style={{ width: `${width}px` }}
-      >
+      <div className="h-full border-r bg-muted flex flex-col" style={{ width: `${width}px` }}>
+        <div className="px-2 md:px-3 pt-3 md:pt-5.5 pb-3 md:pb-4 flex-1 overflow-y-auto">
+          <div className="mb-3 md:mb-4">
+            <div className="flex items-center justify-between mb-2">
+              {/* Tabs */}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setActiveTab('tasks')}
+                  className={cn(
+                    'text-xs font-medium tracking-wide transition-colors px-2 py-1 rounded',
+                    activeTab === 'tasks'
+                      ? 'text-foreground bg-accent'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/50',
+                  )}
+                >
+                  Tasks
+                </button>
+                <button
+                  onClick={() => setActiveTab('repos')}
+                  className={cn(
+                    'text-xs font-medium tracking-wide transition-colors px-2 py-1 rounded',
+                    activeTab === 'repos'
+                      ? 'text-foreground bg-accent'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/50',
+                  )}
+                >
+                  Repos
+                </button>
+                <button
+                  onClick={() => setActiveTab('reviews')}
+                  className={cn(
+                    'text-xs font-medium tracking-wide transition-colors px-2 py-1 rounded',
+                    activeTab === 'reviews'
+                      ? 'text-foreground bg-accent'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/50',
+                  )}
+                >
+                  Review
+                </button>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setShowDeleteDialog(true)}
+                  disabled={true}
+                  title="Delete Tasks"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Link href="/" onClick={handleLinkClick}>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="New Task">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-1">
+            {activeTab === 'tasks' && (
+              <Card>
+                <CardContent className="p-3 text-center text-xs text-muted-foreground">
+                  Sign in to view and create tasks
+                </CardContent>
+              </Card>
+            )}
+            {activeTab === 'repos' && (
+              <Card>
+                <CardContent className="p-3 text-center text-xs text-muted-foreground">
+                  Sign in to view repositories
+                </CardContent>
+              </Card>
+            )}
+            {activeTab === 'reviews' && (
+              <Card>
+                <CardContent className="p-3 text-center text-xs text-muted-foreground">
+                  Sign in to view reviews
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+        <div className="border-t px-2 md:px-3 py-3 md:py-4 bg-muted/80">
+          <div className="space-y-1">
+            <Link href="/scheduled-tasks" onClick={handleLinkClick}>
+              <Button variant="ghost" size="sm" className="w-full justify-start h-8 px-2 text-xs gap-2">
+                <Clock className="h-3.5 w-3.5" />
+                Scheduled Tasks
+              </Button>
+            </Link>
+            <Link href="/settings" onClick={handleLinkClick}>
+              <Button variant="ghost" size="sm" className="w-full justify-start h-8 px-2 text-xs gap-2">
+                <Settings className="h-3.5 w-3.5" />
+                Settings
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-full border-r bg-muted flex flex-col" style={{ width: `${width}px` }}>
+      <div className="px-2 md:px-3 pt-3 md:pt-5.5 pb-3 md:pb-4 flex-1 overflow-y-auto">
         <div className="mb-3 md:mb-4">
           <div className="flex items-center justify-between mb-2">
             {/* Tabs */}
@@ -331,6 +473,17 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
               >
                 Repos
               </button>
+              <button
+                onClick={() => setActiveTab('reviews')}
+                className={cn(
+                  'text-xs font-medium tracking-wide transition-colors px-2 py-1 rounded',
+                  activeTab === 'reviews'
+                    ? 'text-foreground bg-accent'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50',
+                )}
+              >
+                Review
+              </button>
             </div>
             <div className="flex items-center gap-1">
               <Button
@@ -338,7 +491,7 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
                 size="sm"
                 className="h-8 w-8 p-0"
                 onClick={() => setShowDeleteDialog(true)}
-                disabled={true}
+                disabled={isDeleting || tasks.length === 0}
                 title="Delete Tasks"
               >
                 <Trash2 className="h-4 w-4" />
@@ -351,250 +504,25 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
             </div>
           </div>
         </div>
-        <div className="space-y-1">
-          {activeTab === 'tasks' && (
-            <Card>
-              <CardContent className="p-3 text-center text-xs text-muted-foreground">
-                Sign in to view and create tasks
-              </CardContent>
-            </Card>
-          )}
-          {activeTab === 'repos' && (
-            <Card>
-              <CardContent className="p-3 text-center text-xs text-muted-foreground">
-                Sign in to view repositories
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
-    )
-  }
 
-  return (
-    <div
-      className="h-full border-r bg-muted px-2 md:px-3 pt-3 md:pt-5.5 pb-3 md:pb-4 overflow-y-auto"
-      style={{ width: `${width}px` }}
-    >
-      <div className="mb-3 md:mb-4">
-        <div className="flex items-center justify-between mb-2">
-          {/* Tabs */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setActiveTab('tasks')}
-              className={cn(
-                'text-xs font-medium tracking-wide transition-colors px-2 py-1 rounded',
-                activeTab === 'tasks'
-                  ? 'text-foreground bg-accent'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50',
-              )}
-            >
-              Tasks
-            </button>
-            <button
-              onClick={() => setActiveTab('repos')}
-              className={cn(
-                'text-xs font-medium tracking-wide transition-colors px-2 py-1 rounded',
-                activeTab === 'repos'
-                  ? 'text-foreground bg-accent'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50',
-              )}
-            >
-              Repos
-            </button>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={() => setShowDeleteDialog(true)}
-              disabled={isDeleting || tasks.length === 0}
-              title="Delete Tasks"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <Link href="/" onClick={handleLinkClick}>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="New Task">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Tasks Tab Content */}
-      {activeTab === 'tasks' && (
-        <div className="space-y-1">
-          {tasks.length === 0 ? (
-            <Card>
-              <CardContent className="p-3 text-center text-xs text-muted-foreground">
-                No tasks yet. Create your first task!
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              {tasks.slice(0, 10).map((task) => {
-                const isActive = pathname === `/tasks/${task.id}`
-
-                return (
-                  <Link
-                    key={task.id}
-                    href={`/tasks/${task.id}`}
-                    onClick={handleLinkClick}
-                    className={cn('block rounded-lg', isActive && 'ring-1 ring-primary/50 ring-offset-0')}
-                  >
-                    <Card
-                      className={cn(
-                        'cursor-pointer transition-colors hover:bg-accent p-0 rounded-lg',
-                        isActive && 'bg-accent',
-                      )}
-                    >
-                      <CardContent className="px-3 py-2">
-                        <div className="flex gap-2">
-                          {/* Text content */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-1">
-                              <h3
-                                className={cn(
-                                  'text-xs font-medium truncate mb-0.5',
-                                  task.status === 'processing' &&
-                                    'bg-gradient-to-r from-muted-foreground from-20% via-white via-50% to-muted-foreground to-80% bg-clip-text text-transparent bg-[length:300%_100%] animate-[shimmer_1.5s_linear_infinite]',
-                                )}
-                              >
-                                {(() => {
-                                  const displayText = task.title || task.prompt
-                                  return displayText.slice(0, 50) + (displayText.length > 50 ? '...' : '')
-                                })()}
-                              </h3>
-                              {task.status === 'error' && (
-                                <AlertCircle className="h-3 w-3 text-red-500 flex-shrink-0" />
-                              )}
-                              {task.status === 'stopped' && (
-                                <AlertCircle className="h-3 w-3 text-orange-500 flex-shrink-0" />
-                              )}
-                            </div>
-                            {task.repoUrl && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-0.5">
-                                {task.prStatus && (
-                                  <div className="relative">
-                                    <PRStatusIcon status={task.prStatus} />
-                                    <PRCheckStatus taskId={task.id} prStatus={task.prStatus} isActive={isActive} />
-                                  </div>
-                                )}
-                                <span className="truncate">
-                                  {(() => {
-                                    try {
-                                      const url = new URL(task.repoUrl)
-                                      const pathParts = url.pathname.split('/').filter(Boolean)
-                                      if (pathParts.length >= 2) {
-                                        return `${pathParts[0]}/${pathParts[1].replace(/\.git$/, '')}`
-                                      } else {
-                                        return 'Unknown repository'
-                                      }
-                                    } catch {
-                                      return 'Invalid repository URL'
-                                    }
-                                  })()}
-                                </span>
-                              </div>
-                            )}
-                            {task.selectedAgent && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <OpenCode className="w-3 h-3" />
-                                <span className="truncate">{getProviderLabel(task.selectedAgent)}</span>
-                                {task.selectedModel && (
-                                  <span className="truncate">
-                                    {getHumanFriendlyModelName(task.selectedAgent, task.selectedModel)}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                )
-              })}
-              {tasks.length >= 1 && (
-                <div className="pt-1">
-                  <Link href="/tasks" onClick={handleLinkClick}>
-                    <Button variant="ghost" size="sm" className="w-full justify-start h-7 px-2 text-xs">
-                      View All Tasks
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Repos Tab Content */}
-      {activeTab === 'repos' && (
-        <div className="space-y-2">
-          {/* Search input */}
-          {githubConnection.connected && (repos.length > 0 || repoSearchQuery) && (
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search repos..."
-                value={repoSearchQuery}
-                onChange={(e) => setRepoSearchQuery(e.target.value)}
-                className="h-8 pl-7 pr-7 text-xs"
-              />
-              {repoSearchQuery && (
-                <button
-                  onClick={() => setRepoSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-          )}
-
+        {/* Tasks Tab Content */}
+        {activeTab === 'tasks' && (
           <div className="space-y-1">
-            {!githubConnection.connected ? (
+            {tasks.length === 0 ? (
               <Card>
                 <CardContent className="p-3 text-center text-xs text-muted-foreground">
-                  Connect GitHub to view your repositories
-                </CardContent>
-              </Card>
-            ) : (reposLoading && repos.length === 0 && !isSearching) ||
-              (searchLoading && searchResults.length === 0 && isSearching) ? (
-              <Card>
-                <CardContent className="p-3 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  {isSearching ? 'Searching...' : 'Loading repositories...'}
-                </CardContent>
-              </Card>
-            ) : displayedRepos.length === 0 && !isSearching ? (
-              <Card>
-                <CardContent className="p-3 text-center text-xs text-muted-foreground">
-                  No repositories found
-                </CardContent>
-              </Card>
-            ) : displayedRepos.length === 0 && isSearching && !searchLoading ? (
-              <Card>
-                <CardContent className="p-3 text-center text-xs text-muted-foreground">
-                  No repos match &quot;{repoSearchQuery}&quot;
+                  No tasks yet. Create your first task!
                 </CardContent>
               </Card>
             ) : (
               <>
-                {displayedRepos.map((repo) => {
-                  const repoPath = `/repos/${repo.owner}/${repo.name}`
-                  const isActive = pathname === repoPath || pathname.startsWith(repoPath + '/')
-                  const repoKey = `${repo.owner}/${repo.name}`
-                  const taskCount = taskCountByRepo.get(repoKey) || 0
+                {tasks.slice(0, 10).map((task) => {
+                  const isActive = pathname === `/tasks/${task.id}`
 
                   return (
                     <Link
-                      key={repoKey}
-                      href={repoPath}
+                      key={task.id}
+                      href={`/tasks/${task.id}`}
                       onClick={handleLinkClick}
                       className={cn('block rounded-lg', isActive && 'ring-1 ring-primary/50 ring-offset-0')}
                     >
@@ -605,84 +533,319 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
                         )}
                       >
                         <CardContent className="px-3 py-2">
-                          <div className="flex gap-2 items-center">
-                            <GitBranch className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <div className="flex gap-2">
+                            {/* Text content */}
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-xs font-medium truncate mb-0.5">
-                                {repo.owner}/{repo.name}
-                              </h3>
-                              {taskCount > 0 && (
-                                <div className="text-xs text-muted-foreground">
-                                  {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
+                              <div className="flex items-center justify-between gap-1">
+                                <h3
+                                  className={cn(
+                                    'text-xs font-medium truncate mb-0.5',
+                                    task.status === 'processing' &&
+                                      'bg-gradient-to-r from-muted-foreground from-20% via-white via-50% to-muted-foreground to-80% bg-clip-text text-transparent bg-[length:300%_100%] animate-[shimmer_1.5s_linear_infinite]',
+                                  )}
+                                >
+                                  {(() => {
+                                    const displayText = task.title || task.prompt
+                                    return displayText.slice(0, 50) + (displayText.length > 50 ? '...' : '')
+                                  })()}
+                                </h3>
+                                {task.status === 'error' && (
+                                  <AlertCircle className="h-3 w-3 text-red-500 flex-shrink-0" />
+                                )}
+                                {task.status === 'stopped' && (
+                                  <AlertCircle className="h-3 w-3 text-orange-500 flex-shrink-0" />
+                                )}
+                              </div>
+                              {task.repoUrl && (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground mb-0.5">
+                                  {task.prStatus && (
+                                    <div className="relative">
+                                      <PRStatusIcon status={task.prStatus} />
+                                      <PRCheckStatus taskId={task.id} prStatus={task.prStatus} isActive={isActive} />
+                                    </div>
+                                  )}
+                                  <span className="truncate">
+                                    {(() => {
+                                      try {
+                                        const url = new URL(task.repoUrl)
+                                        const pathParts = url.pathname.split('/').filter(Boolean)
+                                        if (pathParts.length >= 2) {
+                                          return `${pathParts[0]}/${pathParts[1].replace(/\.git$/, '')}`
+                                        } else {
+                                          return 'Unknown repository'
+                                        }
+                                      } catch {
+                                        return 'Invalid repository URL'
+                                      }
+                                    })()}
+                                  </span>
+                                </div>
+                              )}
+                              {task.selectedAgent && (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <OpenCode className="w-3 h-3" />
+                                  <span className="truncate">{getProviderLabel(task.selectedAgent)}</span>
+                                  {task.selectedModel && (
+                                    <span className="truncate">
+                                      {getHumanFriendlyModelName(task.selectedAgent, task.selectedModel)}
+                                    </span>
+                                  )}
                                 </div>
                               )}
                             </div>
-                            {repo.private && (
-                              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                Private
-                              </span>
-                            )}
                           </div>
                         </CardContent>
                       </Card>
                     </Link>
                   )
                 })}
-                {/* Load more trigger */}
-                {displayedHasMore && (
-                  <div ref={loadMoreRef} className="py-2 flex justify-center">
-                    {(isSearching ? searchLoading : reposLoading) && (
-                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                    )}
+                {tasks.length >= 1 && (
+                  <div className="pt-1">
+                    <Link href="/tasks" onClick={handleLinkClick}>
+                      <Button variant="ghost" size="sm" className="w-full justify-start h-7 px-2 text-xs">
+                        View All Tasks
+                      </Button>
+                    </Link>
                   </div>
                 )}
               </>
             )}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Quick Links */}
-      <div className="mt-4 pt-4 border-t space-y-1">
-        <Link href="/scheduled-tasks" onClick={handleLinkClick}>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              'w-full justify-start h-8 px-2 text-xs gap-2',
-              pathname.startsWith('/scheduled-tasks') && 'bg-accent',
+        {/* Repos Tab Content */}
+        {activeTab === 'repos' && (
+          <div className="space-y-2">
+            {/* Search input */}
+            {githubConnection.connected && (repos.length > 0 || repoSearchQuery) && (
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search repos..."
+                  value={repoSearchQuery}
+                  onChange={(e) => setRepoSearchQuery(e.target.value)}
+                  className="h-8 pl-7 pr-7 text-xs"
+                />
+                {repoSearchQuery && (
+                  <button
+                    onClick={() => setRepoSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
             )}
-          >
-            <Clock className="h-3.5 w-3.5" />
-            Scheduled Tasks
-          </Button>
-        </Link>
-        <Link href="/reviews" onClick={handleLinkClick}>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              'w-full justify-start h-8 px-2 text-xs gap-2',
-              pathname.startsWith('/reviews') && 'bg-accent',
+
+            <div className="space-y-1">
+              {!githubConnection.connected ? (
+                <Card>
+                  <CardContent className="p-3 text-center text-xs text-muted-foreground">
+                    Connect GitHub to view your repositories
+                  </CardContent>
+                </Card>
+              ) : (reposLoading && repos.length === 0 && !isSearching) ||
+                (searchLoading && searchResults.length === 0 && isSearching) ? (
+                <Card>
+                  <CardContent className="p-3 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    {isSearching ? 'Searching...' : 'Loading repositories...'}
+                  </CardContent>
+                </Card>
+              ) : displayedRepos.length === 0 && !isSearching ? (
+                <Card>
+                  <CardContent className="p-3 text-center text-xs text-muted-foreground">
+                    No repositories found
+                  </CardContent>
+                </Card>
+              ) : displayedRepos.length === 0 && isSearching && !searchLoading ? (
+                <Card>
+                  <CardContent className="p-3 text-center text-xs text-muted-foreground">
+                    No repos match &quot;{repoSearchQuery}&quot;
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  {displayedRepos.map((repo) => {
+                    const repoPath = `/repos/${repo.owner}/${repo.name}`
+                    const isActive = pathname === repoPath || pathname.startsWith(repoPath + '/')
+                    const repoKey = `${repo.owner}/${repo.name}`
+                    const taskCount = taskCountByRepo.get(repoKey) || 0
+
+                    return (
+                      <Link
+                        key={repoKey}
+                        href={repoPath}
+                        onClick={handleLinkClick}
+                        className={cn('block rounded-lg', isActive && 'ring-1 ring-primary/50 ring-offset-0')}
+                      >
+                        <Card
+                          className={cn(
+                            'cursor-pointer transition-colors hover:bg-accent p-0 rounded-lg',
+                            isActive && 'bg-accent',
+                          )}
+                        >
+                          <CardContent className="px-3 py-2">
+                            <div className="flex gap-2 items-center">
+                              <GitBranch className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-xs font-medium truncate mb-0.5">
+                                  {repo.owner}/{repo.name}
+                                </h3>
+                                {taskCount > 0 && (
+                                  <div className="text-xs text-muted-foreground">
+                                    {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
+                                  </div>
+                                )}
+                              </div>
+                              {repo.private && (
+                                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                  Private
+                                </span>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    )
+                  })}
+                  {/* Load more trigger */}
+                  {displayedHasMore && (
+                    <div ref={loadMoreRef} className="py-2 flex justify-center">
+                      {(isSearching ? searchLoading : reposLoading) && (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Reviews Tab Content */}
+        {activeTab === 'reviews' && (
+          <div className="space-y-1">
+            {reviewsLoading && !reviewsInitialized ? (
+              <Card>
+                <CardContent className="p-3 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Loading reviews...
+                </CardContent>
+              </Card>
+            ) : reviews.length === 0 ? (
+              <Card>
+                <CardContent className="p-3 text-center text-xs text-muted-foreground">
+                  No reviews yet. Connect GitHub to enable automated PR reviews.
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {reviews.slice(0, 10).map((review) => {
+                  const reviewPath = `/reviews/${review.id}`
+                  const isActive = pathname === reviewPath
+                  const repoLabel = (() => {
+                    if (!review.repoUrl) return 'Repository not set'
+                    try {
+                      const url = new URL(review.repoUrl)
+                      const parts = url.pathname.split('/').filter(Boolean)
+                      if (parts.length >= 2) {
+                        return `${parts[0]}/${parts[1].replace(/\.git$/, '')}`
+                      }
+                    } catch {
+                      return 'Repository not set'
+                    }
+                    return 'Repository not set'
+                  })()
+
+                  const statusLabel =
+                    review.status === 'completed'
+                      ? 'Completed'
+                      : review.status === 'in_progress'
+                        ? 'In progress'
+                        : review.status === 'error'
+                          ? 'Error'
+                          : 'Queued'
+
+                  const statusVariant =
+                    review.status === 'completed' ? 'default' : review.status === 'error' ? 'destructive' : 'secondary'
+
+                  return (
+                    <Link
+                      key={review.id}
+                      href={reviewPath}
+                      onClick={handleLinkClick}
+                      className={cn('block rounded-lg', isActive && 'ring-1 ring-primary/50 ring-offset-0')}
+                    >
+                      <Card
+                        className={cn(
+                          'cursor-pointer transition-colors hover:bg-accent p-0 rounded-lg',
+                          isActive && 'bg-accent',
+                        )}
+                      >
+                        <CardContent className="px-3 py-2 space-y-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium truncate">{review.prTitle || 'Untitled review'}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {repoLabel}
+                                {review.prNumber ? ` · PR #${review.prNumber}` : ''}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {review.status === 'completed' && <CheckCircle2 className="h-3 w-3 text-green-600" />}
+                              {review.status === 'in_progress' && (
+                                <Loader2 className="h-3 w-3 animate-spin text-blue-600" />
+                              )}
+                              {review.status === 'error' && <AlertCircle className="h-3 w-3 text-destructive" />}
+                              <Badge variant={statusVariant} className="text-[10px] capitalize">
+                                {statusLabel}
+                              </Badge>
+                            </div>
+                          </div>
+                          {review.summary && (
+                            <p className="text-[11px] text-muted-foreground line-clamp-2">{review.summary}</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  )
+                })}
+              </>
             )}
-          >
-            <FileSearch className="h-3.5 w-3.5" />
-            PR Reviews
-          </Button>
-        </Link>
-        <Link href="/settings" onClick={handleLinkClick}>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              'w-full justify-start h-8 px-2 text-xs gap-2',
-              pathname.startsWith('/settings') && 'bg-accent',
-            )}
-          >
-            <Settings className="h-3.5 w-3.5" />
-            Settings
-          </Button>
-        </Link>
+          </div>
+        )}
+      </div>
+      <div className="border-t px-2 md:px-3 py-3 md:py-4 bg-muted/80">
+        <div className="space-y-1">
+          <Link href="/scheduled-tasks" onClick={handleLinkClick}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                'w-full justify-start h-8 px-2 text-xs gap-2',
+                pathname.startsWith('/scheduled-tasks') && 'bg-accent',
+              )}
+            >
+              <Clock className="h-3.5 w-3.5" />
+              Scheduled Tasks
+            </Button>
+          </Link>
+          <Link href="/settings" onClick={handleLinkClick}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                'w-full justify-start h-8 px-2 text-xs gap-2',
+                pathname.startsWith('/settings') && 'bg-accent',
+              )}
+            >
+              <Settings className="h-3.5 w-3.5" />
+              Settings
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

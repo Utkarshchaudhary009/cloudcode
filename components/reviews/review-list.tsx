@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ReviewScoreBadge } from './review-score-badge'
-import { ReviewFindingCard } from './review-finding-card'
 import { useRouter } from 'next/navigation'
 import { ExternalLink, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import Link from 'next/link'
 
 export function ReviewList() {
   const router = useRouter()
@@ -24,7 +24,7 @@ export function ReviewList() {
       const data = await response.json()
       setReviews(data.reviews || [])
     } catch (error) {
-      console.error('Error fetching reviews:', error)
+      console.error('Error fetching reviews')
     } finally {
       setLoading(false)
     }
@@ -56,24 +56,80 @@ export function ReviewList() {
     }
   }
 
+  const totalReviews = reviews.length
+  const completedCount = reviews.filter((review) => review.status === 'completed').length
+  const inProgressCount = reviews.filter((review) => review.status === 'in_progress').length
+  const errorCount = reviews.filter((review) => review.status === 'error').length
+
   if (loading) {
-    return <div className="flex items-center justify-center h-64">Loading...</div>
+    return <div className="flex items-center justify-center h-64 text-sm text-muted-foreground">Loading reviews...</div>
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">PR Reviews</h1>
-        <p className="text-muted-foreground">View all code review history</p>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-bold">Reviews</h1>
+            <p className="text-muted-foreground">Track automated PR reviews and outcomes.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/settings/review-rules">
+              <Button variant="outline" size="sm">
+                Review Rules
+              </Button>
+            </Link>
+            <Link href="/settings/integrations">
+              <Button size="sm">Connect GitHub</Button>
+            </Link>
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Total reviews</p>
+              <p className="text-2xl font-semibold">{totalReviews}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Completed</p>
+              <p className="text-2xl font-semibold">{completedCount}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">In progress</p>
+              <p className="text-2xl font-semibold">{inProgressCount}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Needs attention</p>
+              <p className="text-2xl font-semibold">{errorCount}</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {reviews.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground mb-4">No reviews yet</p>
-            <p className="text-sm text-muted-foreground">
-              Connect your GitHub repository to enable automatic PR reviews
+          <CardContent className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+            <p className="text-muted-foreground">No reviews yet</p>
+            <p className="text-sm text-muted-foreground max-w-md">
+              Connect the GitHub app to start automatic PR reviews. Once enabled, every pull request will surface
+              findings and a summary here.
             </p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Link href="/settings/integrations">
+                <Button size="sm">Connect GitHub</Button>
+              </Link>
+              <Link href="/settings/review-rules">
+                <Button size="sm" variant="outline">
+                  Configure rules
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       ) : (
@@ -85,18 +141,21 @@ export function ReviewList() {
               onClick={() => router.push(`/reviews/${review.id}`)}
             >
               <CardHeader>
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-4">
                   <div className="space-y-2">
-                    <CardTitle className="text-lg">{review.prTitle}</CardTitle>
-                    <CardDescription className="flex items-center gap-2">
+                    <CardTitle className="text-lg">{review.prTitle || 'Untitled review'}</CardTitle>
+                    <CardDescription className="flex flex-wrap items-center gap-2">
                       <ExternalLink className="h-3 w-3" />
-                      {review.repoUrl} · PR #{review.prNumber}
+                      <span className="text-xs">{review.repoUrl || 'Repository not set'}</span>
+                      <Badge variant="outline" className="text-[10px]">
+                        PR #{review.prNumber ?? '—'}
+                      </Badge>
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {getStatusIcon(review.status)}
                     <Badge variant={getStatusColor(review.status)} className="capitalize">
-                      {review.status.replace('_', ' ')}
+                      {review.status?.replace('_', ' ') || 'queued'}
                     </Badge>
                     {review.score !== null && <ReviewScoreBadge score={review.score} />}
                   </div>

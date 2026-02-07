@@ -1,44 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserApiKey } from '@/lib/api-keys/user-keys'
+import { API_KEY_PROVIDER_LABELS, API_KEY_PROVIDER_SET, type ApiKeyProviderId } from '@/lib/api-keys/providers'
 
-type Provider =
-  | 'openai'
-  | 'gemini'
-  | 'cursor'
-  | 'anthropic'
-  | 'aigateway'
-  | 'groq'
-  | 'openrouter'
-  | 'vercel'
-  | 'synthetic'
-  | 'zai'
-  | 'huggingface'
-  | 'cerebras'
-  | 'vertexai'
-  | 'bedrock'
-  | 'azure'
-  | 'openai-compat'
-  | 'anthropic-compat'
-
-const PROVIDER_LABELS: Record<Provider, string> = {
-  openai: 'OpenAI',
-  gemini: 'Gemini',
-  cursor: 'Cursor',
-  anthropic: 'Anthropic',
-  aigateway: 'AI Gateway',
-  groq: 'Groq',
-  openrouter: 'OpenRouter',
-  vercel: 'Vercel AI Gateway',
-  synthetic: 'Synthetic',
-  zai: 'Z.ai',
-  huggingface: 'Hugging Face',
-  cerebras: 'Cerebras',
-  vertexai: 'Vertex AI',
-  bedrock: 'Amazon Bedrock',
-  azure: 'Azure OpenAI',
-  'openai-compat': 'OpenAI Compatible',
-  'anthropic-compat': 'Anthropic Compatible',
-}
+type Provider = ApiKeyProviderId
 
 export async function GET(req: NextRequest) {
   try {
@@ -49,22 +13,22 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Provider parameter is required' }, { status: 400 })
     }
 
-    if (!PROVIDER_LABELS[provider as Provider]) {
+    if (!API_KEY_PROVIDER_SET.has(provider as Provider)) {
       return NextResponse.json({ error: 'Invalid provider' }, { status: 400 })
     }
 
     // Check if API key is available (either user's or system)
-    const apiKey = await getUserApiKey(provider as any)
+    const apiKey = await getUserApiKey(provider as Provider)
     const hasKey = !!apiKey
 
     return NextResponse.json({
       success: true,
       hasKey,
       provider,
-      providerName: PROVIDER_LABELS[provider as Provider],
+      providerName: API_KEY_PROVIDER_LABELS[provider as Provider],
     })
   } catch (error) {
-    console.error('Error checking API key:', error)
+    console.error('Error checking API key')
     return NextResponse.json({ error: 'Failed to check API key' }, { status: 500 })
   }
 }

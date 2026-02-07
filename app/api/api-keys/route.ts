@@ -4,26 +4,10 @@ import { db } from '@/lib/db/client'
 import { keys } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
-import { encrypt, decrypt } from '@/lib/crypto'
+import { encrypt } from '@/lib/crypto'
+import { API_KEY_PROVIDER_SET, type ApiKeyProviderId } from '@/lib/api-keys/providers'
 
-type Provider =
-  | 'openai'
-  | 'gemini'
-  | 'cursor'
-  | 'anthropic'
-  | 'aigateway'
-  | 'groq'
-  | 'openrouter'
-  | 'vercel'
-  | 'synthetic'
-  | 'zai'
-  | 'huggingface'
-  | 'cerebras'
-  | 'vertexai'
-  | 'bedrock'
-  | 'azure'
-  | 'openai-compat'
-  | 'anthropic-compat'
+type Provider = ApiKeyProviderId
 
 export async function GET(req: NextRequest) {
   try {
@@ -46,7 +30,7 @@ export async function GET(req: NextRequest) {
       apiKeys: userKeys,
     })
   } catch (error) {
-    console.error('Error fetching API keys:', error)
+    console.error('Error fetching API keys')
     return NextResponse.json({ error: 'Failed to fetch API keys' }, { status: 500 })
   }
 }
@@ -66,27 +50,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Provider and API key are required' }, { status: 400 })
     }
 
-    if (
-      ![
-        'openai',
-        'gemini',
-        'cursor',
-        'anthropic',
-        'aigateway',
-        'groq',
-        'openrouter',
-        'vercel',
-        'synthetic',
-        'zai',
-        'huggingface',
-        'cerebras',
-        'vertexai',
-        'bedrock',
-        'azure',
-        'openai-compat',
-        'anthropic-compat',
-      ].includes(provider)
-    ) {
+    if (!API_KEY_PROVIDER_SET.has(provider)) {
       return NextResponse.json({ error: 'Invalid provider' }, { status: 400 })
     }
 
@@ -120,7 +84,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error saving API key:', error)
+    console.error('Error saving API key')
     return NextResponse.json({ error: 'Failed to save API key' }, { status: 500 })
   }
 }
@@ -140,11 +104,15 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Provider is required' }, { status: 400 })
     }
 
+    if (!API_KEY_PROVIDER_SET.has(provider)) {
+      return NextResponse.json({ error: 'Invalid provider' }, { status: 400 })
+    }
+
     await db.delete(keys).where(and(eq(keys.userId, session.user.id), eq(keys.provider, provider)))
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting API key:', error)
+    console.error('Error deleting API key')
     return NextResponse.json({ error: 'Failed to delete API key' }, { status: 500 })
   }
 }
