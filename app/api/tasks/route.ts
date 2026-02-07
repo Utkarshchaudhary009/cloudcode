@@ -254,8 +254,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Validation failed',
-          details: error.errors,
-          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
+          details: error.issues,
+          message: error.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
         },
         { status: 400 },
       )
