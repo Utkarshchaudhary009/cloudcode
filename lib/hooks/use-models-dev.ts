@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  DEFAULT_OPENCODE_MODEL,
   OPENCODE_PROVIDER_LABELS,
-  OPENCODE_PROVIDER_MODELS,
   SUPPORTED_OPENCODE_PROVIDERS,
   type OpenCodeProviderId,
 } from '@/lib/opencode/providers'
@@ -36,13 +34,7 @@ type ModelsDevCache = {
 
 const getFallbackModelsByProvider = (): Record<OpenCodeProviderId, ModelsDevModelOption[]> => {
   return Object.fromEntries(
-    SUPPORTED_OPENCODE_PROVIDERS.map((provider) => [
-      provider,
-      (OPENCODE_PROVIDER_MODELS[provider] || []).map((model) => ({
-        value: model.value,
-        label: model.label,
-      })),
-    ]),
+    SUPPORTED_OPENCODE_PROVIDERS.map((provider) => [provider, [] as ModelsDevModelOption[]]),
   ) as Record<OpenCodeProviderId, ModelsDevModelOption[]>
 }
 
@@ -55,7 +47,10 @@ const getFallbackProviders = (): ModelsDevProviderOption[] => {
 }
 
 const getFallbackDefaultModels = (): Record<OpenCodeProviderId, string> => {
-  return { ...DEFAULT_OPENCODE_MODEL }
+  return Object.fromEntries(SUPPORTED_OPENCODE_PROVIDERS.map((provider) => [provider, ''])) as Record<
+    OpenCodeProviderId,
+    string
+  >
 }
 
 const readCache = (): ModelsDevCache | null => {
@@ -219,7 +214,10 @@ const buildCatalogFromData = (data: unknown): ModelsDevCache => {
     modelsByProvider[provider].sort((a, b) => a.label.localeCompare(b.label))
   })
 
-  const defaultModels = { ...DEFAULT_OPENCODE_MODEL }
+  const defaultModels = Object.fromEntries(SUPPORTED_OPENCODE_PROVIDERS.map((provider) => [provider, ''])) as Record<
+    OpenCodeProviderId,
+    string
+  >
   SUPPORTED_OPENCODE_PROVIDERS.forEach((provider) => {
     const modelsForProvider = modelsByProvider[provider]
     if (modelsForProvider.length > 0) {
