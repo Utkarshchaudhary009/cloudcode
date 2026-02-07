@@ -22,12 +22,8 @@ import { Label } from '@/components/ui/label'
 import { User, Calendar, MessageSquare, MoreVertical, ListTodo } from 'lucide-react'
 import { toast } from 'sonner'
 import type { OpenCodeProviderId } from '@/lib/opencode/providers'
-import {
-  DEFAULT_OPENCODE_MODEL,
-  DEFAULT_OPENCODE_PROVIDER,
-  OPENCODE_PROVIDERS,
-  OPENCODE_PROVIDER_MODELS,
-} from '@/lib/opencode/providers'
+import { DEFAULT_OPENCODE_PROVIDER } from '@/lib/opencode/providers'
+import { useModelsDevCatalog } from '@/lib/hooks/use-models-dev'
 
 function formatDistanceToNow(date: Date): string {
   const now = new Date()
@@ -87,7 +83,8 @@ export function RepoIssues({ owner, repo }: RepoIssuesProps) {
   const [showCreateTaskDialog, setShowCreateTaskDialog] = useState(false)
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null)
   const [selectedAgent, setSelectedAgent] = useState<OpenCodeProviderId>(DEFAULT_OPENCODE_PROVIDER)
-  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_OPENCODE_MODEL[DEFAULT_OPENCODE_PROVIDER])
+  const { providers, modelsByProvider, defaultModels } = useModelsDevCatalog()
+  const [selectedModel, setSelectedModel] = useState<string>(defaultModels[DEFAULT_OPENCODE_PROVIDER])
   const [installDeps, setInstallDeps] = useState(false)
   const [maxDuration, setMaxDuration] = useState(300)
   const [keepAlive, setKeepAlive] = useState(false)
@@ -115,12 +112,12 @@ export function RepoIssues({ owner, repo }: RepoIssuesProps) {
   }, [owner, repo])
 
   useEffect(() => {
-    const providerModels = OPENCODE_PROVIDER_MODELS[selectedAgent as keyof typeof OPENCODE_PROVIDER_MODELS]
-    const defaultModel = DEFAULT_OPENCODE_MODEL[selectedAgent as keyof typeof DEFAULT_OPENCODE_MODEL]
+    const providerModels = modelsByProvider[selectedAgent]
+    const defaultModel = defaultModels[selectedAgent]
     if (providerModels && !providerModels.find((m) => m.value === selectedModel)) {
       setSelectedModel(defaultModel)
     }
-  }, [selectedAgent, selectedModel])
+  }, [defaultModels, modelsByProvider, selectedAgent, selectedModel])
 
   const handleCreateTaskFromIssue = (issue: Issue) => {
     setSelectedIssue(issue)
@@ -293,12 +290,37 @@ export function RepoIssues({ owner, repo }: RepoIssuesProps) {
                 <label className="text-sm font-medium mb-2 block">Provider</label>
                 <Select value={selectedAgent} onValueChange={(value) => setSelectedAgent(value as OpenCodeProviderId)}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a provider" />
+                    <SelectValue placeholder="Select a provider">
+                      {selectedAgent
+                        ? (() => {
+                            const provider = providers.find((item) => item.value === selectedAgent)
+                            return provider ? (
+                              <div className="flex items-center gap-2">
+                                <img
+                                  src={provider.logoUrl}
+                                  alt={`${provider.label} logo`}
+                                  className="h-4 w-4"
+                                  loading="lazy"
+                                />
+                                <span>{provider.label}</span>
+                              </div>
+                            ) : null
+                          })()
+                        : null}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {OPENCODE_PROVIDERS.map((provider) => (
+                    {providers.map((provider) => (
                       <SelectItem key={provider.value} value={provider.value}>
-                        {provider.label}
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={provider.logoUrl}
+                            alt={`${provider.label} logo`}
+                            className="h-4 w-4"
+                            loading="lazy"
+                          />
+                          <span>{provider.label}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -311,7 +333,7 @@ export function RepoIssues({ owner, repo }: RepoIssuesProps) {
                     <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {OPENCODE_PROVIDER_MODELS[selectedAgent as keyof typeof OPENCODE_PROVIDER_MODELS]?.map((model) => (
+                    {modelsByProvider[selectedAgent]?.map((model) => (
                       <SelectItem key={model.value} value={model.value}>
                         {model.label}
                       </SelectItem>

@@ -36,15 +36,8 @@ import { cn } from '@/lib/utils'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
 import { OpenCode } from '@/components/logos'
-import {
-  DEFAULT_OPENCODE_MODEL,
-  DEFAULT_OPENCODE_PROVIDER,
-  OPENCODE_PROVIDERS,
-  OPENCODE_PROVIDER_LABELS,
-  OPENCODE_PROVIDER_MODELS,
-  getOpenCodeModelLabel,
-  normalizeOpenCodeProvider,
-} from '@/lib/opencode/providers'
+import { DEFAULT_OPENCODE_PROVIDER, normalizeOpenCodeProvider } from '@/lib/opencode/providers'
+import { useModelsDevCatalog } from '@/lib/hooks/use-models-dev'
 import { useTasks } from '@/components/app-layout'
 import {
   getShowFilesPane,
@@ -118,6 +111,7 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
   const [loadingMcpServers, setLoadingMcpServers] = useState(false)
   const [diffsCache, setDiffsCache] = useState<Record<string, DiffData>>({})
   const loadingDiffsRef = useRef(false)
+  const { providers, modelsByProvider, defaultModels, getProviderLabel, getModelLabel } = useModelsDevCatalog()
   const [refreshKey, setRefreshKey] = useState(0)
   const previousStatusRef = useRef<Task['status']>(task.status)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -126,8 +120,7 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
   const [isTryingAgain, setIsTryingAgain] = useState(false)
   const [selectedAgent, setSelectedAgent] = useState(task.selectedAgent || DEFAULT_OPENCODE_PROVIDER)
   const [selectedModel, setSelectedModel] = useState<string>(
-    task.selectedModel ||
-      DEFAULT_OPENCODE_MODEL[normalizeOpenCodeProvider(task.selectedAgent || DEFAULT_OPENCODE_PROVIDER)],
+    task.selectedModel || defaultModels[normalizeOpenCodeProvider(task.selectedAgent || DEFAULT_OPENCODE_PROVIDER)],
   )
   const [tryAgainInstallDeps, setTryAgainInstallDeps] = useState(task.installDependencies || false)
   const [tryAgainMaxDuration, setTryAgainMaxDuration] = useState(task.maxDuration || maxSandboxDuration)
@@ -180,16 +173,16 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
     const taskModel = task.selectedModel
 
     // Check if the task's model exists in the provider's model list
-    const providerModels = OPENCODE_PROVIDER_MODELS[provider]
+    const providerModels = modelsByProvider[provider]
     const modelExists = providerModels?.some((m) => m.value === taskModel)
 
     // Use task model if it exists for the provider, otherwise use default
-    const correctModel = modelExists && taskModel ? taskModel : DEFAULT_OPENCODE_MODEL[provider]
+    const correctModel = modelExists && taskModel ? taskModel : defaultModels[provider]
 
     if (correctModel !== selectedModel) {
       setSelectedModel(correctModel)
     }
-  }, [selectedAgent, task.selectedModel, selectedModel])
+  }, [defaultModels, modelsByProvider, selectedAgent, task.selectedModel, selectedModel])
 
   // File search state
   const [fileSearchQuery, setFileSearchQuery] = useState('')
@@ -609,16 +602,10 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
     }
   }, [task.id, task.sandboxUrl])
 
-  const getProviderLabel = (provider: string | null) => {
-    if (!provider) return null
-    const normalized = normalizeOpenCodeProvider(provider)
-    return OPENCODE_PROVIDER_LABELS[normalized]
-  }
-
   // Get readable model name
   const getModelName = (modelId: string | null, provider: string | null) => {
     if (!modelId || !provider) return modelId
-    return getOpenCodeModelLabel(provider, modelId)
+    return getModelLabel(provider, modelId)
   }
 
   // Function to determine which icon to show for a connector
@@ -1027,10 +1014,10 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
   useEffect(() => {
     if (selectedAgent) {
       const provider = normalizeOpenCodeProvider(selectedAgent)
-      const defaultModel = DEFAULT_OPENCODE_MODEL[provider]
+      const defaultModel = defaultModels[provider]
       setSelectedModel(defaultModel)
     }
-  }, [selectedAgent])
+  }, [defaultModels, selectedAgent])
 
   // Scroll active tab into view when it changes
   useEffect(() => {
@@ -2384,12 +2371,37 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
                 <label className="text-sm font-medium mb-2 block">Provider</label>
                 <Select value={selectedAgent} onValueChange={setSelectedAgent}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a provider" />
+                    <SelectValue placeholder="Select a provider">
+                      {selectedAgent
+                        ? (() => {
+                            const provider = providers.find((item) => item.value === selectedAgent)
+                            return provider ? (
+                              <div className="flex items-center gap-2">
+                                <img
+                                  src={provider.logoUrl}
+                                  alt={`${provider.label} logo`}
+                                  className="h-4 w-4"
+                                  loading="lazy"
+                                />
+                                <span>{provider.label}</span>
+                              </div>
+                            ) : null
+                          })()
+                        : null}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {OPENCODE_PROVIDERS.map((provider) => (
+                    {providers.map((provider) => (
                       <SelectItem key={provider.value} value={provider.value}>
-                        {provider.label}
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={provider.logoUrl}
+                            alt={`${provider.label} logo`}
+                            className="h-4 w-4"
+                            loading="lazy"
+                          />
+                          <span>{provider.label}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -2402,7 +2414,7 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
                     <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {OPENCODE_PROVIDER_MODELS[selectedAgent as keyof typeof OPENCODE_PROVIDER_MODELS]?.map((model) => (
+                    {modelsByProvider[normalizeOpenCodeProvider(selectedAgent)]?.map((model) => (
                       <SelectItem key={model.value} value={model.value}>
                         {model.label}
                       </SelectItem>
