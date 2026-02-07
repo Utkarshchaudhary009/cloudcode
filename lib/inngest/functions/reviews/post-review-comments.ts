@@ -11,7 +11,7 @@ export const postReviewComments = inngest.createFunction(
     retries: 3,
   },
   { event: 'review/post-comments' },
-  async ({ event, step }) => {
+  async ({ event, step }: { event: any; step: any }) => {
     const { reviewId, userId, repoUrl, prNumber, findings } = event.data
 
     const account = await step.run('get-github-account', async () => {

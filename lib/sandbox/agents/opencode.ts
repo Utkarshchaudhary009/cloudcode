@@ -369,7 +369,8 @@ chmod 600 ~/.opencode/config.json`
       await logger.info('Failed to create OpenCode configuration file')
     }
 
-    if (process.env.GEMINI_API_KEY) {
+    const googleKey = process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY
+    if (googleKey) {
       console.log('Configuring Gemini provider')
       if (logger) {
         await logger.info('Configuring Gemini provider')
@@ -379,30 +380,28 @@ chmod 600 ~/.opencode/config.json`
         '-c',
         `echo "${googleKey}" | opencode auth add google`,
       ])
-      if (googleAuthResult.success) {
+      if (geminiAuthResult.success) {
         authSetupCommands.push('Google provider configured')
       }
     }
 
-<<<<<<< HEAD
     if (vertexProject) {
       console.log('Configuring Google Vertex provider...')
       const vertexAuthResult = await runCommandInSandbox(sandbox, 'sh', [
         '-c',
         `echo "${vertexProject}" | opencode auth add google-vertex`,
-        authSetupCommands.push('Gemini provider configured')
->>>>>>> 64decfa8fa4e9e20dcd9b6400c77af92cabe260
+      ])
+      if (vertexAuthResult.success) {
+        authSetupCommands.push('Google Vertex provider configured')
       }
     }
 
     if (process.env.GROQ_API_KEY) {
-<<<<<<< HEAD
       console.log('Configuring Groq provider')
       if (logger) {
         await logger.info('Configuring Groq provider')
       }
 
->>>>>>> 64decfa8fa4e9e20dcd9b6400c77af92cabe2602
       const groqAuthResult = await runCommandInSandbox(sandbox, 'sh', [
         '-c',
         `echo "${process.env.GROQ_API_KEY}" | opencode auth add groq`,
@@ -607,49 +606,46 @@ chmod 600 ~/.opencode/config.json`
       }
     }
 
-    if (process.env.OPENAI_API_KEY) {
-      console.log('Configuring OpenAI Compatible provider')
+    if (process.env.MINIMAX_API_KEY) {
+      console.log('Configuring MiniMax provider')
       if (logger) {
-        await logger.info('Configuring OpenAI Compatible provider')
+        await logger.info('Configuring MiniMax provider')
       }
 
-      const openaiCompatAuthResult = await runCommandInSandbox(sandbox, 'sh', [
+      const minimaxAuthResult = await runCommandInSandbox(sandbox, 'sh', [
         '-c',
         `echo "${process.env.MINIMAX_API_KEY}" | opencode auth add minimax`,
       ])
 
-      if (!openaiCompatAuthResult.success) {
-        console.warn('Failed to configure OpenAI Compatible provider')
+      if (!minimaxAuthResult.success) {
+        console.warn('Failed to configure MiniMax provider')
         if (logger) {
-          await logger.info('Failed to configure OpenAI Compatible provider')
+          await logger.info('Failed to configure MiniMax provider')
         }
       } else {
-        authSetupCommands.push('OpenAI Compatible provider configured')
+        authSetupCommands.push('MiniMax provider configured')
       }
     }
 
-    if (process.env.ANTHROPIC_API_KEY) {
-      console.log('Configuring Anthropic Compatible provider')
+    const opencodeKey = process.env.OPENCODE_API_KEY ?? process.env.ZEN_API_KEY
+    if (opencodeKey) {
+      console.log('Configuring OpenCode Zen provider')
       if (logger) {
-        await logger.info('Configuring Anthropic Compatible provider')
+        await logger.info('Configuring OpenCode Zen provider')
       }
 
-      const anthropicCompatAuthResult = await runCommandInSandbox(sandbox, 'sh', [
+      const opencodeAuthResult = await runCommandInSandbox(sandbox, 'sh', [
         '-c',
         `echo "${opencodeKey}" | opencode auth add opencode`,
       ])
-      if (authResult.success) {
-        authSetupCommands.push('OpenCode Zen provider configured')
-      }
-    }
 
-      if (!anthropicCompatAuthResult.success) {
-        console.warn('Failed to configure Anthropic Compatible provider')
+      if (!opencodeAuthResult.success) {
+        console.warn('Failed to configure OpenCode Zen provider')
         if (logger) {
-          await logger.info('Failed to configure Anthropic Compatible provider')
+          await logger.info('Failed to configure OpenCode Zen provider')
         }
       } else {
-        authSetupCommands.push('Anthropic Compatible provider configured')
+        authSetupCommands.push('OpenCode Zen provider configured')
       }
     }
 

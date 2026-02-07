@@ -21,13 +21,17 @@ export async function getSetting(
     return defaultValue
   }
 
-  const userSetting = await db
-    .select()
-    .from(settings)
-    .where(and(eq(settings.userId, userId), eq(settings.key, key)))
-    .limit(1)
+  try {
+    const userSetting = await db
+      .select()
+      .from(settings)
+      .where(and(eq(settings.userId, userId), eq(settings.key, key)))
+      .limit(1)
 
-  return userSetting[0]?.value ?? defaultValue
+    return userSetting[0]?.value ?? defaultValue
+  } catch {
+    return defaultValue
+  }
 }
 
 /**

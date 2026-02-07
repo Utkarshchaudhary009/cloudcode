@@ -12,7 +12,7 @@ export const handlePrReview = inngest.createFunction(
     retries: 3,
   },
   { event: 'pr/review.requested' },
-  async ({ event, step }) => {
+  async ({ event, step }: { event: any; step: any }) => {
     const { userId, repoUrl, prNumber, headSha, prTitle, prAuthor, baseBranch, headBranch } = event.data
 
     const existingReview = await step.run('check-existing', async () => {
