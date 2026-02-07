@@ -44,8 +44,9 @@ const statusConfig = {
 export default function VercelAutoFixSettingsPage() {
   const [projects, setProjects] = useState<VercelProject[]>([])
   const [loading, setLoading] = useState(true)
-  const [needsVercelToken, setNeedsVercelToken] = useState(false)
+  const [needsVercelAuth, setNeedsVercelAuth] = useState(false)
   const [togglingProject, setTogglingProject] = useState<string | null>(null)
+  const [connectingVercel, setConnectingVercel] = useState(false)
 
   useEffect(() => {
     fetchProjects()
@@ -57,18 +58,37 @@ export default function VercelAutoFixSettingsPage() {
       const res = await fetch('/api/vercel/projects')
       const data = await res.json()
 
-      if (data.needsVercelToken) {
-        setNeedsVercelToken(true)
+      if (data.needsVercelAuth) {
+        setNeedsVercelAuth(true)
         setProjects([])
       } else if (data.success) {
         setProjects(data.projects)
-        setNeedsVercelToken(false)
+        setNeedsVercelAuth(false)
       }
     } catch (error) {
-      console.error('Error fetching projects:', error)
+      console.error('Error fetching projects', error)
       toast.error('Failed to load projects')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleConnectVercel = async () => {
+    setConnectingVercel(true)
+    try {
+      const res = await fetch('/api/auth/signin/vercel?next=/settings/vercel-auto-fix', {
+        method: 'POST',
+      })
+      const data = await res.json()
+      if (data?.url) {
+        window.location.href = data.url
+        return
+      }
+      toast.error('Failed to start Vercel connection')
+    } catch (error) {
+      toast.error('Failed to start Vercel connection')
+    } finally {
+      setConnectingVercel(false)
     }
   }
 
@@ -151,7 +171,7 @@ export default function VercelAutoFixSettingsPage() {
     )
   }
 
-  if (needsVercelToken) {
+  if (needsVercelAuth) {
     return (
       <div className="container py-8 max-w-5xl">
         <Card className="border-dashed">
@@ -161,14 +181,16 @@ export default function VercelAutoFixSettingsPage() {
             </div>
             <h2 className="text-2xl font-bold mb-2">Connect Your Vercel Account</h2>
             <p className="text-muted-foreground max-w-md mx-auto mb-6">
-              Add your Vercel API key to automatically detect your projects and enable AI-powered build fixes.
+              Connect Vercel once to automatically detect your projects and enable AI-powered build fixes.
             </p>
-            <Link href="/api-keys">
-              <Button size="lg">
+            <Button size="lg" onClick={handleConnectVercel} disabled={connectingVercel}>
+              {connectingVercel ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
                 <KeyRound className="h-4 w-4 mr-2" />
-                Add Vercel API Key
-              </Button>
-            </Link>
+              )}
+              Connect Vercel
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -281,7 +303,7 @@ export default function VercelAutoFixSettingsPage() {
           <CardContent className="py-12 text-center">
             <Zap className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">No Vercel Projects Found</h3>
-            <p className="text-muted-foreground">Make sure your Vercel API key has access to your projects.</p>
+            <p className="text-muted-foreground">Make sure your Vercel account has projects available.</p>
           </CardContent>
         </Card>
       )}
