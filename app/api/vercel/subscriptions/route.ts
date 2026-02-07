@@ -5,11 +5,16 @@ import { vercelSubscriptions } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { generateId } from '@/lib/utils/id'
 import { Vercel } from '@vercel/sdk'
+import { getOAuthToken } from '@/lib/session/get-oauth-token'
 import { decrypt } from '@/lib/crypto'
 
 // Get user's Vercel token
 async function getVercelToken(userId: string): Promise<string | null> {
-  // First try user's stored Vercel API key
+  const tokenData = await getOAuthToken(userId, 'vercel')
+  if (tokenData?.accessToken) {
+    return tokenData.accessToken
+  }
+
   const { keys } = await import('@/lib/db/schema')
   const [vercelKey] = await db
     .select()
@@ -40,7 +45,7 @@ export async function GET() {
 
     return NextResponse.json({ success: true, subscriptions })
   } catch (error) {
-    console.error('Error fetching subscriptions:', error)
+    console.error('Error fetching subscriptions', error)
     return NextResponse.json({ error: 'Failed to fetch subscriptions' }, { status: 500 })
   }
 }
@@ -93,7 +98,7 @@ export async function POST(request: NextRequest) {
         webhookId = webhook.id
         console.log('Created Vercel webhook for project')
       } catch (webhookError) {
-        console.error('Failed to create Vercel webhook:', webhookError)
+        console.error('Failed to create Vercel webhook', webhookError)
         // Continue without webhook - user can set up manually
       }
     }
@@ -124,7 +129,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error creating subscription:', error)
+    console.error('Error creating subscription', error)
     return NextResponse.json({ error: 'Failed to create subscription' }, { status: 500 })
   }
 }
@@ -164,7 +169,7 @@ export async function DELETE(request: NextRequest) {
           await vercel.webhooks.deleteWebhook({ id: subscription.webhookId })
           console.log('Deleted Vercel webhook')
         } catch (webhookError) {
-          console.error('Failed to delete Vercel webhook:', webhookError)
+          console.error('Failed to delete Vercel webhook', webhookError)
         }
       }
     }
@@ -174,7 +179,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting subscription:', error)
+    console.error('Error deleting subscription', error)
     return NextResponse.json({ error: 'Failed to delete subscription' }, { status: 500 })
   }
 }
@@ -216,7 +221,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error updating subscription:', error)
+    console.error('Error updating subscription', error)
     return NextResponse.json({ error: 'Failed to update subscription' }, { status: 500 })
   }
 }

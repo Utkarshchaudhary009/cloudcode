@@ -3,8 +3,9 @@ import { getServerSession } from '@/lib/session/get-server-session'
 import { db } from '@/lib/db/client'
 import { keys, vercelSubscriptions } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
-import { decrypt } from '@/lib/crypto'
 import { listProjects, VercelProject } from '@/lib/vercel-client/projects'
+import { getOAuthToken } from '@/lib/session/get-oauth-token'
+import { decrypt } from '@/lib/crypto'
 
 interface ProjectWithSubscription extends VercelProject {
   isSubscribed: boolean
@@ -20,20 +21,24 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user's Vercel token
-    const [vercelKey] = await db
-      .select()
-      .from(keys)
-      .where(and(eq(keys.userId, session.user.id), eq(keys.provider, 'vercel')))
-      .limit(1)
+    const tokenData = await getOAuthToken(session.user.id, 'vercel')
+    let vercelToken = tokenData?.accessToken
 
-    const vercelToken = vercelKey ? decrypt(vercelKey.value) : process.env.VERCEL_API_KEY
+    if (!vercelToken) {
+      const [vercelKey] = await db
+        .select()
+        .from(keys)
+        .where(and(eq(keys.userId, session.user.id), eq(keys.provider, 'vercel')))
+        .limit(1)
+
+      vercelToken = vercelKey ? decrypt(vercelKey.value) : process.env.VERCEL_API_KEY
+    }
 
     if (!vercelToken) {
       return NextResponse.json({
         success: false,
-        error: 'No Vercel API key configured',
-        needsVercelToken: true,
+        error: 'Vercel connection required',
+        needsVercelAuth: true,
         projects: [],
       })
     }
@@ -72,7 +77,7 @@ export async function GET() {
       projects: projectsWithStatus,
     })
   } catch (error) {
-    console.error('Error fetching Vercel projects:', error)
+    console.error('Error fetching Vercel projects', error)
     return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 })
   }
 }
