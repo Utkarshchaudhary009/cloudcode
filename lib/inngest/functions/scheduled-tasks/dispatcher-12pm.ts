@@ -6,7 +6,7 @@ import { eq, and } from 'drizzle-orm'
 export const scheduledTasksDispatcher12pm = inngest.createFunction(
   { id: 'scheduled-tasks-dispatcher-12pm' },
   { cron: 'TZ=UTC 0 12 * * *' },
-  async ({ step }) => {
+  async ({ step }: { step: any }) => {
     const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase()
 
     const tasks = await step.run('fetch-tasks', async () => {
@@ -16,7 +16,7 @@ export const scheduledTasksDispatcher12pm = inngest.createFunction(
         .where(and(eq(scheduledTasks.timeSlot, '12pm'), eq(scheduledTasks.enabled, true)))
     })
 
-    const tasksToRun = tasks.filter((task) => {
+    const tasksToRun = tasks.filter((task: any) => {
       const days = task.days as string[]
       return days.includes('daily') || days.includes(dayOfWeek)
     })
@@ -27,7 +27,7 @@ export const scheduledTasksDispatcher12pm = inngest.createFunction(
 
     await step.sendEvent(
       'fan-out-tasks',
-      tasksToRun.map((task) => ({
+      tasksToRun.map((task: any) => ({
         name: 'scheduled-task/execute',
         data: {
           scheduledTaskId: task.id,

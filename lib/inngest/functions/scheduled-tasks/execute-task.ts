@@ -11,7 +11,7 @@ export const executeScheduledTask = inngest.createFunction(
     retries: 3,
   },
   { event: 'scheduled-task/execute' },
-  async ({ event, step }) => {
+  async ({ event, step }: { event: any; step: any }) => {
     const { scheduledTaskId, userId, repoUrl, prompt, taskType, selectedAgent, selectedModel } = event.data
 
     const taskId = await step.run('create-task', async () => {
