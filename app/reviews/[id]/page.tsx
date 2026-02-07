@@ -1,11 +1,12 @@
 import { Suspense } from 'react'
 import { ReviewDetail } from '@/components/reviews/review-detail'
 
-export default function ReviewDetailPage({ params }: { params: { id: string } }) {
+export default async function ReviewDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   return (
     <div className="container py-8 max-w-5xl">
       <Suspense fallback={<div>Loading review...</div>}>
-        <ReviewDetail reviewId={params.id} />
+        <ReviewDetail reviewId={id} />
       </Suspense>
     </div>
   )

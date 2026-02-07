@@ -1,7 +1,8 @@
 import { Suspense } from 'react'
 import { ReviewRuleForm } from '@/components/review-rules/review-rule-form'
 
-export default function EditReviewRulePage({ params }: { params: { id: string } }) {
+export default async function EditReviewRulePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   return (
     <div className="container py-8 max-w-2xl">
       <div className="mb-6">
@@ -9,7 +10,7 @@ export default function EditReviewRulePage({ params }: { params: { id: string } 
         <p className="text-muted-foreground">Modify your code review rule configuration</p>
       </div>
       <Suspense fallback={<div>Loading rule...</div>}>
-        <ReviewRuleForm ruleId={params.id} onSuccess={() => (window.location.href = '/settings/review-rules')} />
+        <ReviewRuleForm ruleId={id} onSuccess={() => (window.location.href = '/settings/review-rules')} />
       </Suspense>
     </div>
   )
