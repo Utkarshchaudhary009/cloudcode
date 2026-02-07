@@ -3,22 +3,36 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Github, ExternalLink, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
+import { RepoSelector } from '@/components/repo-selector'
 
 export function GitHubAppInstall() {
-  const [repoUrl, setRepoUrl] = useState('')
+  const [selectedOwner, setSelectedOwner] = useState('')
+  const [selectedRepo, setSelectedRepo] = useState('')
   const [autoReviewEnabled, setAutoReviewEnabled] = useState(true)
   const [reviewOnDraft, setReviewOnDraft] = useState(false)
   const [loading, setLoading] = useState(false)
   const [installed, setInstalled] = useState(false)
 
+  const repoUrl = selectedOwner && selectedRepo ? `https://github.com/${selectedOwner}/${selectedRepo}` : ''
+
+  const handleOwnerChange = (owner: string) => {
+    setSelectedOwner(owner)
+    setSelectedRepo('')
+  }
+
   const handleInstall = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!repoUrl) {
+      toast.error('Please select a repository')
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -44,6 +58,12 @@ export function GitHubAppInstall() {
     }
   }
 
+  const handleReset = () => {
+    setInstalled(false)
+    setSelectedOwner('')
+    setSelectedRepo('')
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -65,14 +85,17 @@ export function GitHubAppInstall() {
               <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
                 <form onSubmit={handleInstall} className="space-y-4">
                   <div>
-                    <Label htmlFor="repoUrl">Repository URL</Label>
-                    <Input
-                      id="repoUrl"
-                      value={repoUrl}
-                      onChange={(e) => setRepoUrl(e.target.value)}
-                      placeholder="https://github.com/owner/repo"
-                      required
+                    <Label>Repository</Label>
+                    <RepoSelector
+                      selectedOwner={selectedOwner}
+                      selectedRepo={selectedRepo}
+                      onOwnerChange={handleOwnerChange}
+                      onRepoChange={setSelectedRepo}
+                      size="default"
                     />
+                    {repoUrl && (
+                      <p className="text-xs text-muted-foreground mt-1">{repoUrl}</p>
+                    )}
                   </div>
 
                   <div className="flex items-center space-x-2">
@@ -85,7 +108,7 @@ export function GitHubAppInstall() {
                     <Label htmlFor="reviewOnDraft">Review draft PRs</Label>
                   </div>
 
-                  <Button type="submit" disabled={loading} className="w-full">
+                  <Button type="submit" disabled={loading || !repoUrl} className="w-full">
                     {loading ? (
                       'Installing...'
                     ) : (
@@ -121,7 +144,7 @@ export function GitHubAppInstall() {
                 <Badge variant="outline">{autoReviewEnabled ? 'Auto reviews on' : 'Auto reviews off'}</Badge>
                 <Badge variant="outline">{reviewOnDraft ? 'Draft reviews on' : 'Draft reviews off'}</Badge>
               </div>
-              <Button variant="outline" onClick={() => setInstalled(false)} className="mt-4">
+              <Button variant="outline" onClick={handleReset} className="mt-4">
                 Install Another Repository
               </Button>
             </div>

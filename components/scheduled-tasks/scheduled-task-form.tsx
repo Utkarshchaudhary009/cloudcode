@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { TimeSlotPicker } from './time-slot-picker'
 import { DayPicker } from './day-picker'
 import { useRouter } from 'next/navigation'
+import { RepoSelector } from '@/components/repo-selector'
+import { API_KEY_PROVIDERS } from '@/lib/api-keys/providers'
 
 interface ScheduledTaskFormProps {
   task?: any
@@ -17,11 +19,16 @@ interface ScheduledTaskFormProps {
   onSuccess?: () => void
 }
 
+// Get unique provider list for agent selection
+const AI_PROVIDERS = API_KEY_PROVIDERS.map((p) => ({ id: p.id, name: p.name }))
+
 export function ScheduledTaskForm({ task: initialTask, taskId, onSuccess }: ScheduledTaskFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [fetchingTask, setFetchingTask] = useState(!!taskId && !initialTask)
   const [task, setTask] = useState(initialTask)
+  const [selectedOwner, setSelectedOwner] = useState('')
+  const [selectedRepo, setSelectedRepo] = useState('')
   const [formData, setFormData] = useState({
     name: initialTask?.name || '',
     repoUrl: initialTask?.repoUrl || '',
@@ -34,6 +41,17 @@ export function ScheduledTaskForm({ task: initialTask, taskId, onSuccess }: Sche
     selectedModel: initialTask?.selectedModel || '',
     enabled: initialTask?.enabled ?? true,
   })
+
+  // Parse existing repo URL to owner/repo
+  useEffect(() => {
+    if (formData.repoUrl) {
+      const match = formData.repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/)
+      if (match) {
+        setSelectedOwner(match[1])
+        setSelectedRepo(match[2].replace('.git', ''))
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (taskId && !initialTask) {
@@ -59,10 +77,30 @@ export function ScheduledTaskForm({ task: initialTask, taskId, onSuccess }: Sche
         selectedModel: data.task.selectedModel || '',
         enabled: data.task.enabled ?? true,
       })
+      // Parse repo URL
+      const match = data.task.repoUrl?.match(/github\.com\/([^\/]+)\/([^\/]+)/)
+      if (match) {
+        setSelectedOwner(match[1])
+        setSelectedRepo(match[2].replace('.git', ''))
+      }
     } catch (error) {
       console.error('Error fetching task:', error)
     } finally {
       setFetchingTask(false)
+    }
+  }
+
+  // Update repoUrl when owner/repo changes
+  const handleOwnerChange = (owner: string) => {
+    setSelectedOwner(owner)
+    setSelectedRepo('')
+    setFormData((prev) => ({ ...prev, repoUrl: '' }))
+  }
+
+  const handleRepoChange = (repo: string) => {
+    setSelectedRepo(repo)
+    if (selectedOwner && repo) {
+      setFormData((prev) => ({ ...prev, repoUrl: `https://github.com/${selectedOwner}/${repo}` }))
     }
   }
 
@@ -113,14 +151,17 @@ export function ScheduledTaskForm({ task: initialTask, taskId, onSuccess }: Sche
         </div>
 
         <div>
-          <Label htmlFor="repoUrl">Repository URL</Label>
-          <Input
-            id="repoUrl"
-            value={formData.repoUrl}
-            onChange={(e) => setFormData({ ...formData, repoUrl: e.target.value })}
-            placeholder="https://github.com/owner/repo"
-            required
+          <Label>Repository</Label>
+          <RepoSelector
+            selectedOwner={selectedOwner}
+            selectedRepo={selectedRepo}
+            onOwnerChange={handleOwnerChange}
+            onRepoChange={handleRepoChange}
+            size="default"
           />
+          {formData.repoUrl && (
+            <p className="text-xs text-muted-foreground mt-1">{formData.repoUrl}</p>
+          )}
         </div>
 
         <div>
@@ -166,7 +207,7 @@ export function ScheduledTaskForm({ task: initialTask, taskId, onSuccess }: Sche
         </div>
 
         <div>
-          <Label htmlFor="selectedAgent">AI Agent</Label>
+          <Label htmlFor="selectedAgent">AI Provider</Label>
           <Select
             value={formData.selectedAgent}
             onValueChange={(value) => setFormData({ ...formData, selectedAgent: value })}
@@ -174,13 +215,12 @@ export function ScheduledTaskForm({ task: initialTask, taskId, onSuccess }: Sche
             <SelectTrigger id="selectedAgent">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="openai">OpenAI</SelectItem>
-              <SelectItem value="anthropic">Anthropic</SelectItem>
-              <SelectItem value="gemini">Gemini</SelectItem>
-              <SelectItem value="groq">Groq</SelectItem>
-              <SelectItem value="openrouter">OpenRouter</SelectItem>
-              <SelectItem value="vercel">Vercel</SelectItem>
+            <SelectContent className="max-h-60">
+              {AI_PROVIDERS.map((provider) => (
+                <SelectItem key={provider.id} value={provider.id}>
+                  {provider.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -199,7 +239,7 @@ export function ScheduledTaskForm({ task: initialTask, taskId, onSuccess }: Sche
         <Button type="button" variant="outline" onClick={() => router.back()}>
           Cancel
         </Button>
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading || !formData.repoUrl}>
           {loading ? 'Saving...' : task || taskId ? 'Update' : 'Create'} Task
         </Button>
       </div>

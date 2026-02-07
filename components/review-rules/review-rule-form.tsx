@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { useRouter } from 'next/navigation'
+import { RepoSelector } from '@/components/repo-selector'
 
 interface ReviewRuleFormProps {
   rule?: any
@@ -20,6 +21,8 @@ export function ReviewRuleForm({ rule: initialRule, ruleId, onSuccess }: ReviewR
   const [loading, setLoading] = useState(false)
   const [fetchingRule, setFetchingRule] = useState(!!ruleId && !initialRule)
   const [rule, setRule] = useState(initialRule)
+  const [selectedOwner, setSelectedOwner] = useState('')
+  const [selectedRepo, setSelectedRepo] = useState('')
   const [formData, setFormData] = useState({
     name: initialRule?.name || '',
     description: initialRule?.description || '',
@@ -29,6 +32,17 @@ export function ReviewRuleForm({ rule: initialRule, ruleId, onSuccess }: ReviewR
     filePatterns: initialRule?.filePatterns || [],
     enabled: initialRule?.enabled ?? true,
   })
+
+  // Parse existing repo URL to owner/repo
+  useEffect(() => {
+    if (formData.repoUrl) {
+      const match = formData.repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/)
+      if (match) {
+        setSelectedOwner(match[1])
+        setSelectedRepo(match[2].replace('.git', ''))
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (ruleId && !initialRule) {
@@ -51,11 +65,37 @@ export function ReviewRuleForm({ rule: initialRule, ruleId, onSuccess }: ReviewR
         filePatterns: data.rule.filePatterns || [],
         enabled: data.rule.enabled ?? true,
       })
+      // Parse repo URL
+      const match = data.rule.repoUrl?.match(/github\.com\/([^\/]+)\/([^\/]+)/)
+      if (match) {
+        setSelectedOwner(match[1])
+        setSelectedRepo(match[2].replace('.git', ''))
+      }
     } catch (error) {
       console.error('Error fetching rule:', error)
     } finally {
       setFetchingRule(false)
     }
+  }
+
+  // Update repoUrl when owner/repo changes
+  const handleOwnerChange = (owner: string) => {
+    setSelectedOwner(owner)
+    setSelectedRepo('')
+    setFormData((prev) => ({ ...prev, repoUrl: '' }))
+  }
+
+  const handleRepoChange = (repo: string) => {
+    setSelectedRepo(repo)
+    if (selectedOwner && repo) {
+      setFormData((prev) => ({ ...prev, repoUrl: `https://github.com/${selectedOwner}/${repo}` }))
+    }
+  }
+
+  const handleClearRepo = () => {
+    setSelectedOwner('')
+    setSelectedRepo('')
+    setFormData((prev) => ({ ...prev, repoUrl: '' }))
   }
 
   if (fetchingRule) {
@@ -158,14 +198,26 @@ export function ReviewRuleForm({ rule: initialRule, ruleId, onSuccess }: ReviewR
         </div>
 
         <div>
-          <Label htmlFor="repoUrl">Repository URL (Optional)</Label>
-          <Input
-            id="repoUrl"
-            value={formData.repoUrl}
-            onChange={(e) => setFormData({ ...formData, repoUrl: e.target.value })}
-            placeholder="https://github.com/owner/repo"
-          />
-          <p className="text-xs text-muted-foreground mt-1">Leave empty to apply to all repositories</p>
+          <Label>Repository (Optional)</Label>
+          <div className="flex items-center gap-2">
+            <RepoSelector
+              selectedOwner={selectedOwner}
+              selectedRepo={selectedRepo}
+              onOwnerChange={handleOwnerChange}
+              onRepoChange={handleRepoChange}
+              size="default"
+            />
+            {formData.repoUrl && (
+              <Button type="button" variant="ghost" size="sm" onClick={handleClearRepo}>
+                Clear
+              </Button>
+            )}
+          </div>
+          {formData.repoUrl ? (
+            <p className="text-xs text-muted-foreground mt-1">{formData.repoUrl}</p>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-1">Leave empty to apply to all repositories</p>
+          )}
         </div>
 
         <div>

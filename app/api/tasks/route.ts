@@ -22,6 +22,9 @@ import { getGitHubUser } from '@/lib/github/client'
 import { getUserApiKeys } from '@/lib/api-keys/user-keys'
 import { checkRateLimit } from '@/lib/utils/rate-limit'
 import { getMaxSandboxDuration } from '@/lib/db/settings'
+import { ZodError } from 'zod'
+
+export const maxDuration = 60 // 1 minute timeout for the API route itself (vercel limit)
 
 export async function GET() {
   try {
@@ -243,9 +246,23 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ task: newTask })
+    return NextResponse.json({ task: newTask })
   } catch (error) {
     console.error('Error creating task:', error)
-    return NextResponse.json({ error: 'Failed to create task' }, { status: 500 })
+
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Validation failed',
+          details: error.errors,
+          message: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
+        },
+        { status: 400 },
+      )
+    }
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: 'Failed to create task', message: errorMessage }, { status: 500 })
   }
 }
 

@@ -164,7 +164,7 @@ export function ApiKeysDialog({ open, onOpenChange }: ApiKeysDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>API Keys</DialogTitle>
           <DialogDescription>
@@ -172,7 +172,7 @@ export function ApiKeysDialog({ open, onOpenChange }: ApiKeysDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-y-auto flex-1 pr-2">
           {PROVIDERS.map((provider) => {
             const hasSavedKey = savedKeys.has(provider.id)
             const isCleared = clearedKeys.has(provider.id)
