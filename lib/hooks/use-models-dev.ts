@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import {
   OPENCODE_PROVIDER_LABELS,
   SUPPORTED_OPENCODE_PROVIDERS,
@@ -251,7 +252,10 @@ export const useModelsDevCatalog = () => {
     const fetchCatalog = async () => {
       try {
         const response = await fetch(MODELS_DEV_API_URL)
-        if (!response.ok) return
+        if (!response.ok) {
+          toast.error('Failed to load models')
+          return
+        }
         const data = await response.json()
         const catalog = buildCatalogFromData(data)
         if (!isMounted || catalog.providers.length === 0) return
@@ -260,6 +264,7 @@ export const useModelsDevCatalog = () => {
         setDefaultModels(catalog.defaultModels)
         writeCache(catalog)
       } catch {
+        toast.error('Failed to load models')
         return
       }
     }
