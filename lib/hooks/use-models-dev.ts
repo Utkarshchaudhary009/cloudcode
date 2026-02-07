@@ -12,7 +12,9 @@ const CACHE_KEY = 'models-dev-cache-v2'
 const CACHE_TTL_MS = 1000 * 60 * 60 * 24
 
 const MODELS_DEV_PROVIDER_ID_MAP: Record<string, OpenCodeProviderId> = {
-  opencode: 'zen',
+  gemini: 'google',
+  vertexai: 'google-vertex',
+  zen: 'opencode',
 }
 
 export type ModelsDevProviderOption = {
@@ -162,8 +164,7 @@ const extractModels = (data: unknown): Array<{ id: string; providerId: string; l
       normalizeLabel(entry.provider_id, '') ||
       normalizeLabel(entry.vendor, '') ||
       normalizeLabel(entry.organization, '')
-    const providerId =
-      rawProvider || (id.includes('/') ? id.split('/')[0] : '') || parentProviderId || ''
+    const providerId = rawProvider || (id.includes('/') ? id.split('/')[0] : '') || parentProviderId || ''
     const label = normalizeLabel(
       entry.name,
       normalizeLabel(entry.displayName, normalizeLabel(entry.display_name, normalizeLabel(entry.label, id))),

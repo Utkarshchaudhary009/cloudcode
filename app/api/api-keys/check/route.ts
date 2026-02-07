@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Check if API key is available (either user's or system)
-    const apiKey = await getUserApiKey(provider as Provider)
+    const apiKey = await getUserApiKey(provider as any)
     const hasKey = !!apiKey
 
     return NextResponse.json({

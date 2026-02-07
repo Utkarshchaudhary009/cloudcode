@@ -359,6 +359,15 @@ export const keys = pgTable(
         'azure',
         'openai-compat',
         'anthropic-compat',
+        'google',
+        'google-vertex',
+        'minimax',
+        'opencode',
+        'cohere',
+        'deepseek',
+        'moonshotai',
+        'zhipuai',
+        'zen',
       ],
     }).notNull(),
     value: text('value').notNull(), // Encrypted API key value
@@ -392,6 +401,14 @@ export const insertKeySchema = z.object({
     'azure',
     'openai-compat',
     'anthropic-compat',
+    'google',
+    'google-vertex',
+    'minimax',
+    'opencode',
+    'cohere',
+    'deepseek',
+    'moonshotai',
+    'zhipuai',
   ]),
   value: z.string().min(1, 'API key value is required'),
   createdAt: z.date().optional(),
@@ -419,6 +436,14 @@ export const selectKeySchema = z.object({
     'azure',
     'openai-compat',
     'anthropic-compat',
+    'google',
+    'google-vertex',
+    'minimax',
+    'opencode',
+    'cohere',
+    'deepseek',
+    'moonshotai',
+    'zhipuai',
   ]),
   value: z.string(),
   createdAt: z.date(),
@@ -504,3 +529,306 @@ export type InsertSetting = z.infer<typeof insertSettingSchema>
 export const userConnections = accounts
 export type UserConnection = Account
 export type InsertUserConnection = InsertAccount
+
+// Scheduled tasks configuration
+export const scheduledTasks = pgTable(
+  'scheduled_tasks',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    repoUrl: text('repo_url').notNull(),
+    prompt: text('prompt').notNull(),
+    taskType: text('task_type', {
+      enum: ['bug_finder', 'ui_review', 'security_scan', 'code_quality', 'performance_audit', 'custom'],
+    }).notNull(),
+    timeSlot: text('time_slot', {
+      enum: ['4am', '9am', '12pm', '9pm'],
+    }).notNull(),
+    days: jsonb('days')
+      .$type<string[]>()
+      .notNull()
+      .$defaultFn(() => ['daily']),
+    timezone: text('timezone').notNull().default('UTC'),
+    selectedAgent: text('selected_agent').default('openai'),
+    selectedModel: text('selected_model'),
+    enabled: boolean('enabled').notNull().default(true),
+    lastRunAt: timestamp('last_run_at'),
+    lastRunStatus: text('last_run_status', {
+      enum: ['success', 'error', 'running'],
+    }),
+    lastRunTaskId: text('last_run_task_id').references(() => tasks.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    timeSlotIdx: uniqueIndex('scheduled_tasks_user_time_slot_idx').on(table.userId, table.repoUrl, table.timeSlot),
+  }),
+)
+
+export const insertScheduledTaskSchema = z.object({
+  id: z.string().optional(),
+  userId: z.string().min(1, 'User ID is required'),
+  name: z.string().min(1, 'Name is required'),
+  repoUrl: z.string().url('Must be a valid URL'),
+  prompt: z.string().min(1, 'Prompt is required'),
+  taskType: z
+    .enum(['bug_finder', 'ui_review', 'security_scan', 'code_quality', 'performance_audit', 'custom'])
+    .default('custom'),
+  timeSlot: z.enum(['4am', '9am', '12pm', '9pm']),
+  days: z.array(z.string()).default(['daily']),
+  timezone: z.string().default('UTC'),
+  selectedAgent: z.string().default('openai'),
+  selectedModel: z.string().optional(),
+  enabled: z.boolean().default(true),
+  lastRunAt: z.date().optional(),
+  lastRunStatus: z.enum(['success', 'error', 'running']).optional(),
+  lastRunTaskId: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+})
+
+export const selectScheduledTaskSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  name: z.string(),
+  repoUrl: z.string(),
+  prompt: z.string(),
+  taskType: z.enum(['bug_finder', 'ui_review', 'security_scan', 'code_quality', 'performance_audit', 'custom']),
+  timeSlot: z.enum(['4am', '9am', '12pm', '9pm']),
+  days: z.array(z.string()),
+  timezone: z.string(),
+  selectedAgent: z.string().nullable(),
+  selectedModel: z.string().nullable(),
+  enabled: z.boolean(),
+  lastRunAt: z.date().nullable(),
+  lastRunStatus: z.enum(['success', 'error', 'running']).nullable(),
+  lastRunTaskId: z.string().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+export type ScheduledTask = z.infer<typeof selectScheduledTaskSchema>
+export type InsertScheduledTask = z.infer<typeof insertScheduledTaskSchema>
+
+// PR Reviews
+export const reviews = pgTable(
+  'reviews',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    taskId: text('task_id').references(() => tasks.id, { onDelete: 'set null' }),
+    repoUrl: text('repo_url').notNull(),
+    prNumber: integer('pr_number').notNull(),
+    prTitle: text('pr_title'),
+    prAuthor: text('pr_author'),
+    headSha: text('head_sha').notNull(),
+    baseBranch: text('base_branch'),
+    headBranch: text('head_branch'),
+    status: text('status', {
+      enum: ['pending', 'in_progress', 'completed', 'error'],
+    })
+      .notNull()
+      .default('pending'),
+    summary: text('summary'),
+    findings: jsonb('findings').$type<
+      Array<{
+        file: string
+        line?: number
+        severity: 'error' | 'warning' | 'info'
+        message: string
+        suggestion?: string
+      }>
+    >(),
+    score: integer('score'),
+    selectedAgent: text('selected_agent'),
+    reviewRules: jsonb('review_rules'),
+    startedAt: timestamp('started_at'),
+    completedAt: timestamp('completed_at'),
+    error: text('error'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    repoPrShaUnique: uniqueIndex('reviews_repo_pr_sha_idx').on(table.repoUrl, table.prNumber, table.headSha),
+  }),
+)
+
+export const insertReviewSchema = z.object({
+  id: z.string().optional(),
+  userId: z.string().min(1, 'User ID is required'),
+  taskId: z.string().optional(),
+  repoUrl: z.string().url('Must be a valid URL'),
+  prNumber: z.number().int().positive(),
+  prTitle: z.string().optional(),
+  prAuthor: z.string().optional(),
+  headSha: z.string().min(1, 'Head SHA is required'),
+  baseBranch: z.string().optional(),
+  headBranch: z.string().optional(),
+  status: z.enum(['pending', 'in_progress', 'completed', 'error']).default('pending'),
+  summary: z.string().optional(),
+  findings: z
+    .array(
+      z.object({
+        file: z.string(),
+        line: z.number().int().positive().optional(),
+        severity: z.enum(['error', 'warning', 'info']),
+        message: z.string(),
+        suggestion: z.string().optional(),
+      }),
+    )
+    .optional(),
+  score: z.number().int().min(0).max(100).optional(),
+  selectedAgent: z.string().optional(),
+  reviewRules: z.any().optional(),
+  startedAt: z.date().optional(),
+  completedAt: z.date().optional(),
+  error: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+})
+
+export const selectReviewSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  taskId: z.string().nullable(),
+  repoUrl: z.string(),
+  prNumber: z.number().int(),
+  prTitle: z.string().nullable(),
+  prAuthor: z.string().nullable(),
+  headSha: z.string(),
+  baseBranch: z.string().nullable(),
+  headBranch: z.string().nullable(),
+  status: z.enum(['pending', 'in_progress', 'completed', 'error']),
+  summary: z.string().nullable(),
+  findings: z
+    .array(
+      z.object({
+        file: z.string(),
+        line: z.number().int().positive().optional(),
+        severity: z.enum(['error', 'warning', 'info']),
+        message: z.string(),
+        suggestion: z.string().optional(),
+      }),
+    )
+    .nullable(),
+  score: z.number().int().nullable(),
+  selectedAgent: z.string().nullable(),
+  reviewRules: z.any().nullable(),
+  startedAt: z.date().nullable(),
+  completedAt: z.date().nullable(),
+  error: z.string().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+export type Review = z.infer<typeof selectReviewSchema>
+export type InsertReview = z.infer<typeof insertReviewSchema>
+export type ReviewFinding = NonNullable<z.infer<typeof selectReviewSchema>['findings']>[number]
+
+// Review rules (user-defined)
+export const reviewRules = pgTable(
+  'review_rules',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description'),
+    prompt: text('prompt').notNull(),
+    severity: text('severity', {
+      enum: ['error', 'warning', 'info'],
+    })
+      .notNull()
+      .default('warning'),
+    repoUrl: text('repo_url'),
+    filePatterns: jsonb('file_patterns').$type<string[]>(),
+    enabled: boolean('enabled').notNull().default(true),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: uniqueIndex('review_rules_user_name_idx').on(table.userId, table.name),
+  }),
+)
+
+export const insertReviewRuleSchema = z.object({
+  id: z.string().optional(),
+  userId: z.string().min(1, 'User ID is required'),
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().optional(),
+  prompt: z.string().min(1, 'Prompt is required'),
+  severity: z.enum(['error', 'warning', 'info']).default('warning'),
+  repoUrl: z.string().url('Must be a valid URL').optional().or(z.literal(null)),
+  filePatterns: z.array(z.string()).optional(),
+  enabled: z.boolean().default(true),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+})
+
+export const selectReviewRuleSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+  prompt: z.string(),
+  severity: z.enum(['error', 'warning', 'info']),
+  repoUrl: z.string().nullable(),
+  filePatterns: z.array(z.string()).nullable(),
+  enabled: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+export type ReviewRule = z.infer<typeof selectReviewRuleSchema>
+export type InsertReviewRule = z.infer<typeof insertReviewRuleSchema>
+
+// GitHub webhook installations (for auto-review)
+export const githubInstallations = pgTable(
+  'github_installations',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    installationId: text('installation_id').notNull(),
+    repoUrl: text('repo_url').notNull(),
+    autoReviewEnabled: boolean('auto_review_enabled').notNull().default(true),
+    reviewOnDraft: boolean('review_on_draft').notNull().default(false),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userRepoUnique: uniqueIndex('github_installations_user_repo_idx').on(table.userId, table.repoUrl),
+  }),
+)
+
+export const insertGithubInstallationSchema = z.object({
+  id: z.string().optional(),
+  userId: z.string().min(1, 'User ID is required'),
+  installationId: z.string().min(1, 'Installation ID is required'),
+  repoUrl: z.string().url('Must be a valid URL'),
+  autoReviewEnabled: z.boolean().default(true),
+  reviewOnDraft: z.boolean().default(false),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+})
+
+export const selectGithubInstallationSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  installationId: z.string(),
+  repoUrl: z.string(),
+  autoReviewEnabled: z.boolean(),
+  reviewOnDraft: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+export type GithubInstallation = z.infer<typeof selectGithubInstallationSchema>
+export type InsertGithubInstallation = z.infer<typeof insertGithubInstallationSchema>

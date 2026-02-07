@@ -3,7 +3,7 @@
 import { Task } from '@/lib/db/schema'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { AlertCircle, Plus, Trash2, GitBranch, Loader2, Search, X } from 'lucide-react'
+import { AlertCircle, Plus, Trash2, GitBranch, Loader2, Search, X, Clock, FileSearch, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -641,6 +641,49 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
           </div>
         </div>
       )}
+
+      {/* Quick Links */}
+      <div className="mt-4 pt-4 border-t space-y-1">
+        <Link href="/scheduled-tasks" onClick={handleLinkClick}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              'w-full justify-start h-8 px-2 text-xs gap-2',
+              pathname.startsWith('/scheduled-tasks') && 'bg-accent',
+            )}
+          >
+            <Clock className="h-3.5 w-3.5" />
+            Scheduled Tasks
+          </Button>
+        </Link>
+        <Link href="/reviews" onClick={handleLinkClick}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              'w-full justify-start h-8 px-2 text-xs gap-2',
+              pathname.startsWith('/reviews') && 'bg-accent',
+            )}
+          >
+            <FileSearch className="h-3.5 w-3.5" />
+            PR Reviews
+          </Button>
+        </Link>
+        <Link href="/settings" onClick={handleLinkClick}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              'w-full justify-start h-8 px-2 text-xs gap-2',
+              pathname.startsWith('/settings') && 'bg-accent',
+            )}
+          >
+            <Settings className="h-3.5 w-3.5" />
+            Settings
+          </Button>
+        </Link>
+      </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

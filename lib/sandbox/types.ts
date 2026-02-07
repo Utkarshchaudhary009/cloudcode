@@ -9,20 +9,22 @@ export interface SandboxConfig {
   gitAuthorEmail?: string
   apiKeys?: {
     OPENAI_API_KEY?: string
-    GEMINI_API_KEY?: string
-    CURSOR_API_KEY?: string
     ANTHROPIC_API_KEY?: string
-    AI_GATEWAY_API_KEY?: string
+    GOOGLE_API_KEY?: string
+    GOOGLE_VERTEX_PROJECT?: string
     GROQ_API_KEY?: string
     OPENROUTER_API_KEY?: string
     VERCEL_API_KEY?: string
-    SYNTHETIC_API_KEY?: string
     ZAI_API_KEY?: string
     HF_TOKEN?: string
     CEREBRAS_API_KEY?: string
-    VERTEXAI_PROJECT?: string
-    AWS_ACCESS_KEY_ID?: string
     AZURE_OPENAI_API_KEY?: string
+    MINIMAX_API_KEY?: string
+    OPENCODE_API_KEY?: string
+    COHERE_API_KEY?: string
+    DEEPSEEK_API_KEY?: string
+    MOONSHOT_API_KEY?: string
+    ZHIPU_API_KEY?: string
   }
   timeout?: string
   ports?: number[]

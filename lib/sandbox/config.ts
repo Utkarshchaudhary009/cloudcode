@@ -3,20 +3,25 @@ export function validateEnvironmentVariables(
   githubToken?: string | null,
   apiKeys?: {
     OPENAI_API_KEY?: string
-    GEMINI_API_KEY?: string
-    CURSOR_API_KEY?: string
     ANTHROPIC_API_KEY?: string
-    AI_GATEWAY_API_KEY?: string
+    GOOGLE_API_KEY?: string
+    GOOGLE_VERTEX_PROJECT?: string
     GROQ_API_KEY?: string
     OPENROUTER_API_KEY?: string
     VERCEL_API_KEY?: string
-    SYNTHETIC_API_KEY?: string
     ZAI_API_KEY?: string
     HF_TOKEN?: string
     CEREBRAS_API_KEY?: string
-    VERTEXAI_PROJECT?: string
-    AWS_ACCESS_KEY_ID?: string
     AZURE_OPENAI_API_KEY?: string
+    MINIMAX_API_KEY?: string
+    OPENCODE_API_KEY?: string
+    COHERE_API_KEY?: string
+    DEEPSEEK_API_KEY?: string
+    MOONSHOT_API_KEY?: string
+    ZHIPU_API_KEY?: string
+    // Legacy support
+    GEMINI_API_KEY?: string
+    VERTEXAI_PROJECT?: string
     ZEN_API_KEY?: string
   },
 ) {
@@ -24,22 +29,21 @@ export function validateEnvironmentVariables(
 
   const hasOpenAI = apiKeys?.OPENAI_API_KEY || process.env.OPENAI_API_KEY
   const hasAnthropic = apiKeys?.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
-  const hasGemini = apiKeys?.GEMINI_API_KEY || process.env.GEMINI_API_KEY
+  const hasGoogle = apiKeys?.GOOGLE_API_KEY || process.env.GOOGLE_API_KEY || apiKeys?.GEMINI_API_KEY || process.env.GEMINI_API_KEY
+  const hasVertex = apiKeys?.GOOGLE_VERTEX_PROJECT || process.env.GOOGLE_VERTEX_PROJECT || apiKeys?.VERTEXAI_PROJECT || process.env.VERTEXAI_PROJECT
   const hasGroq = apiKeys?.GROQ_API_KEY || process.env.GROQ_API_KEY
   const hasOpenRouter = apiKeys?.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
-  const hasVercel =
-    apiKeys?.VERCEL_API_KEY ||
-    process.env.VERCEL_API_KEY ||
-    apiKeys?.AI_GATEWAY_API_KEY ||
-    process.env.AI_GATEWAY_API_KEY
-  const hasSynthetic = apiKeys?.SYNTHETIC_API_KEY || process.env.SYNTHETIC_API_KEY
+  const hasVercel = apiKeys?.VERCEL_API_KEY || process.env.VERCEL_API_KEY
   const hasZai = apiKeys?.ZAI_API_KEY || process.env.ZAI_API_KEY
   const hasHuggingFace = apiKeys?.HF_TOKEN || process.env.HF_TOKEN
   const hasCerebras = apiKeys?.CEREBRAS_API_KEY || process.env.CEREBRAS_API_KEY
-  const hasVertex = apiKeys?.VERTEXAI_PROJECT || process.env.VERTEXAI_PROJECT
-  const hasBedrock = apiKeys?.AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID
   const hasAzure = apiKeys?.AZURE_OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY
-  const hasZen = apiKeys?.ZEN_API_KEY || process.env.ZEN_API_KEY
+  const hasMinimax = apiKeys?.MINIMAX_API_KEY || process.env.MINIMAX_API_KEY
+  const hasOpenCode = apiKeys?.OPENCODE_API_KEY || process.env.OPENCODE_API_KEY || apiKeys?.ZEN_API_KEY || process.env.ZEN_API_KEY
+  const hasCohere = apiKeys?.COHERE_API_KEY || process.env.COHERE_API_KEY
+  const hasDeepSeek = apiKeys?.DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY
+  const hasMoonshot = apiKeys?.MOONSHOT_API_KEY || process.env.MOONSHOT_API_KEY
+  const hasZhipu = apiKeys?.ZHIPU_API_KEY || process.env.ZHIPU_API_KEY
 
   switch (selectedAgent) {
     case 'openai':
@@ -52,9 +56,16 @@ export function validateEnvironmentVariables(
         errors.push('ANTHROPIC_API_KEY is required for OpenCode with Anthropic.')
       }
       break
+    case 'google':
     case 'gemini':
-      if (!hasGemini) {
-        errors.push('GEMINI_API_KEY is required for OpenCode with Gemini.')
+      if (!hasGoogle) {
+        errors.push('GOOGLE_API_KEY is required for OpenCode with Google/Gemini.')
+      }
+      break
+    case 'google-vertex':
+    case 'vertexai':
+      if (!hasVertex) {
+        errors.push('GOOGLE_VERTEX_PROJECT is required for OpenCode with Google Vertex.')
       }
       break
     case 'groq':
@@ -72,11 +83,6 @@ export function validateEnvironmentVariables(
         errors.push('VERCEL_API_KEY is required for OpenCode with Vercel AI Gateway.')
       }
       break
-    case 'synthetic':
-      if (!hasSynthetic) {
-        errors.push('SYNTHETIC_API_KEY is required for OpenCode with Synthetic.')
-      }
-      break
     case 'zai':
       if (!hasZai) {
         errors.push('ZAI_API_KEY is required for OpenCode with Z.ai.')
@@ -92,62 +98,61 @@ export function validateEnvironmentVariables(
         errors.push('CEREBRAS_API_KEY is required for OpenCode with Cerebras.')
       }
       break
-    case 'vertexai':
-      if (!hasVertex) {
-        errors.push('VERTEXAI_PROJECT is required for OpenCode with Vertex AI.')
-      }
-      break
-    case 'bedrock': {
-      const hasAwsSecret = process.env.AWS_SECRET_ACCESS_KEY
-      const hasAwsRegion = process.env.AWS_DEFAULT_REGION
-
-      if (!hasBedrock) {
-        errors.push('AWS_ACCESS_KEY_ID is required for OpenCode with Amazon Bedrock.')
-      }
-      if (!hasAwsSecret) {
-        errors.push('AWS_SECRET_ACCESS_KEY is required for OpenCode with Amazon Bedrock.')
-      }
-      if (!hasAwsRegion) {
-        errors.push('AWS_DEFAULT_REGION is required for OpenCode with Amazon Bedrock.')
-      }
-      break
-    }
     case 'azure':
       if (!hasAzure) {
         errors.push('AZURE_OPENAI_API_KEY is required for OpenCode with Azure OpenAI.')
       }
       break
+    case 'minimax':
+      if (!hasMinimax) {
+        errors.push('MINIMAX_API_KEY is required for OpenCode with MiniMax.')
+      }
+      break
+    case 'opencode':
     case 'zen':
-      if (!hasZen) {
-        errors.push('ZEN_API_KEY is required for OpenCode with Zen.')
+      if (!hasOpenCode) {
+        errors.push('OPENCODE_API_KEY is required for OpenCode Zen.')
       }
       break
-    case 'openai-compat':
-      if (!hasOpenAI) {
-        errors.push('OPENAI_API_KEY is required for OpenCode with OpenAI Compatible.')
+    case 'cohere':
+      if (!hasCohere) {
+        errors.push('COHERE_API_KEY is required for OpenCode with Cohere.')
       }
       break
-    case 'anthropic-compat':
-      if (!hasAnthropic) {
-        errors.push('ANTHROPIC_API_KEY is required for OpenCode with Anthropic Compatible.')
+    case 'deepseek':
+      if (!hasDeepSeek) {
+        errors.push('DEEPSEEK_API_KEY is required for OpenCode with DeepSeek.')
+      }
+      break
+    case 'moonshotai':
+      if (!hasMoonshot) {
+        errors.push('MOONSHOT_API_KEY is required for OpenCode with Moonshot AI.')
+      }
+      break
+    case 'zhipuai':
+      if (!hasZhipu) {
+        errors.push('ZHIPU_API_KEY is required for OpenCode with Zhipu AI.')
       }
       break
     default:
       if (
         !hasOpenAI &&
         !hasAnthropic &&
-        !hasGemini &&
+        !hasGoogle &&
+        !hasVertex &&
         !hasGroq &&
         !hasOpenRouter &&
         !hasVercel &&
-        !hasSynthetic &&
         !hasZai &&
         !hasHuggingFace &&
         !hasCerebras &&
-        !hasVertex &&
-        !hasBedrock &&
         !hasAzure &&
-        !hasZen
+        !hasMinimax &&
+        !hasOpenCode &&
+        !hasCohere &&
+        !hasDeepSeek &&
+        !hasMoonshot &&
+        !hasZhipu
       ) {
         errors.push('A provider API key is required for OpenCode.')
       }

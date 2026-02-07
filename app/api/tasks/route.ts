@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server'
 import { Sandbox } from '@vercel/sandbox'
 import { db } from '@/lib/db/client'
-import { tasks, insertTaskSchema, connectors, taskMessages } from '@/lib/db/schema'
+import { tasks, insertTaskSchema, connectors, taskMessages, type Task } from '@/lib/db/schema'
 import { generateId } from '@/lib/utils/id'
 import { createSandbox } from '@/lib/sandbox/creation'
 import { executeAgentInSandbox, AgentType } from '@/lib/sandbox/agents'
@@ -261,20 +261,22 @@ async function processTaskWithTimeout(
   enableBrowser: boolean = false,
   apiKeys?: {
     OPENAI_API_KEY?: string
-    GEMINI_API_KEY?: string
-    CURSOR_API_KEY?: string
     ANTHROPIC_API_KEY?: string
-    AI_GATEWAY_API_KEY?: string
+    GOOGLE_API_KEY?: string
+    GOOGLE_VERTEX_PROJECT?: string
     GROQ_API_KEY?: string
     OPENROUTER_API_KEY?: string
     VERCEL_API_KEY?: string
-    SYNTHETIC_API_KEY?: string
     ZAI_API_KEY?: string
     HF_TOKEN?: string
     CEREBRAS_API_KEY?: string
-    VERTEXAI_PROJECT?: string
-    AWS_ACCESS_KEY_ID?: string
     AZURE_OPENAI_API_KEY?: string
+    MINIMAX_API_KEY?: string
+    OPENCODE_API_KEY?: string
+    COHERE_API_KEY?: string
+    DEEPSEEK_API_KEY?: string
+    MOONSHOT_API_KEY?: string
+    ZHIPU_API_KEY?: string
   },
   githubToken?: string | null,
   githubUser?: {
@@ -385,20 +387,22 @@ async function processTask(
   enableBrowser: boolean = false,
   apiKeys?: {
     OPENAI_API_KEY?: string
-    GEMINI_API_KEY?: string
-    CURSOR_API_KEY?: string
     ANTHROPIC_API_KEY?: string
-    AI_GATEWAY_API_KEY?: string
+    GOOGLE_API_KEY?: string
+    GOOGLE_VERTEX_PROJECT?: string
     GROQ_API_KEY?: string
     OPENROUTER_API_KEY?: string
     VERCEL_API_KEY?: string
-    SYNTHETIC_API_KEY?: string
     ZAI_API_KEY?: string
     HF_TOKEN?: string
     CEREBRAS_API_KEY?: string
-    VERTEXAI_PROJECT?: string
-    AWS_ACCESS_KEY_ID?: string
     AZURE_OPENAI_API_KEY?: string
+    MINIMAX_API_KEY?: string
+    OPENCODE_API_KEY?: string
+    COHERE_API_KEY?: string
+    DEEPSEEK_API_KEY?: string
+    MOONSHOT_API_KEY?: string
+    ZHIPU_API_KEY?: string
   },
   githubToken?: string | null,
   githubUser?: {
@@ -807,15 +811,15 @@ export async function DELETE(request: NextRequest) {
     // Build response message
     const actionMessages = []
     if (actions.includes('completed')) {
-      const completedCount = deletedTasks.filter((task) => task.status === 'completed').length
+      const completedCount = deletedTasks.filter((task: Task) => task.status === 'completed').length
       if (completedCount > 0) actionMessages.push(`${completedCount} completed`)
     }
     if (actions.includes('failed')) {
-      const failedCount = deletedTasks.filter((task) => task.status === 'error').length
+      const failedCount = deletedTasks.filter((task: Task) => task.status === 'error').length
       if (failedCount > 0) actionMessages.push(`${failedCount} failed`)
     }
     if (actions.includes('stopped')) {
-      const stoppedCount = deletedTasks.filter((task) => task.status === 'stopped').length
+      const stoppedCount = deletedTasks.filter((task: Task) => task.status === 'stopped').length
       if (stoppedCount > 0) actionMessages.push(`${stoppedCount} stopped`)
     }
 

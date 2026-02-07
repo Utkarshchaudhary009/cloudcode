@@ -1,38 +1,40 @@
 export type OpenCodeProviderId =
   | 'openai'
   | 'anthropic'
-  | 'gemini'
+  | 'google'
+  | 'google-vertex'
   | 'groq'
-  | 'openrouter'
-  | 'vercel'
-  | 'synthetic'
-  | 'zai'
-  | 'huggingface'
   | 'cerebras'
-  | 'vertexai'
-  | 'bedrock'
+  | 'openrouter'
+  | 'huggingface'
+  | 'vercel'
+  | 'zai'
+  | 'minimax'
   | 'azure'
-  | 'openai-compat'
-  | 'anthropic-compat'
-  | 'zen'
+  | 'opencode'
+  | 'cohere'
+  | 'deepseek'
+  | 'moonshotai'
+  | 'zhipuai'
 
 export const SUPPORTED_OPENCODE_PROVIDERS = [
   'openai',
   'anthropic',
-  'gemini',
+  'google',
+  'google-vertex',
   'groq',
-  'openrouter',
-  'vercel',
-  'synthetic',
-  'zai',
-  'huggingface',
   'cerebras',
-  'vertexai',
-  'bedrock',
+  'openrouter',
+  'huggingface',
+  'vercel',
+  'zai',
+  'minimax',
   'azure',
-  'openai-compat',
-  'anthropic-compat',
-  'zen',
+  'opencode',
+  'cohere',
+  'deepseek',
+  'moonshotai',
+  'zhipuai',
 ] as const satisfies ReadonlyArray<OpenCodeProviderId>
 
 export const DEFAULT_OPENCODE_PROVIDER: OpenCodeProviderId = 'openai'
@@ -40,20 +42,21 @@ export const DEFAULT_OPENCODE_PROVIDER: OpenCodeProviderId = 'openai'
 export const OPENCODE_PROVIDER_LABELS: Record<OpenCodeProviderId, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
-  gemini: 'Gemini',
+  google: 'Google',
+  'google-vertex': 'Vertex',
   groq: 'Groq',
-  openrouter: 'OpenRouter',
-  vercel: 'Vercel AI Gateway',
-  synthetic: 'Synthetic',
-  zai: 'Z.ai',
-  huggingface: 'Hugging Face',
   cerebras: 'Cerebras',
-  vertexai: 'Vertex AI',
-  bedrock: 'Amazon Bedrock',
-  azure: 'Azure OpenAI',
-  'openai-compat': 'OpenAI Compatible',
-  'anthropic-compat': 'Anthropic Compatible',
-  zen: 'Zen',
+  openrouter: 'OpenRouter',
+  huggingface: 'Hugging Face',
+  vercel: 'Vercel AI Gateway',
+  zai: 'Z.ai',
+  minimax: 'MiniMax',
+  azure: 'Azure',
+  opencode: 'OpenCode Zen',
+  cohere: 'Cohere',
+  deepseek: 'DeepSeek',
+  moonshotai: 'Moonshot AI',
+  zhipuai: 'Zhipu AI',
 }
 
 export const isOpenCodeProvider = (value: string | null | undefined): value is OpenCodeProviderId => {
