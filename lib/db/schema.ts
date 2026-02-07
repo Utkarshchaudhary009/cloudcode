@@ -832,3 +832,118 @@ export const selectGithubInstallationSchema = z.object({
 
 export type GithubInstallation = z.infer<typeof selectGithubInstallationSchema>
 export type InsertGithubInstallation = z.infer<typeof insertGithubInstallationSchema>
+
+// Vercel project subscriptions (for auto-fix)
+export const vercelSubscriptions = pgTable(
+  'vercel_subscriptions',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    projectId: text('project_id').notNull(), // Vercel project ID
+    projectName: text('project_name').notNull(), // Display name
+    repoUrl: text('repo_url'), // GitHub repo URL linked to this project
+    teamId: text('team_id'), // Vercel team ID (optional, for team projects)
+    webhookId: text('webhook_id'), // Vercel webhook ID for this subscription
+    enabled: boolean('enabled').notNull().default(true),
+    selectedAgent: text('selected_agent').default('openai'),
+    selectedModel: text('selected_model'),
+    maxAttempts: integer('max_attempts').notNull().default(5),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userProjectUnique: uniqueIndex('vercel_subscriptions_user_project_idx').on(table.userId, table.projectId),
+  }),
+)
+
+export const insertVercelSubscriptionSchema = z.object({
+  id: z.string().optional(),
+  userId: z.string().min(1, 'User ID is required'),
+  projectId: z.string().min(1, 'Project ID is required'),
+  projectName: z.string().min(1, 'Project name is required'),
+  repoUrl: z.string().url().optional().or(z.literal(null)),
+  teamId: z.string().optional(),
+  webhookId: z.string().optional(),
+  enabled: z.boolean().default(true),
+  selectedAgent: z.string().default('openai'),
+  selectedModel: z.string().optional(),
+  maxAttempts: z.number().int().min(1).max(10).default(5),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+})
+
+export const selectVercelSubscriptionSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  projectId: z.string(),
+  projectName: z.string(),
+  repoUrl: z.string().nullable(),
+  teamId: z.string().nullable(),
+  webhookId: z.string().nullable(),
+  enabled: z.boolean(),
+  selectedAgent: z.string().nullable(),
+  selectedModel: z.string().nullable(),
+  maxAttempts: z.number().int(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+export type VercelSubscription = z.infer<typeof selectVercelSubscriptionSchema>
+export type InsertVercelSubscription = z.infer<typeof insertVercelSubscriptionSchema>
+
+// Build fixes tracking table
+export const buildFixes = pgTable('build_fixes', {
+  id: text('id').primaryKey(),
+  subscriptionId: text('subscription_id')
+    .notNull()
+    .references(() => vercelSubscriptions.id, { onDelete: 'cascade' }),
+  deploymentId: text('deployment_id').notNull(), // Vercel deployment ID
+  deploymentUrl: text('deployment_url'), // Vercel deployment URL
+  branch: text('branch').notNull(), // Branch that failed
+  buildError: text('build_error'), // Build error logs
+  status: text('status', {
+    enum: ['pending', 'fixing', 'success', 'failed', 'exhausted'],
+  })
+    .notNull()
+    .default('pending'),
+  attempts: integer('attempts').notNull().default(0),
+  lastFixCommit: text('last_fix_commit'), // SHA of last fix commit
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  completedAt: timestamp('completed_at'),
+})
+
+export const insertBuildFixSchema = z.object({
+  id: z.string().optional(),
+  subscriptionId: z.string().min(1, 'Subscription ID is required'),
+  deploymentId: z.string().min(1, 'Deployment ID is required'),
+  deploymentUrl: z.string().url().optional(),
+  branch: z.string().min(1, 'Branch is required'),
+  buildError: z.string().optional(),
+  status: z.enum(['pending', 'fixing', 'success', 'failed', 'exhausted']).default('pending'),
+  attempts: z.number().int().min(0).default(0),
+  lastFixCommit: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+  completedAt: z.date().optional(),
+})
+
+export const selectBuildFixSchema = z.object({
+  id: z.string(),
+  subscriptionId: z.string(),
+  deploymentId: z.string(),
+  deploymentUrl: z.string().nullable(),
+  branch: z.string(),
+  buildError: z.string().nullable(),
+  status: z.enum(['pending', 'fixing', 'success', 'failed', 'exhausted']),
+  attempts: z.number().int(),
+  lastFixCommit: z.string().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  completedAt: z.date().nullable(),
+})
+
+export type BuildFix = z.infer<typeof selectBuildFixSchema>
+export type InsertBuildFix = z.infer<typeof insertBuildFixSchema>

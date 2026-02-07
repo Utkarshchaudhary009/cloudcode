@@ -34,4 +34,23 @@ export type Events = {
       findings: ReviewFinding[]
     }
   }
+  // Vercel auto-fix events
+  'vercel/deployment.failed': {
+    data: {
+      subscriptionId: string
+      deploymentId: string
+      deploymentUrl: string
+      branch: string
+      buildError: string
+      projectId: string
+      projectName: string
+    }
+  }
+  'vercel/build-fix.execute': {
+    data: {
+      buildFixId: string
+      subscriptionId: string
+      attempt: number
+    }
+  }
 }

@@ -21,6 +21,63 @@ interface CreateProjectResponse {
   }
 }
 
+export interface VercelProject {
+  id: string
+  name: string
+  framework: string | null
+  repoUrl: string | null
+  latestDeploymentStatus: 'READY' | 'ERROR' | 'BUILDING' | 'QUEUED' | null
+  latestDeploymentUrl: string | null
+  updatedAt: number
+}
+
+/**
+ * List all Vercel projects for the authenticated user/team
+ * @param accessToken - Vercel access token
+ * @param teamId - Optional team ID (omit for personal account)
+ * @returns Array of projects with key info
+ */
+export async function listProjects(
+  accessToken: string,
+  teamId?: string,
+): Promise<VercelProject[]> {
+  try {
+    const vercel = new Vercel({
+      bearerToken: accessToken,
+    })
+
+    const response = await vercel.projects.getProjects({
+      teamId,
+      limit: '100', // Get up to 100 projects
+    })
+
+    // Response can be an array or object with projects property
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const projects: any[] = Array.isArray(response) ? response : (response as any).projects || []
+
+    if (!projects || projects.length === 0) {
+      return []
+    }
+
+    return projects.map((project) => ({
+      id: project.id,
+      name: project.name,
+      framework: project.framework || null,
+      repoUrl: project.link?.type === 'github'
+        ? `https://github.com/${project.link.org}/${project.link.repo}`
+        : null,
+      latestDeploymentStatus: project.latestDeployments?.[0]?.readyState as VercelProject['latestDeploymentStatus'] || null,
+      latestDeploymentUrl: project.latestDeployments?.[0]?.url
+        ? `https://${project.latestDeployments[0].url}`
+        : null,
+      updatedAt: project.updatedAt || Date.now(),
+    }))
+  } catch (error) {
+    console.error('Error listing Vercel projects:', error)
+    return []
+  }
+}
+
 /**
  * Create a Vercel project using the official SDK
  * @param accessToken - Vercel OAuth access token
@@ -43,9 +100,9 @@ export async function createProject(
       name: params.name,
       gitRepository: params.gitRepository
         ? {
-            type: params.gitRepository.type,
-            repo: params.gitRepository.repo,
-          }
+          type: params.gitRepository.type,
+          repo: params.gitRepository.repo,
+        }
         : undefined,
     }
 

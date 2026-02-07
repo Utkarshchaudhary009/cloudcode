@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { FileText, Github } from 'lucide-react'
+import { FileText, Github, Zap } from 'lucide-react'
 
 export default function SettingsPage() {
   return (
@@ -31,6 +31,18 @@ export default function SettingsPage() {
                 GitHub Integration
               </CardTitle>
               <CardDescription>Connect your repositories for automatic PR reviews</CardDescription>
+            </CardHeader>
+          </Card>
+        </Link>
+
+        <Link href="/settings/vercel-auto-fix">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                Vercel Auto-Fix
+              </CardTitle>
+              <CardDescription>Subscribe to Vercel projects for automatic build failure fixes</CardDescription>
             </CardHeader>
           </Card>
         </Link>
