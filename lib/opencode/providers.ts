@@ -16,24 +16,24 @@ export type OpenCodeProviderId =
   | 'anthropic-compat'
   | 'zen'
 
-export const OPENCODE_PROVIDERS = [
-  { value: 'openai', label: 'OpenAI' },
-  { value: 'anthropic', label: 'Anthropic' },
-  { value: 'gemini', label: 'Gemini' },
-  { value: 'groq', label: 'Groq' },
-  { value: 'openrouter', label: 'OpenRouter' },
-  { value: 'vercel', label: 'Vercel AI Gateway' },
-  { value: 'synthetic', label: 'Synthetic' },
-  { value: 'zai', label: 'Z.ai' },
-  { value: 'huggingface', label: 'Hugging Face' },
-  { value: 'cerebras', label: 'Cerebras' },
-  { value: 'vertexai', label: 'Vertex AI' },
-  { value: 'bedrock', label: 'Amazon Bedrock' },
-  { value: 'azure', label: 'Azure OpenAI' },
-  { value: 'openai-compat', label: 'OpenAI Compatible' },
-  { value: 'anthropic-compat', label: 'Anthropic Compatible' },
-  { value: 'zen', label: 'Zen' },
-] as const satisfies Array<{ value: OpenCodeProviderId; label: string }>
+export const SUPPORTED_OPENCODE_PROVIDERS = [
+  'openai',
+  'anthropic',
+  'gemini',
+  'groq',
+  'openrouter',
+  'vercel',
+  'synthetic',
+  'zai',
+  'huggingface',
+  'cerebras',
+  'vertexai',
+  'bedrock',
+  'azure',
+  'openai-compat',
+  'anthropic-compat',
+  'zen',
+] as const satisfies ReadonlyArray<OpenCodeProviderId>
 
 export const OPENCODE_PROVIDER_MODELS: Record<OpenCodeProviderId, Array<{ value: string; label: string }>> = {
   openai: [
@@ -118,7 +118,7 @@ export const OPENCODE_PROVIDER_LABELS: Record<OpenCodeProviderId, string> = {
 
 export const isOpenCodeProvider = (value: string | null | undefined): value is OpenCodeProviderId => {
   if (!value) return false
-  return OPENCODE_PROVIDERS.some((provider) => provider.value === value)
+  return SUPPORTED_OPENCODE_PROVIDERS.includes(value as OpenCodeProviderId)
 }
 
 export const normalizeOpenCodeProvider = (value: string | null | undefined): OpenCodeProviderId => {
@@ -126,11 +126,4 @@ export const normalizeOpenCodeProvider = (value: string | null | undefined): Ope
     return value
   }
   return DEFAULT_OPENCODE_PROVIDER
-}
-
-export const getOpenCodeModelLabel = (provider: string | null | undefined, modelId: string | null | undefined) => {
-  if (!modelId) return modelId || ''
-  const resolvedProvider = normalizeOpenCodeProvider(provider)
-  const model = OPENCODE_PROVIDER_MODELS[resolvedProvider].find((entry) => entry.value === modelId)
-  return model?.label || modelId
 }

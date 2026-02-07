@@ -26,18 +26,12 @@ import type { Session } from '@/lib/session/types'
 import { OpenCode } from '@/components/logos'
 import { PRStatusIcon } from '@/components/pr-status-icon'
 import { PRCheckStatus } from '@/components/pr-check-status'
-import { getOpenCodeModelLabel, normalizeOpenCodeProvider, OPENCODE_PROVIDER_LABELS } from '@/lib/opencode/providers'
+import { useModelsDevCatalog } from '@/lib/hooks/use-models-dev'
 
 interface TasksListClientProps {
   user: Session['user'] | null
   authProvider: Session['authProvider'] | null
   initialStars?: number
-}
-
-const getProviderLabel = (provider: string | null) => {
-  if (!provider) return null
-  const normalized = normalizeOpenCodeProvider(provider)
-  return OPENCODE_PROVIDER_LABELS[normalized]
 }
 
 function getTimeAgo(date: Date): string {
@@ -60,6 +54,7 @@ function getTimeAgo(date: Date): string {
 export function TasksListClient({ user, authProvider, initialStars = 1200 }: TasksListClientProps) {
   const { toggleSidebar, refreshTasks } = useTasks()
   const router = useRouter()
+  const { getProviderLabel, getModelLabel } = useModelsDevCatalog()
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set())
@@ -191,7 +186,7 @@ export function TasksListClient({ user, authProvider, initialStars = 1200 }: Tas
 
   const getHumanFriendlyModelName = (provider: string | null, model: string | null) => {
     if (!provider || !model) return model
-    return getOpenCodeModelLabel(provider, model)
+    return getModelLabel(provider, model)
   }
 
   const selectedProcessingTasks = Array.from(selectedTasks).filter((taskId) => {
