@@ -6,8 +6,8 @@ import { getUserGitHubToken } from './user-token'
  * Returns an Octokit instance with the user's GitHub token if connected, otherwise without authentication
  * Calling code should check octokit.auth to verify user has connected GitHub
  */
-export async function getOctokit(): Promise<Octokit> {
-  const userToken = await getUserGitHubToken()
+export async function getOctokit(accessToken?: string): Promise<Octokit> {
+  const userToken = accessToken || (await getUserGitHubToken())
 
   if (!userToken) {
     console.warn('No user GitHub token available. User needs to connect their GitHub account.')
@@ -76,6 +76,7 @@ interface CreatePullRequestParams {
   title: string
   body?: string
   baseBranch?: string
+  githubToken?: string
 }
 
 interface CreatePullRequestResult {
@@ -89,10 +90,10 @@ interface CreatePullRequestResult {
  * Create a pull request on GitHub
  */
 export async function createPullRequest(params: CreatePullRequestParams): Promise<CreatePullRequestResult> {
-  const { repoUrl, branchName, title, body = '', baseBranch: providedBaseBranch } = params
+  const { repoUrl, branchName, title, body = '', baseBranch: providedBaseBranch, githubToken } = params
 
   try {
-    const octokit = await getOctokit()
+    const octokit = await getOctokit(githubToken)
 
     // Check if user has connected GitHub
     if (!octokit.auth) {
