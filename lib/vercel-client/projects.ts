@@ -37,10 +37,7 @@ export interface VercelProject {
  * @param teamId - Optional team ID (omit for personal account)
  * @returns Array of projects with key info
  */
-export async function listProjects(
-  accessToken: string,
-  teamId?: string,
-): Promise<VercelProject[]> {
+export async function listProjects(accessToken: string, teamId?: string): Promise<VercelProject[]> {
   try {
     const vercel = new Vercel({
       bearerToken: accessToken,
@@ -63,13 +60,10 @@ export async function listProjects(
       id: project.id,
       name: project.name,
       framework: project.framework || null,
-      repoUrl: project.link?.type === 'github'
-        ? `https://github.com/${project.link.org}/${project.link.repo}`
-        : null,
-      latestDeploymentStatus: project.latestDeployments?.[0]?.readyState as VercelProject['latestDeploymentStatus'] || null,
-      latestDeploymentUrl: project.latestDeployments?.[0]?.url
-        ? `https://${project.latestDeployments[0].url}`
-        : null,
+      repoUrl: project.link?.type === 'github' ? `https://github.com/${project.link.org}/${project.link.repo}` : null,
+      latestDeploymentStatus:
+        (project.latestDeployments?.[0]?.readyState as VercelProject['latestDeploymentStatus']) || null,
+      latestDeploymentUrl: project.latestDeployments?.[0]?.url ? `https://${project.latestDeployments[0].url}` : null,
       updatedAt: project.updatedAt || Date.now(),
     }))
   } catch (error) {
@@ -100,9 +94,9 @@ export async function createProject(
       name: params.name,
       gitRepository: params.gitRepository
         ? {
-          type: params.gitRepository.type,
-          repo: params.gitRepository.repo,
-        }
+            type: params.gitRepository.type,
+            repo: params.gitRepository.repo,
+          }
         : undefined,
     }
 
