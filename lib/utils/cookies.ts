@@ -14,6 +14,7 @@ const SHOW_CODE_PANE_COOKIE = 'show-code-pane'
 const SHOW_PREVIEW_PANE_COOKIE = 'show-preview-pane'
 const SHOW_CHAT_PANE_COOKIE = 'show-chat-pane'
 const ENABLE_BROWSER_COOKIE = 'enable-browser'
+const AUTO_CREATE_PR_COOKIE = 'auto-create-pr'
 const DEFAULT_SIDEBAR_WIDTH = 288
 const DEFAULT_SIDEBAR_OPEN = false // Default to false to avoid hydration issues
 const DEFAULT_LOGS_PANE_HEIGHT = 200
@@ -26,6 +27,7 @@ const DEFAULT_SHOW_CODE_PANE = true
 const DEFAULT_SHOW_PREVIEW_PANE = false
 const DEFAULT_SHOW_CHAT_PANE = true
 const DEFAULT_ENABLE_BROWSER = false
+const DEFAULT_AUTO_CREATE_PR = false
 
 export function getSidebarWidth(): number {
   if (typeof window === 'undefined') {
@@ -398,6 +400,28 @@ export function setEnableBrowser(enable: boolean): void {
   if (typeof window === 'undefined') return
 
   Cookies.set(ENABLE_BROWSER_COOKIE, enable.toString(), {
+    expires: 365, // 1 year
+    sameSite: 'strict',
+  })
+}
+
+export function getAutoCreatePr(): boolean {
+  if (typeof window === 'undefined') {
+    return DEFAULT_AUTO_CREATE_PR
+  }
+
+  const cookieValue = Cookies.get(AUTO_CREATE_PR_COOKIE)
+  if (cookieValue !== undefined) {
+    return cookieValue === 'true'
+  }
+
+  return DEFAULT_AUTO_CREATE_PR
+}
+
+export function setAutoCreatePr(autoCreate: boolean): void {
+  if (typeof window === 'undefined') return
+
+  Cookies.set(AUTO_CREATE_PR_COOKIE, autoCreate.toString(), {
     expires: 365, // 1 year
     sameSite: 'strict',
   })

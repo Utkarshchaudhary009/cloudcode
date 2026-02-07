@@ -89,7 +89,7 @@ interface CreatePullRequestResult {
  * Create a pull request on GitHub
  */
 export async function createPullRequest(params: CreatePullRequestParams): Promise<CreatePullRequestResult> {
-  const { repoUrl, branchName, title, body = '', baseBranch = 'main' } = params
+  const { repoUrl, branchName, title, body = '', baseBranch: providedBaseBranch } = params
 
   try {
     const octokit = await getOctokit()
@@ -112,6 +112,18 @@ export async function createPullRequest(params: CreatePullRequestParams): Promis
     }
 
     const { owner, repo } = parsed
+
+    // Determine base branch if not provided
+    let baseBranch = providedBaseBranch
+    if (!baseBranch) {
+      try {
+        const { data: repoData } = await octokit.rest.repos.get({ owner, repo })
+        baseBranch = repoData.default_branch
+      } catch (error) {
+        console.error('Error fetching default branch:', error)
+        baseBranch = 'main' // Fallback
+      }
+    }
 
     // Create the pull request
     const response = await octokit.rest.pulls.create({

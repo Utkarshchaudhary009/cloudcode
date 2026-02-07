@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Loader2, ArrowUp, Settings, X, Cable, Globe } from 'lucide-react'
-import { setInstallDependencies, setMaxDuration, setKeepAlive, setEnableBrowser } from '@/lib/utils/cookies'
+import { setInstallDependencies, setMaxDuration, setKeepAlive, setEnableBrowser, setAutoCreatePr } from '@/lib/utils/cookies'
 import { useConnectors } from '@/components/connectors-provider'
 import { ConnectorDialog } from '@/components/connectors/manage-connectors'
 import { toast } from 'sonner'
@@ -52,6 +52,7 @@ interface TaskFormProps {
     maxDuration: number
     keepAlive: boolean
     enableBrowser: boolean
+    autoCreatePr: boolean
   }) => void
   isSubmitting: boolean
   selectedOwner: string
@@ -60,6 +61,7 @@ interface TaskFormProps {
   initialMaxDuration?: number
   initialKeepAlive?: boolean
   initialEnableBrowser?: boolean
+  initialAutoCreatePr?: boolean
   maxSandboxDuration?: number
 }
 
@@ -74,6 +76,7 @@ export function TaskForm({
   initialMaxDuration = 300,
   initialKeepAlive = false,
   initialEnableBrowser = false,
+  initialAutoCreatePr = false,
   maxSandboxDuration = 300,
 }: TaskFormProps) {
   const [prompt, setPrompt] = useAtom(taskPromptAtom)
@@ -90,6 +93,7 @@ export function TaskForm({
   const [maxDuration, setMaxDurationState] = useState(initialMaxDuration)
   const [keepAlive, setKeepAliveState] = useState(initialKeepAlive)
   const [enableBrowser, setEnableBrowserState] = useState(initialEnableBrowser)
+  const [autoCreatePr, setAutoCreatePrState] = useState(initialAutoCreatePr)
   const [showMcpServersDialog, setShowMcpServersDialog] = useState(false)
 
   // Connectors state
@@ -117,6 +121,11 @@ export function TaskForm({
   const updateEnableBrowser = (value: boolean) => {
     setEnableBrowserState(value)
     setEnableBrowser(value)
+  }
+
+  const updateAutoCreatePr = (value: boolean) => {
+    setAutoCreatePrState(value)
+    setAutoCreatePr(value)
   }
 
   // Handle keyboard events in textarea
@@ -242,6 +251,7 @@ export function TaskForm({
         maxDuration,
         keepAlive,
         enableBrowser,
+        autoCreatePr,
       })
       return
     }
@@ -279,6 +289,7 @@ export function TaskForm({
       maxDuration,
       keepAlive,
       enableBrowser,
+      autoCreatePr,
     })
   }
 
@@ -388,7 +399,7 @@ export function TaskForm({
                 </Select>
 
                 {/* Option Chips - Only visible on desktop */}
-                {(!installDependencies || maxDuration !== maxSandboxDuration || keepAlive) && (
+                {(!installDependencies || maxDuration !== maxSandboxDuration || keepAlive || autoCreatePr) && (
                   <div className="hidden sm:flex items-center gap-2 flex-wrap">
                     {!installDependencies && (
                       <Badge variant="secondary" className="text-xs h-6 px-2 gap-1 bg-transparent border-0">
@@ -401,6 +412,23 @@ export function TaskForm({
                           onClick={(e) => {
                             e.stopPropagation()
                             updateInstallDependencies(true)
+                          }}
+                        >
+                          <X className="h-2 w-2" />
+                        </Button>
+                      </Badge>
+                    )}
+                    {autoCreatePr && (
+                      <Badge variant="secondary" className="text-xs h-6 px-2 gap-1 bg-transparent border-0">
+                        Auto PR
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label="Remove auto create PR option"
+                          className="h-3 w-3 p-0 hover:bg-transparent"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            updateAutoCreatePr(false)
                           }}
                         >
                           <X className="h-2 w-2" />
@@ -514,6 +542,7 @@ export function TaskForm({
                                   !installDependencies,
                                   maxDuration !== maxSandboxDuration,
                                   keepAlive,
+                                  autoCreatePr,
                                 ].filter(Boolean).length
                                 return customOptionsCount > 0 ? (
                                   <Badge
@@ -546,6 +575,19 @@ export function TaskForm({
                               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                             >
                               Install Dependencies?
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="auto-create-pr"
+                              checked={autoCreatePr}
+                              onCheckedChange={(checked) => updateAutoCreatePr(checked === true)}
+                            />
+                            <Label
+                              htmlFor="auto-create-pr"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                              Auto Create PR?
                             </Label>
                           </div>
                           <div className="space-y-2">

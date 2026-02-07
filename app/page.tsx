@@ -11,6 +11,7 @@ export default async function Home() {
   const installDependencies = cookieStore.get('install-dependencies')?.value === 'true'
   const keepAlive = cookieStore.get('keep-alive')?.value === 'true'
   const enableBrowser = cookieStore.get('enable-browser')?.value === 'true'
+  const autoCreatePr = cookieStore.get('auto-create-pr')?.value === 'true'
 
   const session = await getServerSession()
 
@@ -28,6 +29,7 @@ export default async function Home() {
       initialMaxDuration={maxDuration}
       initialKeepAlive={keepAlive}
       initialEnableBrowser={enableBrowser}
+      initialAutoCreatePr={autoCreatePr}
       maxSandboxDuration={maxSandboxDuration}
       user={session?.user ?? null}
       initialStars={stars}

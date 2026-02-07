@@ -38,6 +38,7 @@ interface HomePageContentProps {
   initialMaxDuration?: number
   initialKeepAlive?: boolean
   initialEnableBrowser?: boolean
+  initialAutoCreatePr?: boolean
   maxSandboxDuration?: number
   user?: Session['user'] | null
   initialStars?: number
@@ -50,6 +51,7 @@ export function HomePageContent({
   initialMaxDuration = 300,
   initialKeepAlive = false,
   initialEnableBrowser = false,
+  initialAutoCreatePr = false,
   maxSandboxDuration = 300,
   user = null,
   initialStars = 1200,
@@ -335,6 +337,7 @@ export function HomePageContent({
     maxDuration: number
     keepAlive: boolean
     enableBrowser: boolean
+    autoCreatePr: boolean
   }) => {
     // Check if user is authenticated
     if (!user) {
@@ -389,6 +392,7 @@ export function HomePageContent({
           maxDuration: data.maxDuration,
           keepAlive: data.keepAlive,
           enableBrowser: data.enableBrowser,
+          autoCreatePr: data.autoCreatePr,
         }
       })
 
@@ -497,6 +501,7 @@ export function HomePageContent({
           initialMaxDuration={initialMaxDuration}
           initialKeepAlive={initialKeepAlive}
           initialEnableBrowser={initialEnableBrowser}
+          initialAutoCreatePr={initialAutoCreatePr}
           maxSandboxDuration={maxSandboxDuration}
         />
       </div>

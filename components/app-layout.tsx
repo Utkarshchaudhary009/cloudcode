@@ -30,6 +30,7 @@ interface TasksContextType {
     selectedModel: string
     installDependencies: boolean
     maxDuration: number
+    autoCreatePr?: boolean
   }) => { id: string; optimisticTask: Task }
 }
 
@@ -214,6 +215,7 @@ export function AppLayout({ children, initialSidebarWidth, initialSidebarOpen, i
     selectedModel: string
     installDependencies: boolean
     maxDuration: number
+    autoCreatePr?: boolean
   }) => {
     const id = nanoid()
     const optimisticTask: Task = {
@@ -228,6 +230,7 @@ export function AppLayout({ children, initialSidebarWidth, initialSidebarOpen, i
       maxDuration: taskData.maxDuration,
       keepAlive: false,
       enableBrowser: false,
+      autoCreatePr: taskData.autoCreatePr || false,
       status: 'pending',
       progress: 0,
       logs: [],
