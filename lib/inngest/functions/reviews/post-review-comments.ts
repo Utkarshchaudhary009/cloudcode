@@ -40,8 +40,9 @@ export const postReviewComments = inngest.createFunction(
       for (const finding of findings || []) {
         if (!finding) continue
 
-        const commentBody = `## ${finding.severity.toUpperCase()}\n\n${finding.message}\n\n${finding.suggestion ? `**Suggestion:** ${finding.suggestion}` : ''
-          }`
+        const commentBody = `## ${finding.severity.toUpperCase()}\n\n${finding.message}\n\n${
+          finding.suggestion ? `**Suggestion:** ${finding.suggestion}` : ''
+        }`
 
         if (finding.file && finding.line) {
           await octokit.rest.pulls.createReviewComment({
@@ -55,7 +56,6 @@ export const postReviewComments = inngest.createFunction(
             side: 'RIGHT',
           })
         } else {
-
           await octokit.rest.issues.createComment({
             owner,
             repo,

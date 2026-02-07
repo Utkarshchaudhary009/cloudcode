@@ -29,8 +29,13 @@ export function validateEnvironmentVariables(
 
   const hasOpenAI = apiKeys?.OPENAI_API_KEY || process.env.OPENAI_API_KEY
   const hasAnthropic = apiKeys?.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY
-  const hasGoogle = apiKeys?.GOOGLE_API_KEY || process.env.GOOGLE_API_KEY || apiKeys?.GEMINI_API_KEY || process.env.GEMINI_API_KEY
-  const hasVertex = apiKeys?.GOOGLE_VERTEX_PROJECT || process.env.GOOGLE_VERTEX_PROJECT || apiKeys?.VERTEXAI_PROJECT || process.env.VERTEXAI_PROJECT
+  const hasGoogle =
+    apiKeys?.GOOGLE_API_KEY || process.env.GOOGLE_API_KEY || apiKeys?.GEMINI_API_KEY || process.env.GEMINI_API_KEY
+  const hasVertex =
+    apiKeys?.GOOGLE_VERTEX_PROJECT ||
+    process.env.GOOGLE_VERTEX_PROJECT ||
+    apiKeys?.VERTEXAI_PROJECT ||
+    process.env.VERTEXAI_PROJECT
   const hasGroq = apiKeys?.GROQ_API_KEY || process.env.GROQ_API_KEY
   const hasOpenRouter = apiKeys?.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
   const hasVercel = apiKeys?.VERCEL_API_KEY || process.env.VERCEL_API_KEY
@@ -39,7 +44,8 @@ export function validateEnvironmentVariables(
   const hasCerebras = apiKeys?.CEREBRAS_API_KEY || process.env.CEREBRAS_API_KEY
   const hasAzure = apiKeys?.AZURE_OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY
   const hasMinimax = apiKeys?.MINIMAX_API_KEY || process.env.MINIMAX_API_KEY
-  const hasOpenCode = apiKeys?.OPENCODE_API_KEY || process.env.OPENCODE_API_KEY || apiKeys?.ZEN_API_KEY || process.env.ZEN_API_KEY
+  const hasOpenCode =
+    apiKeys?.OPENCODE_API_KEY || process.env.OPENCODE_API_KEY || apiKeys?.ZEN_API_KEY || process.env.ZEN_API_KEY
   const hasCohere = apiKeys?.COHERE_API_KEY || process.env.COHERE_API_KEY
   const hasDeepSeek = apiKeys?.DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY
   const hasMoonshot = apiKeys?.MOONSHOT_API_KEY || process.env.MOONSHOT_API_KEY

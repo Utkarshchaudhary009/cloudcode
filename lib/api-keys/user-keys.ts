@@ -158,32 +158,60 @@ export async function getUserApiKey(provider: Provider): Promise<string | undefi
   let legacyProviderName = provider as string
 
   switch (provider) {
-    case 'openai': systemValue = process.env.OPENAI_API_KEY; break;
-    case 'anthropic': systemValue = process.env.ANTHROPIC_API_KEY; break;
+    case 'openai':
+      systemValue = process.env.OPENAI_API_KEY
+      break
+    case 'anthropic':
+      systemValue = process.env.ANTHROPIC_API_KEY
+      break
     case 'google':
-      systemValue = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
-      legacyProviderName = 'gemini';
-      break;
+      systemValue = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY
+      legacyProviderName = 'gemini'
+      break
     case 'google-vertex':
-      systemValue = process.env.GOOGLE_VERTEX_PROJECT || process.env.VERTEXAI_PROJECT;
-      legacyProviderName = 'vertexai';
-      break;
-    case 'groq': systemValue = process.env.GROQ_API_KEY; break;
-    case 'cerebras': systemValue = process.env.CEREBRAS_API_KEY; break;
-    case 'openrouter': systemValue = process.env.OPENROUTER_API_KEY; break;
-    case 'huggingface': systemValue = process.env.HF_TOKEN; break;
-    case 'vercel': systemValue = process.env.VERCEL_API_KEY; break;
-    case 'zai': systemValue = process.env.ZAI_API_KEY; break;
-    case 'minimax': systemValue = process.env.MINIMAX_API_KEY; break;
-    case 'azure': systemValue = process.env.AZURE_OPENAI_API_KEY; break;
+      systemValue = process.env.GOOGLE_VERTEX_PROJECT || process.env.VERTEXAI_PROJECT
+      legacyProviderName = 'vertexai'
+      break
+    case 'groq':
+      systemValue = process.env.GROQ_API_KEY
+      break
+    case 'cerebras':
+      systemValue = process.env.CEREBRAS_API_KEY
+      break
+    case 'openrouter':
+      systemValue = process.env.OPENROUTER_API_KEY
+      break
+    case 'huggingface':
+      systemValue = process.env.HF_TOKEN
+      break
+    case 'vercel':
+      systemValue = process.env.VERCEL_API_KEY
+      break
+    case 'zai':
+      systemValue = process.env.ZAI_API_KEY
+      break
+    case 'minimax':
+      systemValue = process.env.MINIMAX_API_KEY
+      break
+    case 'azure':
+      systemValue = process.env.AZURE_OPENAI_API_KEY
+      break
     case 'opencode':
-      systemValue = process.env.OPENCODE_API_KEY || process.env.ZEN_API_KEY;
-      legacyProviderName = 'zen';
-      break;
-    case 'cohere': systemValue = process.env.COHERE_API_KEY; break;
-    case 'deepseek': systemValue = process.env.DEEPSEEK_API_KEY; break;
-    case 'moonshotai': systemValue = process.env.MOONSHOT_API_KEY; break;
-    case 'zhipuai': systemValue = process.env.ZHIPU_API_KEY; break;
+      systemValue = process.env.OPENCODE_API_KEY || process.env.ZEN_API_KEY
+      legacyProviderName = 'zen'
+      break
+    case 'cohere':
+      systemValue = process.env.COHERE_API_KEY
+      break
+    case 'deepseek':
+      systemValue = process.env.DEEPSEEK_API_KEY
+      break
+    case 'moonshotai':
+      systemValue = process.env.MOONSHOT_API_KEY
+      break
+    case 'zhipuai':
+      systemValue = process.env.ZHIPU_API_KEY
+      break
   }
 
   if (!session?.user?.id) {
@@ -197,7 +225,7 @@ export async function getUserApiKey(provider: Provider): Promise<string | undefi
       .where(eq(keys.userId, session.user.id))
 
     // Find key matching either the current provider name or its legacy name
-    const matchedKey = userKeys.find(k => k.provider === provider || k.provider === legacyProviderName)
+    const matchedKey = userKeys.find((k) => k.provider === provider || k.provider === legacyProviderName)
 
     if (matchedKey) {
       return decrypt(matchedKey.value)
