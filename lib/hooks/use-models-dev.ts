@@ -9,8 +9,12 @@ import {
 
 const MODELS_DEV_API_URL = 'https://models.dev/api.json'
 const MODELS_DEV_LOGO_BASE_URL = 'https://models.dev/logos'
-const CACHE_KEY = 'models-dev-cache-v1'
+const CACHE_KEY = 'models-dev-cache-v2'
 const CACHE_TTL_MS = 1000 * 60 * 60 * 24
+
+const MODELS_DEV_PROVIDER_ID_MAP: Record<string, OpenCodeProviderId> = {
+  zenmux: 'zen',
+}
 
 export type ModelsDevProviderOption = {
   value: OpenCodeProviderId
@@ -79,7 +83,18 @@ const normalizeLabel = (value: unknown, fallback: string) => {
   return fallback
 }
 
-const extractProviders = (data: unknown): Array<{ id: string; label: string }> => {
+const resolveProviderId = (providerId: string) => {
+  const mapped = MODELS_DEV_PROVIDER_ID_MAP[providerId]
+  if (mapped) {
+    return { opencodeId: mapped, logoId: providerId }
+  }
+  if (SUPPORTED_OPENCODE_PROVIDERS.includes(providerId as OpenCodeProviderId)) {
+    return { opencodeId: providerId as OpenCodeProviderId, logoId: providerId }
+  }
+  return null
+}
+
+const extractProviders = (data: unknown): Array<{ id: OpenCodeProviderId; label: string; logoId: string }> => {
   if (!data || typeof data !== 'object') return []
   const record = data as Record<string, unknown>
   const providersValue = record.providers
@@ -88,21 +103,53 @@ const extractProviders = (data: unknown): Array<{ id: string; label: string }> =
       .map((provider) => {
         if (!provider || typeof provider !== 'object') return null
         const entry = provider as Record<string, unknown>
-        const id = normalizeLabel(entry.id, normalizeLabel(entry.provider, ''))
-        if (!id) return null
-        const label = normalizeLabel(entry.name, normalizeLabel(entry.label, id))
-        return { id, label }
+        const rawId = normalizeLabel(entry.id, normalizeLabel(entry.provider, ''))
+        if (!rawId) return null
+        const resolved = resolveProviderId(rawId)
+        if (!resolved) return null
+        const label = normalizeLabel(entry.name, normalizeLabel(entry.label, rawId))
+        return { id: resolved.opencodeId, label, logoId: resolved.logoId }
       })
-      .filter((provider): provider is { id: string; label: string } => Boolean(provider))
+      .filter((provider): provider is { id: OpenCodeProviderId; label: string; logoId: string } => Boolean(provider))
   }
   if (providersValue && typeof providersValue === 'object') {
-    return Object.entries(providersValue as Record<string, unknown>).map(([id, value]) => {
-      const entry = value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
-      const label = normalizeLabel(entry.name, normalizeLabel(entry.label, id))
-      return { id, label }
-    })
+    return Object.entries(providersValue as Record<string, unknown>)
+      .map(([rawId, value]) => {
+        const resolved = resolveProviderId(rawId)
+        if (!resolved) return null
+        const entry = value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+        const label = normalizeLabel(entry.name, normalizeLabel(entry.label, rawId))
+        return { id: resolved.opencodeId, label, logoId: resolved.logoId }
+      })
+      .filter((provider): provider is { id: OpenCodeProviderId; label: string; logoId: string } => Boolean(provider))
   }
   return []
+}
+
+const resolveModelsDevProviderId = (providerId: string) => {
+  return resolveProviderId(providerId)?.opencodeId ?? null
+}
+
+const getProviderLabelFallback = (providerId: OpenCodeProviderId, label: string) => {
+  return label || OPENCODE_PROVIDER_LABELS[providerId] || providerId
+}
+
+const extractProvidersWithFallbacks = (data: unknown) => {
+  const providers = extractProviders(data)
+  const providersById = new Map<OpenCodeProviderId, { label: string; logoId: string }>()
+  providers.forEach((provider) => {
+    providersById.set(provider.id, { label: provider.label, logoId: provider.logoId })
+  })
+
+  return SUPPORTED_OPENCODE_PROVIDERS.map((provider) => {
+    const fallbackLabel = OPENCODE_PROVIDER_LABELS[provider] ?? provider
+    const entry = providersById.get(provider)
+    return {
+      id: provider,
+      label: entry ? getProviderLabelFallback(provider, entry.label) : fallbackLabel,
+      logoId: entry?.logoId ?? provider,
+    }
+  })
 }
 
 const extractModels = (data: unknown): Array<{ id: string; providerId: string; label: string }> => {
@@ -144,25 +191,24 @@ const extractModels = (data: unknown): Array<{ id: string; providerId: string; l
 }
 
 const buildCatalogFromData = (data: unknown): ModelsDevCache => {
-  const providers = extractProviders(data)
+  const providers = extractProvidersWithFallbacks(data)
   const models = extractModels(data)
   const supportedProviders = new Set(SUPPORTED_OPENCODE_PROVIDERS)
 
-  const providerOptions: ModelsDevProviderOption[] = providers
-    .filter((provider) => supportedProviders.has(provider.id as OpenCodeProviderId))
-    .map((provider) => ({
-      value: provider.id as OpenCodeProviderId,
-      label: provider.label,
-      logoUrl: `${MODELS_DEV_LOGO_BASE_URL}/${provider.id}.svg`,
-    }))
+  const providerOptions: ModelsDevProviderOption[] = providers.map((provider) => ({
+    value: provider.id,
+    label: provider.label,
+    logoUrl: `${MODELS_DEV_LOGO_BASE_URL}/${provider.logoId}.svg`,
+  }))
 
   const modelsByProvider = Object.fromEntries(
     SUPPORTED_OPENCODE_PROVIDERS.map((provider) => [provider, [] as ModelsDevModelOption[]]),
   ) as Record<OpenCodeProviderId, ModelsDevModelOption[]>
 
   models.forEach((model) => {
-    if (supportedProviders.has(model.providerId as OpenCodeProviderId)) {
-      modelsByProvider[model.providerId as OpenCodeProviderId].push({
+    const resolvedProviderId = resolveModelsDevProviderId(model.providerId)
+    if (resolvedProviderId && supportedProviders.has(resolvedProviderId)) {
+      modelsByProvider[resolvedProviderId].push({
         value: model.id,
         label: model.label,
       })
