@@ -159,9 +159,7 @@ export function ScheduledTaskForm({ task: initialTask, taskId, onSuccess }: Sche
             onRepoChange={handleRepoChange}
             size="default"
           />
-          {formData.repoUrl && (
-            <p className="text-xs text-muted-foreground mt-1">{formData.repoUrl}</p>
-          )}
+          {formData.repoUrl && <p className="text-xs text-muted-foreground mt-1">{formData.repoUrl}</p>}
         </div>
 
         <div>

@@ -57,8 +57,7 @@ export function OpenRepoUrlDialog({ open, onOpenChange, onSubmit }: OpenRepoUrlD
         <DialogHeader>
           <DialogTitle>Open Repository</DialogTitle>
           <DialogDescription>
-            Select a GitHub repository to create a task. The repository will be cloned and you can start working on
-            it.
+            Select a GitHub repository to create a task. The repository will be cloned and you can start working on it.
           </DialogDescription>
         </DialogHeader>
 
@@ -72,9 +71,7 @@ export function OpenRepoUrlDialog({ open, onOpenChange, onSubmit }: OpenRepoUrlD
               onRepoChange={setSelectedRepo}
               size="default"
             />
-            {repoUrl && (
-              <p className="text-xs text-muted-foreground mt-1">{repoUrl}</p>
-            )}
+            {repoUrl && <p className="text-xs text-muted-foreground mt-1">{repoUrl}</p>}
           </div>
 
           <div className="flex justify-end gap-3">

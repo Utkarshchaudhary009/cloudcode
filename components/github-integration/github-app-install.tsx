@@ -93,9 +93,7 @@ export function GitHubAppInstall() {
                       onRepoChange={setSelectedRepo}
                       size="default"
                     />
-                    {repoUrl && (
-                      <p className="text-xs text-muted-foreground mt-1">{repoUrl}</p>
-                    )}
+                    {repoUrl && <p className="text-xs text-muted-foreground mt-1">{repoUrl}</p>}
                   </div>
 
                   <div className="flex items-center space-x-2">
