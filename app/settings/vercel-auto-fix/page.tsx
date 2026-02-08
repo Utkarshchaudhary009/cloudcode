@@ -1,24 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
-import {
-  Zap,
-  ExternalLink,
-  Loader2,
-  RefreshCw,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Settings2,
-  Github,
-  KeyRound,
-} from 'lucide-react'
+import { Zap, Loader2, RefreshCw, CheckCircle, XCircle, Clock, Github, KeyRound } from 'lucide-react'
 import Link from 'next/link'
 
 interface VercelProject {
@@ -34,6 +23,13 @@ interface VercelProject {
   autoFixEnabled: boolean
 }
 
+interface VercelScope {
+  id: string
+  slug: string
+  name: string
+  type: 'personal' | 'team'
+}
+
 const statusConfig = {
   READY: { label: 'Live', icon: CheckCircle, color: 'text-green-500' },
   ERROR: { label: 'Error', icon: XCircle, color: 'text-red-500' },
@@ -47,31 +43,112 @@ export default function VercelAutoFixSettingsPage() {
   const [needsVercelAuth, setNeedsVercelAuth] = useState(false)
   const [togglingProject, setTogglingProject] = useState<string | null>(null)
   const [connectingVercel, setConnectingVercel] = useState(false)
+  const [scopes, setScopes] = useState<VercelScope[]>([])
+  const [selectedScopeId, setSelectedScopeId] = useState<string>('all')
 
-  useEffect(() => {
-    fetchProjects()
-  }, [])
-
-  const fetchProjects = async () => {
-    setLoading(true)
+  const loadScopes = useCallback(async () => {
     try {
-      const res = await fetch('/api/vercel/projects')
+      const res = await fetch('/api/vercel/teams')
+      if (!res.ok) {
+        setScopes([])
+        return
+      }
       const data = await res.json()
-
-      if (data.needsVercelAuth) {
-        setNeedsVercelAuth(true)
-        setProjects([])
-      } else if (data.success) {
-        setProjects(data.projects)
-        setNeedsVercelAuth(false)
+      if (Array.isArray(data.scopes)) {
+        setScopes(data.scopes)
+        if (!selectedScopeId) {
+          setSelectedScopeId('all')
+        }
       }
     } catch (error) {
-      console.error('Error fetching projects', error)
-      toast.error('Failed to load projects')
-    } finally {
-      setLoading(false)
+      toast.error('Failed to load teams')
     }
-  }
+  }, [selectedScopeId])
+
+  const buildProjectsUrl = useCallback((scope?: VercelScope) => {
+    if (scope?.type === 'team' && scope.id) {
+      const params = new URLSearchParams({ teamId: scope.id })
+      return `/api/vercel/projects?${params.toString()}`
+    }
+    return '/api/vercel/projects'
+  }, [])
+
+  const sortProjects = useCallback((items: VercelProject[]) => {
+    return [...items].sort((a, b) => {
+      if (a.isSubscribed && !b.isSubscribed) return -1
+      if (!a.isSubscribed && b.isSubscribed) return 1
+      return a.name.localeCompare(b.name)
+    })
+  }, [])
+
+  const fetchProjects = useCallback(
+    async (scopeId: string) => {
+      setLoading(true)
+      try {
+        if (scopeId === 'all') {
+          if (scopes.length === 0) {
+            const res = await fetch('/api/vercel/projects')
+            const data = await res.json()
+
+            if (data.needsVercelAuth) {
+              setNeedsVercelAuth(true)
+              setProjects([])
+            } else if (data.success) {
+              setProjects(sortProjects(data.projects))
+              setNeedsVercelAuth(false)
+            }
+            return
+          }
+          const responses = await Promise.all(
+            scopes.map(async (scope) => {
+              const res = await fetch(buildProjectsUrl(scope))
+              return res.json()
+            }),
+          )
+          if (responses.some((response) => response.needsVercelAuth)) {
+            setNeedsVercelAuth(true)
+            setProjects([])
+          } else {
+            const combinedProjects = responses.flatMap((response) => (response.success ? response.projects : []))
+            const uniqueProjects = new Map<string, VercelProject>()
+            combinedProjects.forEach((project) => {
+              if (!uniqueProjects.has(project.id)) {
+                uniqueProjects.set(project.id, project)
+              }
+            })
+            setProjects(sortProjects([...uniqueProjects.values()]))
+            setNeedsVercelAuth(false)
+          }
+        } else {
+          const selectedScope = scopes.find((scope) => scope.id === scopeId)
+          const res = await fetch(buildProjectsUrl(selectedScope))
+          const data = await res.json()
+
+          if (data.needsVercelAuth) {
+            setNeedsVercelAuth(true)
+            setProjects([])
+          } else if (data.success) {
+            setProjects(sortProjects(data.projects))
+            setNeedsVercelAuth(false)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching projects')
+        toast.error('Failed to load projects')
+      } finally {
+        setLoading(false)
+      }
+    },
+    [buildProjectsUrl, scopes, sortProjects],
+  )
+
+  useEffect(() => {
+    loadScopes()
+  }, [loadScopes])
+
+  useEffect(() => {
+    fetchProjects(selectedScopeId)
+  }, [fetchProjects, selectedScopeId])
 
   const handleConnectVercel = async () => {
     setConnectingVercel(true)
@@ -213,10 +290,29 @@ export default function VercelAutoFixSettingsPage() {
           <Link href="/vercel-fixes">
             <Button variant="outline">View Build Fixes</Button>
           </Link>
-          <Button variant="outline" onClick={fetchProjects}>
+          <Button variant="outline" onClick={() => fetchProjects(selectedScopeId)}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
+        </div>
+      </div>
+
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-sm text-muted-foreground">Choose a Vercel scope to load projects.</div>
+        <div className="w-full sm:w-64">
+          <Select value={selectedScopeId} onValueChange={setSelectedScopeId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a scope" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All teams</SelectItem>
+              {scopes.map((scope) => (
+                <SelectItem key={scope.id} value={scope.id}>
+                  {scope.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
