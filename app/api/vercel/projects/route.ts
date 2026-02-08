@@ -78,6 +78,32 @@ export async function GET() {
     })
   } catch (error) {
     console.error('Error fetching Vercel projects', error)
+    const statusCode =
+      typeof error === 'object' && error && 'statusCode' in error ? Number(error.statusCode) : undefined
+
+    if (statusCode === 401 || statusCode === 403) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Vercel authorization required',
+          needsVercelAuth: true,
+          projects: [],
+        },
+        { status: statusCode },
+      )
+    }
+
+    if (statusCode === 429) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Vercel rate limit exceeded',
+          projects: [],
+        },
+        { status: statusCode },
+      )
+    }
+
     return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 })
   }
 }
