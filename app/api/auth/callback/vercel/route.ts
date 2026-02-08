@@ -43,21 +43,15 @@ export async function GET(req: NextRequest): Promise<Response> {
   let tokens: OAuth2Tokens
 
   try {
-    tokens = await client.validateAuthorizationCode(
-      'https://api.vercel.com/v2/oauth/access_token',
-      code,
-      storedVerifier,
-    )
+    tokens = await client.validateAuthorizationCode('https://api.vercel.com/login/oauth/token', code, storedVerifier)
   } catch (error) {
     console.error('[Vercel Callback] Validation failed:', error)
     if (error instanceof Error) {
       console.error('[Vercel Callback] Error Name:', error.name)
       console.error('[Vercel Callback] Error Message:', error.message)
-      // If it's a fetch error or arctic error, it might have more details
-      console.error('[Vercel Callback] Full Error:', JSON.stringify(error, Object.getOwnPropertyNames(error)))
     }
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return new Response(`Failed to validate authorization code: ${errorMessage}. Check logs for details.`, {
+    return new Response(`Failed to validate authorization code: ${errorMessage}`, {
       status: 400,
     })
   }
