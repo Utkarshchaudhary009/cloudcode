@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from '@/lib/session/get-server-session'
 import { db } from '@/lib/db/client'
 import { keys, vercelSubscriptions } from '@/lib/db/schema'
@@ -14,8 +14,10 @@ interface ProjectWithSubscription extends VercelProject {
 }
 
 // GET - List user's Vercel projects with subscription status
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const teamId = searchParams.get('teamId') || undefined
     const session = await getServerSession()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -44,7 +46,7 @@ export async function GET() {
     }
 
     // Fetch projects from Vercel
-    const projects = await listProjects(vercelToken)
+    const projects = await listProjects(vercelToken, teamId)
 
     // Get user's existing subscriptions
     const subscriptions = await db
@@ -77,7 +79,7 @@ export async function GET() {
       projects: projectsWithStatus,
     })
   } catch (error) {
-    console.error('Error fetching Vercel projects', error)
+    console.error('Error fetching Vercel projects')
     return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 })
   }
 }
