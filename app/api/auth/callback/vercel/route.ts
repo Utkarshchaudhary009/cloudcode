@@ -11,16 +11,23 @@ export async function GET(req: NextRequest): Promise<Response> {
   const storedVerifier = cookieStore.get(`vercel_oauth_code_verifier`)?.value ?? null
   const storedRedirectTo = cookieStore.get(`vercel_oauth_redirect_to`)?.value ?? null
 
-  if (
-    code === null ||
-    state === null ||
-    storedState !== state ||
-    storedRedirectTo === null ||
-    storedVerifier === null
-  ) {
-    return new Response(null, {
-      status: 400,
-    })
+  if (!code) {
+    return new Response('Missing code param', { status: 400 })
+  }
+  if (!state) {
+    return new Response('Missing state param', { status: 400 })
+  }
+  if (!storedState) {
+    return new Response('Missing stored state cookie', { status: 400 })
+  }
+  if (!storedVerifier) {
+    return new Response('Missing stored verifier cookie', { status: 400 })
+  }
+  if (storedState !== state) {
+    return new Response('State mismatch', { status: 400 })
+  }
+  if (!storedRedirectTo) {
+    return new Response('Missing stored redirect cookie', { status: 400 })
   }
 
   const client = new OAuth2Client(
@@ -39,7 +46,8 @@ export async function GET(req: NextRequest): Promise<Response> {
     )
   } catch (error) {
     console.error('Failed to validate authorization code:', error)
-    return new Response(null, {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return new Response(`Failed to validate authorization code: ${errorMessage}`, {
       status: 400,
     })
   }
