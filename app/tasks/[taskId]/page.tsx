@@ -1,6 +1,5 @@
 import { TaskPageClient } from '@/components/task-page-client'
 import { getServerSession } from '@/lib/session/get-server-session'
-import { getGitHubStars } from '@/lib/github-stars'
 import { getMaxSandboxDuration } from '@/lib/db/settings'
 import { Metadata } from 'next'
 
@@ -17,17 +16,7 @@ export default async function TaskPage({ params }: TaskPageProps) {
   // Get max sandbox duration for this user (user-specific > global > env var)
   const maxSandboxDuration = await getMaxSandboxDuration(session?.user?.id)
 
-  const stars = await getGitHubStars()
-
-  return (
-    <TaskPageClient
-      taskId={taskId}
-      user={session?.user ?? null}
-      authProvider={session?.authProvider ?? null}
-      initialStars={stars}
-      maxSandboxDuration={maxSandboxDuration}
-    />
-  )
+  return <TaskPageClient taskId={taskId} maxSandboxDuration={maxSandboxDuration} />
 }
 
 export async function generateMetadata({ params }: TaskPageProps): Promise<Metadata> {
