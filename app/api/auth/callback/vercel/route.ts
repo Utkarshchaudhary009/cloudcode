@@ -30,10 +30,14 @@ export async function GET(req: NextRequest): Promise<Response> {
     return new Response('Missing stored redirect cookie', { status: 400 })
   }
 
+  const redirectUri = `${req.nextUrl.origin}/api/auth/callback/vercel`
+  console.log('[Vercel Callback] Origin:', req.nextUrl.origin)
+  console.log('[Vercel Callback] Redirect URI:', redirectUri)
+
   const client = new OAuth2Client(
     process.env.NEXT_PUBLIC_VERCEL_CLIENT_ID ?? '',
     process.env.VERCEL_CLIENT_SECRET ?? '',
-    `${req.nextUrl.origin}/api/auth/callback/vercel`,
+    redirectUri,
   )
 
   let tokens: OAuth2Tokens
@@ -45,9 +49,15 @@ export async function GET(req: NextRequest): Promise<Response> {
       storedVerifier,
     )
   } catch (error) {
-    console.error('Failed to validate authorization code:', error)
+    console.error('[Vercel Callback] Validation failed:', error)
+    if (error instanceof Error) {
+      console.error('[Vercel Callback] Error Name:', error.name)
+      console.error('[Vercel Callback] Error Message:', error.message)
+      // If it's a fetch error or arctic error, it might have more details
+      console.error('[Vercel Callback] Full Error:', JSON.stringify(error, Object.getOwnPropertyNames(error)))
+    }
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return new Response(`Failed to validate authorization code: ${errorMessage}`, {
+    return new Response(`Failed to validate authorization code: ${errorMessage}. Check logs for details.`, {
       status: 400,
     })
   }
