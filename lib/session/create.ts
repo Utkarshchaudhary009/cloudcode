@@ -31,7 +31,7 @@ export async function createSession(tokens: Tokens): Promise<Session | undefined
     scope: undefined, // Vercel doesn't provide scope
     username: user.username,
     email: user.email,
-    name: user.name,
+    name: user.name ?? undefined,
     avatarUrl: `https://vercel.com/api/www/avatar/?u=${user.username}`,
   })
 
@@ -42,7 +42,7 @@ export async function createSession(tokens: Tokens): Promise<Session | undefined
       id: userId, // Internal user ID
       username: user.username,
       email: user.email,
-      name: user.name,
+      name: user.name ?? undefined,
       avatar: `https://vercel.com/api/www/avatar/?u=${user.username}`,
     },
   }

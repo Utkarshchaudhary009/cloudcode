@@ -86,7 +86,7 @@ function isVercelUser(value: unknown): value is VercelUser {
   return (
     typeof value.username === 'string' &&
     typeof value.email === 'string' &&
-    typeof value.name === 'string' &&
-    typeof value.avatar === 'string'
+    (typeof value.name === 'string' || value.name === undefined || value.name === null) &&
+    (typeof value.avatar === 'string' || value.avatar === undefined || value.avatar === null)
   )
 }

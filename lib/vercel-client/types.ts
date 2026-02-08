@@ -1,7 +1,7 @@
 export interface VercelUser {
-  avatar: string
+  avatar?: string | null
   email: string
-  name: string
+  name?: string | null
   uid?: string
   id?: string
   username: string
