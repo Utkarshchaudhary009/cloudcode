@@ -8,7 +8,7 @@ export async function fetchUser(accessToken: string): Promise<VercelUser | undef
   })
 
   if (response.status !== 200) {
-    console.error('Failed to fetch user from v2 endpoint', response.status, await response.text())
+    console.error('Failed to fetch user from v2 endpoint')
 
     // Fallback to www/user endpoint
     response = await fetch('https://vercel.com/api/www/user', {
@@ -17,14 +17,14 @@ export async function fetchUser(accessToken: string): Promise<VercelUser | undef
     })
 
     if (response.status !== 200) {
-      console.error('Failed to fetch user from www endpoint', response.status, await response.text())
+      console.error('Failed to fetch user from www endpoint')
       return undefined
     }
   }
 
   // Try to parse response - format may vary by endpoint
-  const data = (await response.json()) as { user?: VercelUser } | VercelUser
-  const user: VercelUser | undefined = 'user' in data && data.user ? data.user : 'username' in data ? data : undefined
+  const data = (await response.json()) as unknown
+  const user = extractUser(data)
 
   if (!user) {
     console.error('No user data in response')
@@ -32,4 +32,61 @@ export async function fetchUser(accessToken: string): Promise<VercelUser | undef
   }
 
   return user
+}
+
+function extractUser(payload: unknown): VercelUser | undefined {
+  if (!isRecord(payload)) {
+    return undefined
+  }
+
+  const record = payload
+
+  if (record.user && isRecord(record.user)) {
+    const directUser = record.user
+    if (directUser.user && isRecord(directUser.user)) {
+      const nestedUser = directUser.user
+      if (isVercelUser(nestedUser)) {
+        return nestedUser
+      }
+    }
+    if (isVercelUser(directUser)) {
+      return directUser
+    }
+  }
+
+  if (isVercelUser(record)) {
+    return record
+  }
+
+  if (record.data && isRecord(record.data)) {
+    const dataRecord = record.data
+    if (dataRecord.user && isRecord(dataRecord.user)) {
+      const nestedUser = dataRecord.user
+      if (isVercelUser(nestedUser)) {
+        return nestedUser
+      }
+    }
+    if (isVercelUser(dataRecord)) {
+      return dataRecord
+    }
+  }
+
+  return undefined
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function isVercelUser(value: unknown): value is VercelUser {
+  if (!isRecord(value)) {
+    return false
+  }
+
+  return (
+    typeof value.username === 'string' &&
+    typeof value.email === 'string' &&
+    typeof value.name === 'string' &&
+    typeof value.avatar === 'string'
+  )
 }
