@@ -157,8 +157,10 @@ export async function createSandbox(config: SandboxConfig, logger: TaskLogger): 
 
       await logger.error('Sandbox creation failed')
       if (errorResponse) {
-        await logger.error('HTTP error occurred')
-        await logger.error('Error response received')
+        await logger.error(`HTTP error ${errorResponse.status} occurred`)
+        if (errorResponse.data) {
+          await logger.error(`Error details: ${JSON.stringify(errorResponse.data)}`)
+        }
       }
       throw error
     }

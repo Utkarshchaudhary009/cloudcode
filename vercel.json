@@ -4,6 +4,7 @@
       "maxDuration": 300
     }
   },
+  "fluid": true,
   "crons": []
 }
 
