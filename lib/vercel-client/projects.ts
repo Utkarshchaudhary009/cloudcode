@@ -49,7 +49,6 @@ export async function listProjects(accessToken: string, teamId?: string): Promis
     })
 
     // Response can be an array or object with projects property
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const projects: any[] = Array.isArray(response) ? response : (response as any).projects || []
 
     if (!projects || projects.length === 0) {
@@ -68,7 +67,7 @@ export async function listProjects(accessToken: string, teamId?: string): Promis
     }))
   } catch (error) {
     console.error('Error listing Vercel projects:', error)
-    return []
+    throw error
   }
 }
 
@@ -107,7 +106,6 @@ export async function createProject(
 
     const response = await vercel.projects.createProject({
       teamId, // Pass teamId at the top level
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       requestBody: requestBody as any,
     })
 
