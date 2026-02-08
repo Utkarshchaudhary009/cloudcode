@@ -68,7 +68,7 @@ export default function CodeReviewPage() {
       const installationsData = installationsRes.ok ? await installationsRes.json() : { installations: [] }
 
       // Map installations by repo path (owner/name) for quick lookup
-      const installationMap = new Map(
+      const installationMap = new Map<string, { enabled: boolean; id: string }>(
         (installationsData.installations || []).map((inst: any) => [
           inst.repoUrl?.replace('https://github.com/', ''),
           { enabled: inst.autoReviewEnabled, id: inst.id },
