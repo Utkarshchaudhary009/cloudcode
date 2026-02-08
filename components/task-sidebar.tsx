@@ -292,7 +292,7 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
 
   return (
     <div
-      className={cn('pb-12 min-h-screen border-r bg-muted/10 transition-all duration-300 ease-in-out flex flex-col', isCollapsed ? 'w-[60px]' : 'w-72')}
+      className={cn('pb-12 min-h-screen border-r bg-background transition-all duration-300 ease-in-out flex flex-col', isCollapsed ? 'w-[60px]' : 'w-72')}
       style={{ width: isCollapsed ? 60 : width }}
     >
       <div className="space-y-4 py-4">
