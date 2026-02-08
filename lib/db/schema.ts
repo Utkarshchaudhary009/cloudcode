@@ -1,5 +1,6 @@
 import { pgTable, text, timestamp, integer, jsonb, boolean, uniqueIndex } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
+import { openCodeProviderSchema } from '@/lib/opencode/provider-schema'
 
 // Log entry types
 export const logEntrySchema = z.object({
@@ -120,25 +121,7 @@ export const insertTaskSchema = z.object({
   prompt: z.string().min(1, 'Prompt is required'),
   title: z.string().optional(),
   repoUrl: z.string().url('Must be a valid URL').optional(),
-  selectedAgent: z
-    .enum([
-      'openai',
-      'anthropic',
-      'gemini',
-      'groq',
-      'openrouter',
-      'vercel',
-      'synthetic',
-      'zai',
-      'huggingface',
-      'cerebras',
-      'vertexai',
-      'bedrock',
-      'azure',
-      'openai-compat',
-      'anthropic-compat',
-    ])
-    .default('openai'),
+  selectedAgent: openCodeProviderSchema,
   selectedModel: z.string().optional(),
   installDependencies: z.boolean().default(false),
   maxDuration: z.number().default(parseInt(process.env.MAX_SANDBOX_DURATION || '300', 10)),
@@ -580,7 +563,7 @@ export const insertScheduledTaskSchema = z.object({
   timeSlot: z.enum(['4am', '9am', '12pm', '9pm']),
   days: z.array(z.string()).default(['daily']),
   timezone: z.string().default('UTC'),
-  selectedAgent: z.string().default('openai'),
+  selectedAgent: openCodeProviderSchema,
   selectedModel: z.string().optional(),
   enabled: z.boolean().default(true),
   lastRunAt: z.date().optional(),
