@@ -2,26 +2,28 @@ import type { VercelUser } from './types'
 
 export async function fetchUser(accessToken: string): Promise<VercelUser | undefined> {
   // Try the user endpoint
-  let response = await fetch('https://api.vercel.com/v2/user', {
+  const response = await fetch('https://api.vercel.com/v2/user', {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: 'no-store',
   })
 
   if (response.status !== 200) {
     const errorText = await response.text()
-    console.error('Failed to fetch user from v2 endpoint:', response.status, errorText)
+    console.error('[fetchUser] Failed to fetch user:', response.status)
     return undefined
   }
 
   // Try to parse response - format may vary by endpoint
   const data = (await response.json()) as unknown
+  console.log('[fetchUser] Raw response structure:', JSON.stringify(data, null, 2).substring(0, 500))
   const user = extractUser(data)
 
   if (!user) {
-    console.error('No user data in response')
+    console.error('[fetchUser] Could not extract user from response')
     return undefined
   }
 
+  console.log('[fetchUser] Extracted user:', user.username, 'uid:', user.uid, 'id:', user.id)
   return user
 }
 
@@ -78,6 +80,7 @@ function isVercelUser(value: unknown): value is VercelUser {
     typeof value.username === 'string' &&
     typeof value.email === 'string' &&
     (typeof value.name === 'string' || value.name === undefined || value.name === null) &&
-    (typeof value.avatar === 'string' || value.avatar === undefined || value.avatar === null)
+    (typeof value.avatar === 'string' || value.avatar === undefined || value.avatar === null) &&
+    (typeof value.uid === 'string' || typeof value.id === 'string' || value.uid === undefined)
   )
 }

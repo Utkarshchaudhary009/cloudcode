@@ -22,7 +22,12 @@ export async function createSession(tokens: Tokens): Promise<Session | undefined
   const plan = teams ? getHighestAccountLevel(teams) : { plan: 'hobby' as const, team: null }
 
   // Create or update user in database
-  const externalId = user.uid || user.id || ''
+  // externalId must be non-empty - fallback to username if uid/id not present
+  const externalId = user.uid || user.id || user.username
+  if (!externalId) {
+    console.error('[createSession] No valid externalId found for user')
+    return undefined
+  }
   const userId = await upsertUser({
     provider: 'vercel',
     externalId,
