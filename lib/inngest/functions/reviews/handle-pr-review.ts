@@ -13,7 +13,7 @@ export const handlePrReview = inngest.createFunction(
   },
   { event: 'pr/review.requested' },
   async ({ event, step }: { event: any; step: any }) => {
-    const { userId, repoUrl, prNumber, headSha, prTitle, prAuthor, baseBranch, headBranch } = event.data
+    const { userId, repoUrl, prNumber, headSha, prTitle, prAuthor, baseBranch, headBranch, installationId } = event.data
 
     const existingReview = await step.run('check-existing', async () => {
       const existing = await db
@@ -50,7 +50,7 @@ export const handlePrReview = inngest.createFunction(
       const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/github/diff`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, repoUrl, prNumber }),
+        body: JSON.stringify({ userId, repoUrl, prNumber, installationId }),
       })
       if (!response.ok) {
         throw new Error('Failed to fetch diff')

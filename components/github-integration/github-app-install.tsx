@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -11,6 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { RepoSelector } from '@/components/repo-selector'
 
 export function GitHubAppInstall() {
+  const searchParams = useSearchParams()
   const [selectedOwner, setSelectedOwner] = useState('')
   const [selectedRepo, setSelectedRepo] = useState('')
   const [autoReviewEnabled, setAutoReviewEnabled] = useState(true)
@@ -18,7 +20,29 @@ export function GitHubAppInstall() {
   const [loading, setLoading] = useState(false)
   const [installed, setInstalled] = useState(false)
 
-  const repoUrl = selectedOwner && selectedRepo ? `https://github.com/${selectedOwner}/${selectedRepo}` : ''
+  const repoUrl = useMemo(() => {
+    return selectedOwner && selectedRepo ? `https://github.com/${selectedOwner}/${selectedRepo}` : ''
+  }, [selectedOwner, selectedRepo])
+
+  useEffect(() => {
+    const installationStatus = searchParams.get('installation')
+    if (installationStatus === 'success') {
+      const repoFromParams = searchParams.get('repo')
+      if (repoFromParams) {
+        const match = repoFromParams.match(/github\.com\/(.+?)\/(.+?)$/)
+        if (match) {
+          setSelectedOwner(match[1])
+          setSelectedRepo(match[2])
+        }
+      }
+      setInstalled(true)
+      toast.success('GitHub App installed')
+    }
+
+    if (installationStatus === 'error') {
+      toast.error('GitHub App installation failed')
+    }
+  }, [searchParams])
 
   const handleOwnerChange = (owner: string) => {
     setSelectedOwner(owner)
@@ -36,20 +60,27 @@ export function GitHubAppInstall() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/github-installations', {
+      const response = await fetch('/api/github/install/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           repoUrl,
-          installationId: 'demo-installation-id',
           autoReviewEnabled,
           reviewOnDraft,
         }),
       })
 
-      if (!response.ok) throw new Error('Failed to install GitHub App')
+      if (!response.ok) {
+        throw new Error('Failed to start GitHub App install')
+      }
 
-      setInstalled(true)
+      const data = (await response.json()) as { installUrl?: string }
+
+      if (!data.installUrl) {
+        throw new Error('Install URL missing')
+      }
+
+      window.location.assign(data.installUrl)
     } catch (error) {
       console.error('Error installing GitHub App')
       toast.error('Failed to install GitHub App')
@@ -136,7 +167,9 @@ export function GitHubAppInstall() {
             <div className="text-center py-8">
               <CheckCircle2 className="h-12 w-12 text-green-600 mx-auto mb-4" />
               <p className="text-lg font-semibold mb-2">GitHub App Installed</p>
-              <p className="text-sm text-muted-foreground mb-4">Automatic PR reviews are enabled for {repoUrl}</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Automatic PR reviews are enabled for {repoUrl || 'your repositories'}
+              </p>
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <Badge variant="secondary">Active</Badge>
                 <Badge variant="outline">{autoReviewEnabled ? 'Auto reviews on' : 'Auto reviews off'}</Badge>
