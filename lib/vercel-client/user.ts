@@ -1,21 +1,47 @@
 import type { VercelUser } from './types'
 
 export async function fetchUser(accessToken: string): Promise<VercelUser | undefined> {
-  // Try the user endpoint
+  // First try the OAuth userinfo endpoint (for tokens from /login/oauth/token)
+  const userInfoResponse = await fetch('https://api.vercel.com/login/oauth/userinfo', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: 'no-store',
+  })
+
+  if (userInfoResponse.ok) {
+    const userInfo = (await userInfoResponse.json()) as {
+      sub?: string
+      email?: string
+      name?: string
+      preferred_username?: string
+      picture?: string
+    }
+    console.log('[fetchUser] Got userinfo:', userInfo.preferred_username, 'sub:', userInfo.sub)
+
+    if (userInfo.sub && userInfo.preferred_username && userInfo.email) {
+      return {
+        uid: userInfo.sub,
+        id: userInfo.sub,
+        username: userInfo.preferred_username,
+        email: userInfo.email,
+        name: userInfo.name ?? undefined,
+        avatar: userInfo.picture ?? undefined,
+      }
+    }
+  }
+
+  // Fallback to v2/user endpoint
   const response = await fetch('https://api.vercel.com/v2/user', {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: 'no-store',
   })
 
   if (response.status !== 200) {
-    const errorText = await response.text()
-    console.error('[fetchUser] Failed to fetch user:', response.status)
+    console.error('[fetchUser] Failed to fetch user from both endpoints')
     return undefined
   }
 
-  // Try to parse response - format may vary by endpoint
   const data = (await response.json()) as unknown
-  console.log('[fetchUser] Raw response structure:', JSON.stringify(data, null, 2).substring(0, 500))
   const user = extractUser(data)
 
   if (!user) {
