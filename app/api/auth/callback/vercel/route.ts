@@ -32,7 +32,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   let tokens: OAuth2Tokens
 
   try {
-    tokens = await client.validateAuthorizationCode('https://vercel.com/api/login/oauth/token', code, storedVerifier)
+    tokens = await client.validateAuthorizationCode('https://api.vercel.com/v2/oauth/access_token', code, storedVerifier)
   } catch (error) {
     console.error('Failed to validate authorization code:', error)
     return new Response(null, {
