@@ -3,7 +3,7 @@
 import { Task } from '@/lib/db/schema'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { AlertCircle, Plus, Trash2, GitBranch, Loader2, Search, X, Clock, Settings, CheckCircle2 } from 'lucide-react'
+import { AlertCircle, Plus, Trash2, GitBranch, Loader2, Search, X, Clock, Settings, CheckCircle2, Home } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -31,6 +31,7 @@ import { PRCheckStatus } from '@/components/pr-check-status'
 import { githubConnectionAtom } from '@/lib/atoms/github-connection'
 
 import { useModelsDevCatalog } from '@/lib/hooks/use-models-dev'
+import { StatusDot } from '@/components/status-badge'
 
 interface TaskSidebarProps {
   tasks: Task[]
@@ -426,6 +427,12 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
         </div>
         <div className="border-t px-2 md:px-3 py-3 md:py-4 bg-muted/80">
           <div className="space-y-1">
+            <Link href="/" onClick={handleLinkClick}>
+              <Button variant="ghost" size="sm" className="w-full justify-start h-8 px-2 text-xs gap-2">
+                <Home className="h-3.5 w-3.5" />
+                Home
+              </Button>
+            </Link>
             <Link href="/scheduled-tasks" onClick={handleLinkClick}>
               <Button variant="ghost" size="sm" className="w-full justify-start h-8 px-2 text-xs gap-2">
                 <Clock className="h-3.5 w-3.5" />
@@ -541,7 +548,7 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
                                   className={cn(
                                     'text-xs font-medium truncate mb-0.5',
                                     task.status === 'processing' &&
-                                      'bg-gradient-to-r from-muted-foreground from-20% via-white via-50% to-muted-foreground to-80% bg-clip-text text-transparent bg-[length:300%_100%] animate-[shimmer_1.5s_linear_infinite]',
+                                    'bg-gradient-to-r from-muted-foreground from-20% via-white via-50% to-muted-foreground to-80% bg-clip-text text-transparent bg-[length:300%_100%] animate-[shimmer_1.5s_linear_infinite]',
                                   )}
                                 >
                                   {(() => {
@@ -549,12 +556,7 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
                                     return displayText.slice(0, 50) + (displayText.length > 50 ? '...' : '')
                                   })()}
                                 </h3>
-                                {task.status === 'error' && (
-                                  <AlertCircle className="h-3 w-3 text-red-500 flex-shrink-0" />
-                                )}
-                                {task.status === 'stopped' && (
-                                  <AlertCircle className="h-3 w-3 text-orange-500 flex-shrink-0" />
-                                )}
+                                <StatusDot status={task.status} />
                               </div>
                               {task.repoUrl && (
                                 <div className="flex items-center gap-1 text-xs text-muted-foreground mb-0.5">
@@ -819,6 +821,19 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
       </div>
       <div className="border-t px-2 md:px-3 py-3 md:py-4 bg-muted/80">
         <div className="space-y-1">
+          <Link href="/" onClick={handleLinkClick}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                'w-full justify-start h-8 px-2 text-xs gap-2',
+                pathname === '/' && 'bg-accent',
+              )}
+            >
+              <Home className="h-3.5 w-3.5" />
+              Home
+            </Button>
+          </Link>
           <Link href="/scheduled-tasks" onClick={handleLinkClick}>
             <Button
               variant="ghost"

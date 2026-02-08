@@ -19,14 +19,14 @@ export function ScheduledTaskCard({ task, onEdit, onDelete, onToggleEnabled }: S
 
   const getTaskTypeColor = (type: string) => {
     const colors: Record<string, string> = {
-      bug_finder: 'destructive',
-      ui_review: 'default',
-      security_scan: 'destructive',
-      code_quality: 'secondary',
-      performance_audit: 'secondary',
-      custom: 'default',
+      bug_finder: 'bg-error/10 text-error border-error/20',
+      ui_review: 'bg-info/10 text-info border-info/20',
+      security_scan: 'bg-error/10 text-error border-error/20',
+      code_quality: 'bg-success/10 text-success border-success/20',
+      performance_audit: 'bg-warning/10 text-warning border-warning/20',
+      custom: 'bg-muted text-muted-foreground',
     }
-    return colors[type] || 'default'
+    return colors[type] || 'bg-muted text-muted-foreground'
   }
 
   const formatTaskType = (type: string) => {
@@ -46,12 +46,12 @@ export function ScheduledTaskCard({ task, onEdit, onDelete, onToggleEnabled }: S
             <CardTitle className="flex items-center gap-2">
               {task.name}
               {task.enabled ? (
-                <Badge variant="secondary" className="text-xs">
+                <Badge className="text-[10px] bg-success/10 text-success border-success/20">
                   Active
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-xs">
-                  Disabled
+                <Badge variant="outline" className="text-[10px] opacity-60">
+                  Paused
                 </Badge>
               )}
             </CardTitle>
@@ -64,7 +64,7 @@ export function ScheduledTaskCard({ task, onEdit, onDelete, onToggleEnabled }: S
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-2">
-          <Badge variant={getTaskTypeColor(task.taskType) as any}>{formatTaskType(task.taskType)}</Badge>
+          <Badge className={`text-[10px] border ${getTaskTypeColor(task.taskType)}`}>{formatTaskType(task.taskType)}</Badge>
           <Badge variant="outline" className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
             {task.timeSlot}
@@ -78,11 +78,11 @@ export function ScheduledTaskCard({ task, onEdit, onDelete, onToggleEnabled }: S
         <p className="text-sm text-muted-foreground line-clamp-2">{task.prompt}</p>
 
         {task.lastRunAt && (
-          <div className="text-xs text-muted-foreground">
-            Last run: {new Date(task.lastRunAt).toLocaleString()}
+          <div className="text-xs text-muted-foreground flex items-center gap-2">
+            <span>Last run: {new Date(task.lastRunAt).toLocaleString()}</span>
             {task.lastRunStatus && (
-              <Badge variant={task.lastRunStatus === 'success' ? 'default' : 'destructive'} className="ml-2">
-                {task.lastRunStatus}
+              <Badge className={`text-[10px] ${task.lastRunStatus === 'success' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}>
+                {task.lastRunStatus === 'success' ? '✓ Success' : '✗ Failed'}
               </Badge>
             )}
           </div>

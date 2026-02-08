@@ -17,8 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AlertCircle, Trash2, Square, StopCircle, CheckSquare, X, Clock } from 'lucide-react'
+import { Trash2, StopCircle, X, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -27,6 +26,7 @@ import { OpenCode } from '@/components/logos'
 import { PRStatusIcon } from '@/components/pr-status-icon'
 import { PRCheckStatus } from '@/components/pr-check-status'
 import { useModelsDevCatalog } from '@/lib/hooks/use-models-dev'
+import { StatusBadge, StatusDot } from '@/components/status-badge'
 
 interface TasksListClientProps {
   user: Session['user'] | null
@@ -87,6 +87,61 @@ export function TasksListClient({ user, authProvider, initialStars = 1200 }: Tas
     if (statusFilter === 'all') return tasks
     return tasks.filter((task) => task.status === statusFilter)
   }, [tasks, statusFilter])
+
+  // Group tasks by date for display
+  const groupedTasks = useMemo(() => {
+    const groups: { label: string; tasks: Task[] }[] = []
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    const lastWeek = new Date(today)
+    lastWeek.setDate(lastWeek.getDate() - 7)
+
+    const todayTasks: Task[] = []
+    const yesterdayTasks: Task[] = []
+    const lastWeekTasks: Task[] = []
+    const olderTasks: Task[] = []
+
+    filteredTasks.forEach((task) => {
+      const taskDate = new Date(task.createdAt)
+      taskDate.setHours(0, 0, 0, 0)
+
+      if (taskDate >= today) {
+        todayTasks.push(task)
+      } else if (taskDate >= yesterday) {
+        yesterdayTasks.push(task)
+      } else if (taskDate >= lastWeek) {
+        lastWeekTasks.push(task)
+      } else {
+        olderTasks.push(task)
+      }
+    })
+
+    if (todayTasks.length > 0) groups.push({ label: 'Today', tasks: todayTasks })
+    if (yesterdayTasks.length > 0) groups.push({ label: 'Yesterday', tasks: yesterdayTasks })
+    if (lastWeekTasks.length > 0) groups.push({ label: 'Last 7 Days', tasks: lastWeekTasks })
+    if (olderTasks.length > 0) groups.push({ label: 'Older', tasks: olderTasks })
+
+    return groups
+  }, [filteredTasks])
+
+  // Task counts by status
+  const taskCounts = useMemo(() => {
+    const counts = {
+      all: tasks.length,
+      processing: 0,
+      completed: 0,
+      error: 0,
+      stopped: 0,
+    }
+    tasks.forEach((task) => {
+      if (task.status in counts) {
+        counts[task.status as keyof typeof counts]++
+      }
+    })
+    return counts
+  }, [tasks])
 
   const handleSelectAll = () => {
     if (selectedTasks.size === filteredTasks.length) {
@@ -201,76 +256,73 @@ export function TasksListClient({ user, authProvider, initialStars = 1200 }: Tas
       </div>
 
       <div className="flex-1 overflow-auto px-4 pb-4">
-        <div className="max-w-7xl mx-auto">
-          {/* Toolbar */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleSelectAll} disabled={filteredTasks.length === 0}>
-                {selectedTasks.size === filteredTasks.length && filteredTasks.length > 0 ? (
-                  <>
-                    <CheckSquare className="h-4 w-4 mr-2" />
-                    Deselect All
-                  </>
-                ) : (
-                  <>
-                    <Square className="h-4 w-4 mr-2" />
-                    Select All
-                  </>
-                )}
-              </Button>
-
-              {selectedTasks.size > 0 && (
-                <>
-                  <Button variant="outline" size="sm" onClick={() => setSelectedTasks(new Set())}>
-                    <X className="h-4 w-4 mr-2" />
-                    Clear Selection
-                  </Button>
-                  <span className="text-sm text-muted-foreground">{selectedTasks.size} selected</span>
-                </>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px] h-9">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Tasks</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="processing">Processing</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="error">Failed</SelectItem>
-                  <SelectItem value="stopped">Stopped</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {selectedTasks.size > 0 && (
-                <>
-                  {selectedProcessingTasks.length > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowStopDialog(true)}
-                      disabled={isStopping}
-                      title={`Stop ${selectedProcessingTasks.length} task${selectedProcessingTasks.length > 1 ? 's' : ''}`}
-                    >
-                      <StopCircle className="h-4 w-4" />
-                    </Button>
+        <div className="max-w-4xl mx-auto">
+          {/* Page Title & Tabs */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold mb-4">Tasks</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              {[
+                { key: 'all', label: 'All', count: taskCounts.all },
+                { key: 'processing', label: 'Running', count: taskCounts.processing },
+                { key: 'completed', label: 'Completed', count: taskCounts.completed },
+                { key: 'error', label: 'Failed', count: taskCounts.error },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setStatusFilter(tab.key)}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                    statusFilter === tab.key
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground'
                   )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowDeleteDialog(true)}
-                    disabled={isDeleting}
-                    title={`Delete ${selectedTasks.size} task${selectedTasks.size > 1 ? 's' : ''}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
+                >
+                  {tab.label}
+                  {tab.count > 0 && (
+                    <span className={cn(
+                      'px-1.5 py-0.5 rounded-full text-xs',
+                      statusFilter === tab.key
+                        ? 'bg-primary-foreground/20 text-primary-foreground'
+                        : 'bg-background text-muted-foreground'
+                    )}>
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
+
+          {/* Bulk Actions Toolbar */}
+          {selectedTasks.size > 0 && (
+            <div className="flex items-center gap-2 mb-4 p-2 bg-muted rounded-lg">
+              <span className="text-sm font-medium">{selectedTasks.size} selected</span>
+              <div className="flex-1" />
+              {selectedProcessingTasks.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowStopDialog(true)}
+                  disabled={isStopping}
+                >
+                  <StopCircle className="h-4 w-4 mr-2" />
+                  Stop
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={isDeleting}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedTasks(new Set())}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
 
           {/* Tasks List */}
           {isLoading ? (
@@ -286,81 +338,86 @@ export function TasksListClient({ user, authProvider, initialStars = 1200 }: Tas
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-2">
-              {filteredTasks.map((task) => (
-                <Card
-                  key={task.id}
-                  className={cn(
-                    'transition-colors hover:bg-accent cursor-pointer p-0',
-                    selectedTasks.has(task.id) && 'ring-2 ring-primary',
-                  )}
-                  onClick={(e) => {
-                    if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
-                      return
-                    }
-                    router.push(`/tasks/${task.id}`)
-                  }}
-                >
-                  <CardContent className="px-3 py-2">
-                    <div className="flex items-start gap-3">
-                      <Checkbox
-                        checked={selectedTasks.has(task.id)}
-                        onCheckedChange={() => handleSelectTask(task.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="mt-1"
-                      />
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-sm font-medium truncate flex-1">{task.title || task.prompt}</h3>
-                          {task.status === 'error' && <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />}
-                          {task.status === 'stopped' && (
-                            <AlertCircle className="h-4 w-4 text-orange-500 flex-shrink-0" />
-                          )}
-                        </div>
-                        {task.repoUrl && (
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                            {task.prStatus && (
-                              <div className="relative">
-                                <PRStatusIcon status={task.prStatus} />
-                                <PRCheckStatus taskId={task.id} prStatus={task.prStatus} />
-                              </div>
-                            )}
-                            <span className="truncate">
-                              {(() => {
-                                try {
-                                  const url = new URL(task.repoUrl)
-                                  const pathParts = url.pathname.split('/').filter(Boolean)
-                                  if (pathParts.length >= 2) {
-                                    return `${pathParts[0]}/${pathParts[1].replace(/\.git$/, '')}`
-                                  }
-                                  return 'Unknown repository'
-                                } catch {
-                                  return 'Invalid repository URL'
-                                }
-                              })()}
-                            </span>
-                          </div>
+            <div className="space-y-6">
+              {groupedTasks.map((group) => (
+                <div key={group.label}>
+                  {/* Date Group Header */}
+                  <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                    {group.label}
+                  </h2>
+                  <div className="space-y-2">
+                    {group.tasks.map((task) => (
+                      <Card
+                        key={task.id}
+                        className={cn(
+                          'transition-colors hover:bg-accent cursor-pointer p-0',
+                          selectedTasks.has(task.id) && 'ring-2 ring-primary',
                         )}
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                          {task.selectedAgent && (
-                            <div className="flex items-center gap-1">
-                              <OpenCode className="w-3 h-3" />
-                              <span>{getProviderLabel(task.selectedAgent)}</span>
-                              {task.selectedModel && (
-                                <span>{getHumanFriendlyModelName(task.selectedAgent, task.selectedModel)}</span>
-                              )}
+                        onClick={(e) => {
+                          if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
+                            return
+                          }
+                          router.push(`/tasks/${task.id}`)
+                        }}
+                      >
+                        <CardContent className="px-4 py-3">
+                          <div className="flex items-start gap-3">
+                            <Checkbox
+                              checked={selectedTasks.has(task.id)}
+                              onCheckedChange={() => handleSelectTask(task.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="mt-0.5"
+                            />
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <StatusDot status={task.status} />
+                                <h3 className="text-sm font-medium truncate flex-1">{task.title || task.prompt}</h3>
+                                <StatusBadge status={task.status} size="sm" showDot={false} />
+                              </div>
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                                {task.repoUrl && (
+                                  <div className="flex items-center gap-1">
+                                    {task.prStatus && (
+                                      <div className="relative">
+                                        <PRStatusIcon status={task.prStatus} />
+                                        <PRCheckStatus taskId={task.id} prStatus={task.prStatus} />
+                                      </div>
+                                    )}
+                                    <span className="truncate max-w-[180px]">
+                                      {(() => {
+                                        try {
+                                          const url = new URL(task.repoUrl)
+                                          const pathParts = url.pathname.split('/').filter(Boolean)
+                                          if (pathParts.length >= 2) {
+                                            return `${pathParts[0]}/${pathParts[1].replace(/\.git$/, '')}`
+                                          }
+                                          return 'Unknown'
+                                        } catch {
+                                          return 'Unknown'
+                                        }
+                                      })()}
+                                    </span>
+                                  </div>
+                                )}
+                                {task.selectedAgent && (
+                                  <div className="flex items-center gap-1">
+                                    <OpenCode className="w-3 h-3" />
+                                    <span>{getProviderLabel(task.selectedAgent)}</span>
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{getTimeAgo(task.createdAt)}</span>
+                                </div>
+                              </div>
                             </div>
-                          )}
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            <span>{getTimeAgo(task.createdAt)}</span>
                           </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}

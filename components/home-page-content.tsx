@@ -30,6 +30,8 @@ import { sessionAtom } from '@/lib/atoms/session'
 import { githubConnectionAtom, githubConnectionInitializedAtom } from '@/lib/atoms/github-connection'
 import { OpenRepoUrlDialog } from '@/components/open-repo-url-dialog'
 import { MultiRepoDialog } from '@/components/multi-repo-dialog'
+import { GreetingHero } from '@/components/greeting-hero'
+import { SuggestionCards } from '@/components/suggestion-cards'
 
 interface HomePageContentProps {
   initialSelectedOwner?: string
@@ -487,7 +489,10 @@ export function HomePageContent({
         <SharedHeader leftActions={headerLeftActions} initialStars={initialStars} />
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 pb-20 md:pb-4">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 pb-20 md:pb-4">
+        {/* Greeting Hero - show when logged in */}
+        {user && <GreetingHero userName={user.username || user.display_name?.split(' ')[0]} />}
+
         <TaskForm
           onSubmit={handleTaskSubmit}
           isSubmitting={isSubmitting}
@@ -499,6 +504,13 @@ export function HomePageContent({
           initialEnableBrowser={initialEnableBrowser}
           maxSandboxDuration={maxSandboxDuration}
         />
+
+        {/* Suggestion Cards - show when logged in */}
+        {user && (
+          <SuggestionCards
+            onSelect={(prompt) => setTaskPrompt(prompt)}
+          />
+        )}
       </div>
 
       {/* Mobile Footer with Stars and Deploy Button - Show when logged in OR when owner/repo are selected */}

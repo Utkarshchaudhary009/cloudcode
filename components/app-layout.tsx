@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Plus, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { getSidebarWidth, setSidebarWidth, getSidebarOpen, setSidebarOpen } from '@/lib/utils/cookies'
 import { nanoid } from 'nanoid'
 import { ConnectorsProvider } from '@/components/connectors-provider'
@@ -105,6 +106,7 @@ export function AppLayout({ children, initialSidebarWidth, initialSidebarOpen, i
   const [isResizing, setIsResizing] = useState(false)
   const [isDesktop, setIsDesktop] = useState(!initialIsMobile)
   const [hasMounted, setHasMounted] = useState(false)
+  const router = useRouter()
 
   // Update sidebar width and save to cookie
   const updateSidebarWidth = (newWidth: number) => {
@@ -180,15 +182,44 @@ export function AppLayout({ children, initialSidebarWidth, initialSidebarOpen, i
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
-        e.preventDefault()
-        toggleSidebar()
+      // Skip if user is typing in an input/textarea
+      const target = e.target as HTMLElement
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return
+      }
+
+      const isModifier = e.metaKey || e.ctrlKey
+
+      if (isModifier) {
+        switch (e.key.toLowerCase()) {
+          case 'b':
+            // Toggle sidebar
+            e.preventDefault()
+            toggleSidebar()
+            break
+          case 'n':
+            // New task - navigate to home
+            if (!e.shiftKey) {
+              e.preventDefault()
+              router.push('/')
+            }
+            break
+          case ',':
+            // Settings
+            e.preventDefault()
+            router.push('/settings')
+            break
+        }
       }
     }
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [toggleSidebar])
+  }, [toggleSidebar, router])
 
   const fetchTasks = async () => {
     try {

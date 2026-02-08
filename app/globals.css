@@ -43,6 +43,20 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Status colors for task indicators */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  /* Surface colors for layered UI */
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
 }
 
 :root {
@@ -81,6 +95,20 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Status colors - Light theme */
+  --success: oklch(0.55 0.18 145);
+  --success-foreground: oklch(1 0 0);
+  --warning: oklch(0.75 0.18 85);
+  --warning-foreground: oklch(0.2 0 0);
+  --error: oklch(0.55 0.22 27);
+  --error-foreground: oklch(1 0 0);
+  --info: oklch(0.55 0.18 230);
+  --info-foreground: oklch(1 0 0);
+
+  /* Surface colors - Light theme */
+  --surface: oklch(0.985 0 0);
+  --surface-elevated: oklch(1 0 0);
 }
 
 .dark {
@@ -115,12 +143,27 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Status colors - Dark theme */
+  --success: oklch(0.65 0.2 145);
+  --success-foreground: oklch(0.15 0 0);
+  --warning: oklch(0.8 0.18 85);
+  --warning-foreground: oklch(0.15 0 0);
+  --error: oklch(0.65 0.22 27);
+  --error-foreground: oklch(0.15 0 0);
+  --info: oklch(0.65 0.18 230);
+  --info-foreground: oklch(0.15 0 0);
+
+  /* Surface colors - Dark theme (Zinc-based) */
+  --surface: oklch(0.18 0 0);
+  --surface-elevated: oklch(0.22 0 0);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -134,9 +177,178 @@ button {
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
+}
+
+/* Micro-interaction animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-subtle {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bounce-subtle {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes success-pop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Animation utility classes */
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 0.5s ease-in-out;
+}
+
+.animate-success-pop {
+  animation: success-pop 0.3s ease-out;
+}
+
+/* Transition utilities */
+.transition-micro {
+  transition: all 0.15s ease-out;
+}
+
+.transition-smooth {
+  transition: all 0.2s ease-in-out;
+}
+
+.transition-spring {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Focus-visible improvements for accessibility */
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+}
+
+/* Hover lift effect */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Git Diff Viewer Mobile Optimizations */
@@ -150,18 +362,18 @@ button {
   .git-diff-view-container {
     font-size: 11px;
   }
-  
+
   /* Ensure horizontal scrolling works on mobile */
-  .git-diff-view-container > div {
+  .git-diff-view-container>div {
     min-width: max-content;
   }
-  
+
   /* Adjust line numbers and content for mobile */
   .git-diff-view-container .diff-line-num {
     padding: 2px 4px;
     font-size: 10px;
   }
-  
+
   .git-diff-view-container .diff-line-content {
     padding: 2px 4px;
   }
