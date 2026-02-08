@@ -1,4 +1,5 @@
 import { Sandbox } from '@vercel/sandbox'
+import { APIError } from '@vercel/sandbox/dist/api-client/api-error'
 import { Writable } from 'stream'
 import { validateEnvironmentVariables, createAuthenticatedRepoUrl } from './config'
 import { runCommandInSandbox, runInProject, PROJECT_DIR } from './commands'
@@ -43,6 +44,104 @@ async function runAndLogCommand(sandbox: Sandbox, command: string, args: string[
   }
 
   return result
+}
+
+type ApiErrorPayload = Record<string, unknown>
+
+const API_ERROR_KEYS = ['error', 'code', 'message']
+
+function collectErrorStrings(value: unknown): string[] {
+  if (!value) {
+    return []
+  }
+
+  if (typeof value === 'string') {
+    return [value]
+  }
+
+  if (Array.isArray(value)) {
+    return value.flatMap(collectErrorStrings)
+  }
+
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>
+    return API_ERROR_KEYS.flatMap((key) => collectErrorStrings(record[key]))
+  }
+
+  return []
+}
+
+function parseApiErrorPayload(error: APIError<unknown>): ApiErrorPayload | undefined {
+  if (error.json && typeof error.json === 'object') {
+    return error.json as ApiErrorPayload
+  }
+
+  if (typeof error.text === 'string' && error.text.trim()) {
+    try {
+      const parsed = JSON.parse(error.text)
+      if (parsed && typeof parsed === 'object') {
+        return parsed as ApiErrorPayload
+      }
+    } catch {
+      return undefined
+    }
+  }
+
+  return undefined
+}
+
+function getSandboxApiErrorMessage(error: unknown): string | undefined {
+  if (!(error instanceof APIError)) {
+    return undefined
+  }
+
+  const status = error.response?.status
+  const payload = parseApiErrorPayload(error)
+  const payloadStrings = payload ? collectErrorStrings(payload) : []
+  const messageTokens = [error.message, error.text, ...payloadStrings].filter((token): token is string =>
+    Boolean(token),
+  )
+  const normalized = messageTokens.join(' ').toLowerCase()
+
+  if (
+    status === 401 ||
+    normalized.includes('unauthorized') ||
+    normalized.includes('invalid token') ||
+    normalized.includes('authentication') ||
+    normalized.includes('token')
+  ) {
+    return 'Sandbox creation failed due to invalid Vercel credentials. Check SANDBOX_VERCEL_TOKEN.'
+  }
+
+  if (
+    status === 403 ||
+    normalized.includes('forbidden') ||
+    normalized.includes('permission') ||
+    normalized.includes('not allowed') ||
+    normalized.includes('access denied') ||
+    normalized.includes('insufficient')
+  ) {
+    return 'Sandbox creation failed due to insufficient Vercel permissions. Ensure the token has access to the team and project.'
+  }
+
+  if (
+    status === 404 ||
+    ((normalized.includes('team') || normalized.includes('project')) &&
+      (normalized.includes('not found') || normalized.includes('invalid')))
+  ) {
+    return 'Sandbox creation failed due to invalid Vercel team or project configuration. Check SANDBOX_VERCEL_TEAM_ID and SANDBOX_VERCEL_PROJECT_ID.'
+  }
+
+  if (
+    status === 400 ||
+    normalized.includes('bad request') ||
+    normalized.includes('invalid') ||
+    normalized.includes('missing')
+  ) {
+    return 'Sandbox creation failed due to invalid sandbox configuration. Verify the Vercel team, project, and token settings.'
+  }
+
+  return 'Sandbox creation failed due to a Vercel API error. Verify the sandbox configuration and credentials.'
 }
 
 export async function createSandbox(config: SandboxConfig, logger: TaskLogger): Promise<SandboxResult> {
@@ -143,25 +242,21 @@ export async function createSandbox(config: SandboxConfig, logger: TaskLogger): 
       const errorName = error instanceof Error ? error.name : 'UnknownError'
       const errorCode =
         error && typeof error === 'object' && 'code' in error ? (error as { code?: string }).code : undefined
-      const errorResponse =
-        error && typeof error === 'object' && 'response' in error
-          ? (error as { response?: { status?: number; data?: unknown } }).response
-          : undefined
 
       // Check if this is a timeout error
       if (errorMessage?.includes('timeout') || errorCode === 'ETIMEDOUT' || errorName === 'TimeoutError') {
-        await logger.error(`Sandbox creation timed out after 5 minutes`)
-        await logger.error(`This usually happens when the repository is large or has many dependencies`)
+        await logger.error('Sandbox creation timed out after 5 minutes')
+        await logger.error('This usually happens when the repository is large or has many dependencies')
         throw new Error('Sandbox creation timed out. Try with a smaller repository or fewer dependencies.')
       }
 
-      await logger.error('Sandbox creation failed')
-      if (errorResponse) {
-        await logger.error(`HTTP error ${errorResponse.status} occurred`)
-        if (errorResponse.data) {
-          await logger.error(`Error details: ${JSON.stringify(errorResponse.data)}`)
-        }
+      const apiErrorMessage = getSandboxApiErrorMessage(error)
+      if (apiErrorMessage) {
+        await logger.error('Sandbox creation failed')
+        throw new Error(apiErrorMessage)
       }
+
+      await logger.error('Sandbox creation failed')
       throw error
     }
 
@@ -828,7 +923,7 @@ SKILL_EOF`
     }
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-    console.error('Sandbox creation error:', error)
+    console.error('Sandbox creation error')
     await logger.error('Error occurred during sandbox creation')
 
     return {
