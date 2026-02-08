@@ -46,9 +46,7 @@ export function ScheduledTaskCard({ task, onEdit, onDelete, onToggleEnabled }: S
             <CardTitle className="flex items-center gap-2">
               {task.name}
               {task.enabled ? (
-                <Badge className="text-[10px] bg-success/10 text-success border-success/20">
-                  Active
-                </Badge>
+                <Badge className="text-[10px] bg-success/10 text-success border-success/20">Active</Badge>
               ) : (
                 <Badge variant="outline" className="text-[10px] opacity-60">
                   Paused
@@ -64,7 +62,9 @@ export function ScheduledTaskCard({ task, onEdit, onDelete, onToggleEnabled }: S
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-2">
-          <Badge className={`text-[10px] border ${getTaskTypeColor(task.taskType)}`}>{formatTaskType(task.taskType)}</Badge>
+          <Badge className={`text-[10px] border ${getTaskTypeColor(task.taskType)}`}>
+            {formatTaskType(task.taskType)}
+          </Badge>
           <Badge variant="outline" className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
             {task.timeSlot}
@@ -81,7 +81,9 @@ export function ScheduledTaskCard({ task, onEdit, onDelete, onToggleEnabled }: S
           <div className="text-xs text-muted-foreground flex items-center gap-2">
             <span>Last run: {new Date(task.lastRunAt).toLocaleString()}</span>
             {task.lastRunStatus && (
-              <Badge className={`text-[10px] ${task.lastRunStatus === 'success' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}>
+              <Badge
+                className={`text-[10px] ${task.lastRunStatus === 'success' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'}`}
+              >
                 {task.lastRunStatus === 'success' ? '✓ Success' : '✗ Failed'}
               </Badge>
             )}

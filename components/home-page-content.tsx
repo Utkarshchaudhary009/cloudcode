@@ -491,7 +491,7 @@ export function HomePageContent({
 
       <div className="flex-1 flex flex-col items-center justify-center px-4 pb-20 md:pb-4">
         {/* Greeting Hero - show when logged in */}
-        {user && <GreetingHero userName={user.username || user.display_name?.split(' ')[0]} />}
+        {user && <GreetingHero userName={user.username || user.name?.split(' ')[0]} />}
 
         <TaskForm
           onSubmit={handleTaskSubmit}
@@ -506,11 +506,7 @@ export function HomePageContent({
         />
 
         {/* Suggestion Cards - show when logged in */}
-        {user && (
-          <SuggestionCards
-            onSelect={(prompt) => setTaskPrompt(prompt)}
-          />
-        )}
+        {user && <SuggestionCards onSelect={(prompt) => setTaskPrompt(prompt)} />}
       </div>
 
       {/* Mobile Footer with Stars and Deploy Button - Show when logged in OR when owner/repo are selected */}

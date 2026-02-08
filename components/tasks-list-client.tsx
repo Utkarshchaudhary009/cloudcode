@@ -274,17 +274,19 @@ export function TasksListClient({ user, authProvider, initialStars = 1200 }: Tas
                     'flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
                     statusFilter === tab.key
                       ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground',
                   )}
                 >
                   {tab.label}
                   {tab.count > 0 && (
-                    <span className={cn(
-                      'px-1.5 py-0.5 rounded-full text-xs',
-                      statusFilter === tab.key
-                        ? 'bg-primary-foreground/20 text-primary-foreground'
-                        : 'bg-background text-muted-foreground'
-                    )}>
+                    <span
+                      className={cn(
+                        'px-1.5 py-0.5 rounded-full text-xs',
+                        statusFilter === tab.key
+                          ? 'bg-primary-foreground/20 text-primary-foreground'
+                          : 'bg-background text-muted-foreground',
+                      )}
+                    >
                       {tab.count}
                     </span>
                   )}
@@ -299,22 +301,12 @@ export function TasksListClient({ user, authProvider, initialStars = 1200 }: Tas
               <span className="text-sm font-medium">{selectedTasks.size} selected</span>
               <div className="flex-1" />
               {selectedProcessingTasks.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowStopDialog(true)}
-                  disabled={isStopping}
-                >
+                <Button variant="outline" size="sm" onClick={() => setShowStopDialog(true)} disabled={isStopping}>
                   <StopCircle className="h-4 w-4 mr-2" />
                   Stop
                 </Button>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowDeleteDialog(true)}
-                disabled={isDeleting}
-              >
+              <Button variant="outline" size="sm" onClick={() => setShowDeleteDialog(true)} disabled={isDeleting}>
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete
               </Button>

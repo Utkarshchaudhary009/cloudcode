@@ -184,11 +184,7 @@ export function AppLayout({ children, initialSidebarWidth, initialSidebarOpen, i
     const handleKeyDown = (e: KeyboardEvent) => {
       // Skip if user is typing in an input/textarea
       const target = e.target as HTMLElement
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
         return
       }
 

@@ -19,7 +19,9 @@ export default function SettingsPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-sm mb-0.5">Review Rules</h3>
-                <p className="text-muted-foreground text-xs">Configure custom code review rules for automated PR analysis</p>
+                <p className="text-muted-foreground text-xs">
+                  Configure custom code review rules for automated PR analysis
+                </p>
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
             </CardContent>
@@ -49,7 +51,9 @@ export default function SettingsPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-sm mb-0.5">Vercel Auto-Fix</h3>
-                <p className="text-muted-foreground text-xs">Subscribe to Vercel projects for automatic build failure fixes</p>
+                <p className="text-muted-foreground text-xs">
+                  Subscribe to Vercel projects for automatic build failure fixes
+                </p>
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
             </CardContent>
