@@ -21,18 +21,11 @@ import { Trash2, StopCircle, X, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import type { Session } from '@/lib/session/types'
 import { OpenCode } from '@/components/logos'
 import { PRStatusIcon } from '@/components/pr-status-icon'
 import { PRCheckStatus } from '@/components/pr-check-status'
 import { useModelsDevCatalog } from '@/lib/hooks/use-models-dev'
 import { StatusBadge, StatusDot } from '@/components/status-badge'
-
-interface TasksListClientProps {
-  user: Session['user'] | null
-  authProvider: Session['authProvider'] | null
-  initialStars?: number
-}
 
 function getTimeAgo(date: Date): string {
   const now = new Date()
@@ -51,7 +44,7 @@ function getTimeAgo(date: Date): string {
   return new Date(date).toLocaleDateString()
 }
 
-export function TasksListClient({ user, authProvider, initialStars = 1200 }: TasksListClientProps) {
+export function TasksListClient() {
   const { toggleSidebar, refreshTasks } = useTasks()
   const router = useRouter()
   const { getProviderLabel, getModelLabel } = useModelsDevCatalog()
@@ -252,7 +245,7 @@ export function TasksListClient({ user, authProvider, initialStars = 1200 }: Tas
   return (
     <div className="flex-1 bg-background flex flex-col h-full overflow-hidden">
       <div className="flex-shrink-0 p-3">
-        <SharedHeader initialStars={initialStars} />
+        <SharedHeader />
       </div>
 
       <div className="flex-1 overflow-auto px-4 pb-4">

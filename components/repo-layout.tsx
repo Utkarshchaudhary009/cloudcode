@@ -4,7 +4,6 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { SharedHeader } from '@/components/shared-header'
 import { Button } from '@/components/ui/button'
-import type { Session } from '@/lib/session/types'
 import { cn } from '@/lib/utils'
 import { setSelectedOwner, setSelectedRepo } from '@/lib/utils/cookies'
 import { Plus } from 'lucide-react'
@@ -12,13 +11,10 @@ import { Plus } from 'lucide-react'
 interface RepoLayoutProps {
   owner: string
   repo: string
-  user: Session['user'] | null
-  authProvider: Session['authProvider'] | null
-  initialStars?: number
   children: React.ReactNode
 }
 
-export function RepoLayout({ owner, repo, user, authProvider, initialStars = 1200, children }: RepoLayoutProps) {
+export function RepoLayout({ owner, repo, children }: RepoLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -47,7 +43,7 @@ export function RepoLayout({ owner, repo, user, authProvider, initialStars = 120
   return (
     <div className="flex-1 bg-background relative flex flex-col h-full overflow-hidden">
       <div className="flex-shrink-0 p-3">
-        <SharedHeader leftActions={headerLeftActions} initialStars={initialStars} />
+        <SharedHeader leftActions={headerLeftActions} />
       </div>
 
       {/* Main content with tabs */}
