@@ -1,5 +1,5 @@
 export function validateEnvironmentVariables(
-  selectedAgent: string = 'openai',
+  selectedAgent: string = 'opencode',
   githubToken?: string | null,
   apiKeys?: {
     OPENAI_API_KEY?: string

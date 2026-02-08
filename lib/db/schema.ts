@@ -82,7 +82,7 @@ export const tasks = pgTable('tasks', {
   prompt: text('prompt').notNull(),
   title: text('title'),
   repoUrl: text('repo_url'),
-  selectedAgent: text('selected_agent').default('openai'),
+  selectedAgent: text('selected_agent').default('opencode'),
   selectedModel: text('selected_model'),
   installDependencies: boolean('install_dependencies').default(false),
   maxDuration: integer('max_duration').default(parseInt(process.env.MAX_SANDBOX_DURATION || '300', 10)),
@@ -535,7 +535,7 @@ export const scheduledTasks = pgTable(
       .notNull()
       .$defaultFn(() => ['daily']),
     timezone: text('timezone').notNull().default('UTC'),
-    selectedAgent: text('selected_agent').default('openai'),
+    selectedAgent: text('selected_agent').default('opencode'),
     selectedModel: text('selected_model'),
     enabled: boolean('enabled').notNull().default(true),
     lastRunAt: timestamp('last_run_at'),
@@ -830,7 +830,7 @@ export const vercelSubscriptions = pgTable(
     teamId: text('team_id'), // Vercel team ID (optional, for team projects)
     webhookId: text('webhook_id'), // Vercel webhook ID for this subscription
     enabled: boolean('enabled').notNull().default(true),
-    selectedAgent: text('selected_agent').default('openai'),
+    selectedAgent: text('selected_agent').default('opencode'),
     selectedModel: text('selected_model'),
     maxAttempts: integer('max_attempts').notNull().default(5),
     createdAt: timestamp('created_at').defaultNow().notNull(),

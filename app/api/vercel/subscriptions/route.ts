@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       teamId: teamId || null,
       webhookId,
       enabled: true,
-      selectedAgent: selectedAgent || 'openai',
+      selectedAgent: selectedAgent || 'opencode',
       selectedModel: selectedModel || null,
       maxAttempts: maxAttempts || 5,
     })

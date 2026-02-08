@@ -121,7 +121,7 @@ async function continueTask(
   repoUrl: string,
   branchName: string,
   maxDuration: number,
-  selectedAgent: string = 'openai',
+  selectedAgent: string = 'opencode',
   selectedModel?: string,
   installDependencies: boolean = false,
   apiKeys?: {

@@ -9,9 +9,8 @@ import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
 export const metadata: Metadata = {
-  title: 'Coding Agent Template',
-  description:
-    'AI-powered coding agent template supporting Claude Code, OpenAI Codex CLI, Cursor CLI, and opencode with Vercel Sandbox',
+  title: 'CloudCode',
+  description: 'AI-powered coding agent built with OpenCode and Vercel Sandbox',
 }
 
 export default function RootLayout({

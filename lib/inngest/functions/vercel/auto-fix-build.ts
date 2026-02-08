@@ -170,7 +170,7 @@ export const executeBuildFix = inngest.createFunction(
             runtime: 'node22',
             resources: { vcpus: 4 },
             taskPrompt: `Fix the build error on branch ${buildFix.branch}`,
-            selectedAgent: subscription.selectedAgent || 'openai',
+            selectedAgent: subscription.selectedAgent || 'opencode',
             selectedModel: subscription.selectedModel || undefined,
             installDependencies: true,
             preDeterminedBranchName: buildFix.branch,
