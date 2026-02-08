@@ -1,9 +1,5 @@
-import { GitHubAppInstall } from '@/components/github-integration/github-app-install'
+import { redirect } from 'next/navigation'
 
-export default function GitHubIntegrationsPage() {
-  return (
-    <div className="container py-8">
-      <GitHubAppInstall />
-    </div>
-  )
+export default function IntegrationsPage() {
+  redirect('/code-review')
 }

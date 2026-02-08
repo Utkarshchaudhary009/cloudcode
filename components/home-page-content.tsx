@@ -30,6 +30,7 @@ import { githubConnectionAtom, githubConnectionInitializedAtom } from '@/lib/ato
 import { OpenRepoUrlDialog } from '@/components/open-repo-url-dialog'
 import { MultiRepoDialog } from '@/components/multi-repo-dialog'
 import { GreetingHero } from '@/components/greeting-hero'
+import { ActivityFeed } from '@/components/activity-feed'
 
 interface HomePageContentProps {
   initialSelectedOwner?: string
@@ -500,6 +501,9 @@ export function HomePageContent({
           initialEnableBrowser={initialEnableBrowser}
           maxSandboxDuration={maxSandboxDuration}
         />
+
+        {/* Activity Feed - Search, Tabs, and Time-grouped items */}
+        <ActivityFeed className="mt-8 px-2" />
       </div>
 
       {/* Dialogs */}

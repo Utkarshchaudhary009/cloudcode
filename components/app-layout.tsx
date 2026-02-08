@@ -161,8 +161,17 @@ export function AppLayout({ children, initialSidebarWidth, initialSidebarOpen, i
   }, [])
 
   const toggleSidebar = useCallback(() => {
-    updateSidebarOpen(!isSidebarOpen)
-  }, [isSidebarOpen, updateSidebarOpen])
+    if (window.innerWidth >= 1024) {
+      // Desktop: Toggle between Rail and Expanded
+      const newWidth = sidebarWidth > 100 ? 64 : 288
+      updateSidebarWidth(newWidth)
+      // Ensure it stays "open" logically
+      if (!isSidebarOpen) updateSidebarOpen(true)
+    } else {
+      // Mobile: Toggle visibility
+      updateSidebarOpen(!isSidebarOpen)
+    }
+  }, [isSidebarOpen, sidebarWidth, updateSidebarOpen])
 
   // Handle window resize - close sidebar on mobile and update isDesktop
   useEffect(() => {
@@ -295,10 +304,13 @@ export function AppLayout({ children, initialSidebarWidth, initialSidebarOpen, i
       if (!isResizing) return
 
       const newWidth = e.clientX
-      const minWidth = 200
+      const railWidth = 64
+      const minExpandedWidth = 200
       const maxWidth = 600
 
-      if (newWidth >= minWidth && newWidth <= maxWidth) {
+      if (newWidth < 100) {
+        updateSidebarWidth(railWidth)
+      } else if (newWidth >= minExpandedWidth && newWidth <= maxWidth) {
         updateSidebarWidth(newWidth)
       }
     }

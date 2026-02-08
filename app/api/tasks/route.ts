@@ -246,7 +246,6 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ task: newTask })
-    return NextResponse.json({ task: newTask })
   } catch (error) {
     console.error('Error creating task:', error)
 
