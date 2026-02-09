@@ -248,196 +248,200 @@ export default function VercelReviewPage() {
 
   if (needsVercelAuth) {
     return (
-      <div className="container py-8 max-w-5xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Zap className="h-8 w-8" />
-            Vercel Auto-Fix
-          </h1>
-          <p className="text-muted-foreground">Connect Vercel to enable AI-powered build failure fixes.</p>
-        </div>
+      <div className="flex-1 bg-background flex flex-col">
+        <div className="container py-8 max-w-5xl">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Zap className="h-8 w-8" />
+              Vercel Auto-Fix
+            </h1>
+            <p className="text-muted-foreground">Connect Vercel to enable AI-powered build failure fixes.</p>
+          </div>
 
-        <Card className="border-dashed">
-          <CardContent className="py-16 text-center">
-            <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-6">
-              <KeyRound className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">Connect Your Vercel Account</h2>
-            <p className="text-muted-foreground max-w-md mx-auto mb-6">
-              Connect Vercel to automatically detect your projects and enable AI-powered build fixes.
-            </p>
-            <Button size="lg" onClick={handleConnectVercel} disabled={connectingVercel}>
-              {connectingVercel ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <KeyRound className="h-4 w-4 mr-2" />
-              )}
-              Connect Vercel
-            </Button>
-          </CardContent>
-        </Card>
+          <Card className="border-dashed">
+            <CardContent className="py-16 text-center">
+              <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-6">
+                <KeyRound className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Connect Your Vercel Account</h2>
+              <p className="text-muted-foreground max-w-md mx-auto mb-6">
+                Connect Vercel to automatically detect your projects and enable AI-powered build fixes.
+              </p>
+              <Button size="lg" onClick={handleConnectVercel} disabled={connectingVercel}>
+                {connectingVercel ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <KeyRound className="h-4 w-4 mr-2" />
+                )}
+                Connect Vercel
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="container py-8 max-w-5xl">
-      {/* Header */}
-      <div className="mb-8 flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Zap className="h-8 w-8" />
-            Vercel Auto-Fix
-          </h1>
-          <p className="text-muted-foreground">
-            Enable auto-fix on any project. We&apos;ll automatically fix build failures with AI.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/vercel-fixes">View Build Fixes</Link>
-          </Button>
-          <Button variant="outline" onClick={() => fetchProjects(selectedScopeId)}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      {/* Scope Selector */}
-      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm text-muted-foreground">Choose a Vercel scope to load projects.</div>
-        <div className="w-full sm:w-64">
-          <Select value={selectedScopeId} onValueChange={setSelectedScopeId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a scope" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All teams</SelectItem>
-              {scopes.map((scope) => (
-                <SelectItem key={scope.id} value={scope.id}>
-                  {scope.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Stats Banner */}
-      {enabledCount > 0 && (
-        <Card className="mb-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 border-green-500/20">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="font-semibold">{enabledCount} projects protected</p>
-                  <p className="text-sm text-muted-foreground">Build failures will be automatically fixed</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/vercel-fixes">View Activity →</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Search */}
-      {projects.length > 0 && (
-        <div className="mb-4">
-          <Input
-            placeholder="Search projects..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-sm"
-          />
-        </div>
-      )}
-
-      {/* Projects Table */}
-      {filteredProjects.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-12 text-center">
-            <Zap className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">
-              {searchQuery ? 'No matching projects' : 'No Vercel Projects Found'}
-            </h3>
+    <div className="flex-1 bg-background flex flex-col">
+      <div className="container py-8 max-w-5xl">
+        {/* Header */}
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Zap className="h-8 w-8" />
+              Vercel Auto-Fix
+            </h1>
             <p className="text-muted-foreground">
-              {searchQuery ? 'Try a different search term.' : 'Make sure your Vercel account has projects available.'}
+              Enable auto-fix on any project. We&apos;ll automatically fix build failures with AI.
             </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Project</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Repository</TableHead>
-                <TableHead>Auto-Fix</TableHead>
-                <TableHead className="w-[80px]">Link</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProjects.map((project) => (
-                <TableRow key={project.id} className={project.autoFixEnabled ? 'bg-green-500/5' : ''}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{project.name}</span>
-                      {project.framework && (
-                        <Badge variant="secondary" className="text-xs">
-                          {project.framework}
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <DeploymentStatus status={project.latestDeploymentStatus} />
-                  </TableCell>
-                  <TableCell>
-                    {project.repoUrl ? (
-                      <a
-                        href={project.repoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-                      >
-                        <Github className="h-3.5 w-3.5" />
-                        <span className="truncate max-w-[150px]">
-                          {project.repoUrl.replace('https://github.com/', '')}
-                        </span>
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {togglingProject === project.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Switch checked={project.autoFixEnabled} onCheckedChange={() => handleToggleAutoFix(project)} />
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {project.latestDeploymentUrl && (
-                      <Button variant="ghost" size="sm" asChild>
-                        <a href={project.latestDeploymentUrl} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    )}
-                  </TableCell>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/vercel-fixes">View Build Fixes</Link>
+            </Button>
+            <Button variant="outline" onClick={() => fetchProjects(selectedScopeId)}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        {/* Scope Selector */}
+        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-muted-foreground">Choose a Vercel scope to load projects.</div>
+          <div className="w-full sm:w-64">
+            <Select value={selectedScopeId} onValueChange={setSelectedScopeId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a scope" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All teams</SelectItem>
+                {scopes.map((scope) => (
+                  <SelectItem key={scope.id} value={scope.id}>
+                    {scope.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Stats Banner */}
+        {enabledCount > 0 && (
+          <Card className="mb-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 border-green-500/20">
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">{enabledCount} projects protected</p>
+                    <p className="text-sm text-muted-foreground">Build failures will be automatically fixed</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/vercel-fixes">View Activity →</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Search */}
+        {projects.length > 0 && (
+          <div className="mb-4">
+            <Input
+              placeholder="Search projects..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-sm"
+            />
+          </div>
+        )}
+
+        {/* Projects Table */}
+        {filteredProjects.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="py-12 text-center">
+              <Zap className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">
+                {searchQuery ? 'No matching projects' : 'No Vercel Projects Found'}
+              </h3>
+              <p className="text-muted-foreground">
+                {searchQuery ? 'Try a different search term.' : 'Make sure your Vercel account has projects available.'}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Project</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Repository</TableHead>
+                  <TableHead>Auto-Fix</TableHead>
+                  <TableHead className="w-[80px]">Link</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
-      )}
+              </TableHeader>
+              <TableBody>
+                {filteredProjects.map((project) => (
+                  <TableRow key={project.id} className={project.autoFixEnabled ? 'bg-green-500/5' : ''}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{project.name}</span>
+                        {project.framework && (
+                          <Badge variant="secondary" className="text-xs">
+                            {project.framework}
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <DeploymentStatus status={project.latestDeploymentStatus} />
+                    </TableCell>
+                    <TableCell>
+                      {project.repoUrl ? (
+                        <a
+                          href={project.repoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                        >
+                          <Github className="h-3.5 w-3.5" />
+                          <span className="truncate max-w-[150px]">
+                            {project.repoUrl.replace('https://github.com/', '')}
+                          </span>
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {togglingProject === project.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Switch checked={project.autoFixEnabled} onCheckedChange={() => handleToggleAutoFix(project)} />
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {project.latestDeploymentUrl && (
+                        <Button variant="ghost" size="sm" asChild>
+                          <a href={project.latestDeploymentUrl} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        )}
+      </div>
     </div>
   )
 }

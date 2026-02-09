@@ -229,31 +229,32 @@ export default function CodeReviewPage() {
   }
 
   return (
-    <div className="container py-8 max-w-5xl">
-      {/* Header */}
-      <div className="mb-8 flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <GitPullRequest className="h-8 w-8" />
-            Code Review
-          </h1>
-          <p className="text-muted-foreground">Enable automatic AI-powered reviews on your pull requests.</p>
+    <div className="flex-1 bg-background flex flex-col">
+      <div className="container py-8 max-w-5xl">
+        {/* Header */}
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <GitPullRequest className="h-8 w-8" />
+              Code Review
+            </h1>
+            <p className="text-muted-foreground">Enable automatic AI-powered reviews on your pull requests.</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link href="/settings/review-rules">
+                <FileText className="h-4 w-4 mr-2" />
+                Review Rules
+              </Link>
+            </Button>
+            <Button variant="outline" onClick={fetchRepos}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/settings/review-rules">
-              <FileText className="h-4 w-4 mr-2" />
-              Review Rules
-            </Link>
-          </Button>
-          <Button variant="outline" onClick={fetchRepos}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
-      </div>
 
-      {/* Stats Banner */}
+        {/* Stats Banner */}
       {enabledCount > 0 && (
         <Card className="mb-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 border-green-500/20">
           <CardContent className="py-4">
@@ -413,5 +414,6 @@ export default function CodeReviewPage() {
         </Card>
       )}
     </div>
-  )
+  </div>
+)
 }

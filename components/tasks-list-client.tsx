@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { Task } from '@/lib/db/schema'
-import { SharedHeader } from '@/components/shared-header'
 import { useTasks } from '@/components/app-layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -45,7 +44,7 @@ function getTimeAgo(date: Date): string {
 }
 
 export function TasksListClient() {
-  const { toggleSidebar, refreshTasks } = useTasks()
+  const { refreshTasks } = useTasks()
   const router = useRouter()
   const { getProviderLabel, getModelLabel } = useModelsDevCatalog()
   const [tasks, setTasks] = useState<Task[]>([])
@@ -244,10 +243,6 @@ export function TasksListClient() {
 
   return (
     <div className="flex-1 bg-background flex flex-col h-full overflow-hidden">
-      <div className="flex-shrink-0 p-3">
-        <SharedHeader />
-      </div>
-
       <div className="flex-1 overflow-auto px-4 pb-4">
         <div className="max-w-4xl mx-auto">
           {/* Page Title & Tabs */}

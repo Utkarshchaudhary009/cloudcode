@@ -96,107 +96,109 @@ export default function VercelFixesPage() {
   }
 
   return (
-    <div className="container py-8 max-w-5xl">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Zap className="h-8 w-8" />
-            Build Fixes
-          </h1>
-          <p className="text-muted-foreground">Track and manage automatic build fix attempts</p>
+    <div className="flex-1 bg-background flex flex-col">
+      <div className="container py-8 max-w-5xl">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Zap className="h-8 w-8" />
+              Build Fixes
+            </h1>
+            <p className="text-muted-foreground">Track and manage automatic build fix attempts</p>
+          </div>
+          <div className="flex gap-2">
+            <Link href="/settings/vercel-auto-fix">
+              <Button variant="outline">Manage Subscriptions</Button>
+            </Link>
+            <Button variant="outline" onClick={fetchFixes}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Link href="/settings/vercel-auto-fix">
-            <Button variant="outline">Manage Subscriptions</Button>
-          </Link>
-          <Button variant="outline" onClick={fetchFixes}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
-      </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : fixes.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-            <h3 className="text-lg font-semibold mb-2">No Build Fixes</h3>
-            <p className="text-muted-foreground">
-              All your builds are passing, or you haven&apos;t subscribed to any projects yet.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {fixes.map((fix) => (
-            <Card key={fix.id}>
-              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                <div className="space-y-1">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : fixes.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+              <h3 className="text-lg font-semibold mb-2">No Build Fixes</h3>
+              <p className="text-muted-foreground">
+                All your builds are passing, or you haven&apos;t subscribed to any projects yet.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {fixes.map((fix) => (
+              <Card key={fix.id}>
+                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg">{fix.projectName}</CardTitle>
+                      <StatusBadge status={fix.status} />
+                    </div>
+                    <CardDescription>
+                      Branch: <span className="font-mono">{fix.branch}</span> · Attempts: {fix.attempts}
+                    </CardDescription>
+                  </div>
                   <div className="flex items-center gap-2">
-                    <CardTitle className="text-lg">{fix.projectName}</CardTitle>
-                    <StatusBadge status={fix.status} />
-                  </div>
-                  <CardDescription>
-                    Branch: <span className="font-mono">{fix.branch}</span> · Attempts: {fix.attempts}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  {fix.deploymentUrl && (
-                    <a href={fix.deploymentUrl} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" size="sm">
-                        <ExternalLink className="h-3 w-3 mr-1" />
-                        View Deployment
+                    {fix.deploymentUrl && (
+                      <a href={fix.deploymentUrl} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" size="sm">
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          View Deployment
+                        </Button>
+                      </a>
+                    )}
+                    {(fix.status === 'failed' || fix.status === 'exhausted') && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRetry(fix.id)}
+                        disabled={retrying === fix.id}
+                      >
+                        {retrying === fix.id ? (
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                        )}
+                        Retry Fix
                       </Button>
-                    </a>
-                  )}
-                  {(fix.status === 'failed' || fix.status === 'exhausted') && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleRetry(fix.id)}
-                      disabled={retrying === fix.id}
-                    >
-                      {retrying === fix.id ? (
-                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                      )}
-                      Retry Fix
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-2 text-sm">
-                  <div className="flex items-center gap-4 text-muted-foreground">
-                    <span>Started: {formatDate(fix.createdAt)}</span>
-                    {fix.completedAt && <span>Completed: {formatDate(fix.completedAt)}</span>}
+                    )}
                   </div>
-                  {fix.buildError && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                        View Build Error
-                      </summary>
-                      <pre className="mt-2 p-3 bg-muted rounded-md text-xs overflow-x-auto whitespace-pre-wrap max-h-48">
-                        {fix.buildError}
-                      </pre>
-                    </details>
-                  )}
-                  {fix.lastFixCommit && (
-                    <p className="text-muted-foreground">
-                      Last fix commit: <span className="font-mono">{fix.lastFixCommit}</span>
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-2 text-sm">
+                    <div className="flex items-center gap-4 text-muted-foreground">
+                      <span>Started: {formatDate(fix.createdAt)}</span>
+                      {fix.completedAt && <span>Completed: {formatDate(fix.completedAt)}</span>}
+                    </div>
+                    {fix.buildError && (
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                          View Build Error
+                        </summary>
+                        <pre className="mt-2 p-3 bg-muted rounded-md text-xs overflow-x-auto whitespace-pre-wrap max-h-48">
+                          {fix.buildError}
+                        </pre>
+                      </details>
+                    )}
+                    {fix.lastFixCommit && (
+                      <p className="text-muted-foreground">
+                        Last fix commit: <span className="font-mono">{fix.lastFixCommit}</span>
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

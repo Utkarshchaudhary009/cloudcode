@@ -246,7 +246,7 @@ export function ActivityFeed({ className }: ActivityFeedProps) {
   return (
     <div className={cn('w-full max-w-2xl mx-auto', className)}>
       {/* Search Bar */}
-      <div className="relative mb-4">
+      <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search by title or repo name..."
@@ -265,7 +265,7 @@ export function ActivityFeed({ className }: ActivityFeedProps) {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 mb-4 overflow-x-auto pb-1">
+      <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1">
         {tabs.map((tab) => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
@@ -314,14 +314,14 @@ export function ActivityFeed({ className }: ActivityFeedProps) {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-10">
           {Object.entries(groupedItems).map(([label, groupItems]) => {
             if (groupItems.length === 0) return null
 
             return (
               <div key={label}>
-                <h3 className="text-xs font-medium text-muted-foreground mb-2 px-1">{label}</h3>
-                <div className="space-y-2">
+                <h3 className="text-xs font-medium text-muted-foreground mb-3 px-1">{label}</h3>
+                <div className="space-y-3">
                   {groupItems.map((item) => {
                     const Icon = getItemIcon(item.type)
                     return (

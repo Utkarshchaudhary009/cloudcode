@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation'
 import { getSidebarWidth, setSidebarWidth, getSidebarOpen, setSidebarOpen } from '@/lib/utils/cookies'
 import { nanoid } from 'nanoid'
 import { ConnectorsProvider } from '@/components/connectors-provider'
+import { SharedHeader } from '@/components/shared-header'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -404,6 +405,9 @@ export function AppLayout({ children, initialSidebarWidth, initialSidebarOpen, i
               marginLeft: isDesktop && isSidebarOpen ? `${sidebarWidth + 4}px` : '0px',
             }}
           >
+            <div className="flex-shrink-0 p-3">
+              <SharedHeader />
+            </div>
             {children}
           </div>
         </div>

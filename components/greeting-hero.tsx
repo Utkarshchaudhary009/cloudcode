@@ -18,7 +18,7 @@ export function GreetingHero({ userName }: GreetingHeroProps) {
   const displayName = userName || 'there'
 
   return (
-    <header className="flex flex-col items-center gap-4 text-center mb-6" role="banner" aria-label="Welcome section">
+    <header className="flex flex-col items-center gap-4 text-center" role="banner" aria-label="Welcome section">
       {/* Logo */}
       <div className="relative w-16 h-16 md:w-20 md:h-20" aria-hidden="true">
         <Image src="/Logo.png" alt="" fill className="object-contain dark:invert" priority />

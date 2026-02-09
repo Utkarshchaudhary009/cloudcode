@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { SharedHeader } from '@/components/shared-header'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { RepoCommits } from '@/components/repo-commits'
 import { RepoPullRequests } from '@/components/repo-pull-requests'
 import { GitBranch, GitPullRequest } from 'lucide-react'
+import { useHeaderActions } from '@/lib/hooks/use-header-actions'
 
 interface RepoPageClientProps {
   owner: string
@@ -15,20 +14,18 @@ interface RepoPageClientProps {
 export function RepoPageClient({ owner, repo }: RepoPageClientProps) {
   const [activeTab, setActiveTab] = useState('commits')
 
-  const headerLeftActions = (
-    <div className="flex items-center gap-2 min-w-0">
-      <h1 className="text-lg font-semibold truncate">
-        {owner}/{repo}
-      </h1>
-    </div>
-  )
+  useHeaderActions({
+    left: (
+      <div className="flex items-center gap-2 min-w-0">
+        <h1 className="text-lg font-semibold truncate">
+          {owner}/{repo}
+        </h1>
+      </div>
+    ),
+  })
 
   return (
     <div className="flex-1 bg-background relative flex flex-col h-full overflow-hidden">
-      <div className="flex-shrink-0 p-3">
-        <SharedHeader leftActions={headerLeftActions} />
-      </div>
-
       {/* Main content with tabs */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden px-3">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
