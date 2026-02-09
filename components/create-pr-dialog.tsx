@@ -36,7 +36,40 @@ export function CreatePRDialog({
   const [title, setTitle] = useState(defaultTitle)
   const [body, setBody] = useState(defaultBody)
   const [isCreating, setIsCreating] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    // Generate AI description if body is empty when dialog opens
+    if (open && !body && taskId) {
+      const generateDescription = async () => {
+        setIsGenerating(true)
+        try {
+          const response = await fetch(`/api/tasks/${taskId}/generate-description`, {
+            method: 'POST',
+          })
+          if (response.ok) {
+            const result = await response.json()
+            if (result.description) {
+              setBody(result.description)
+            }
+          }
+        } catch (error) {
+          console.error('Failed to generate PR description:', error)
+        } finally {
+          setIsGenerating(false)
+        }
+      }
+      generateDescription()
+    }
+  }, [open, taskId, body])
+
+  useEffect(() => {
+    // Update title when defaultTitle changes
+    if (defaultTitle && !title) {
+      setTitle(defaultTitle)
+    }
+  }, [defaultTitle, title])
 
   useEffect(() => {
     // Check if the device is mobile
@@ -120,13 +153,21 @@ export function CreatePRDialog({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="body">Description</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="body">Description</Label>
+                {isGenerating && (
+                  <span className="text-xs text-muted-foreground flex items-center animate-pulse">
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                    Generating AI description...
+                  </span>
+                )}
+              </div>
               <Textarea
                 id="body"
-                placeholder="Detailed description of the changes (optional)"
+                placeholder={isGenerating ? "AI is generating description..." : "Detailed description of the changes (optional)"}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                disabled={isCreating}
+                disabled={isCreating || isGenerating}
                 className="min-h-[120px] max-h-[300px] resize-none"
               />
             </div>

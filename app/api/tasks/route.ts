@@ -93,12 +93,43 @@ export async function POST(request: NextRequest) {
       })
       .returning()
 
+    // Get user's API keys, GitHub token, and GitHub user info BEFORE entering after() block (where session is not accessible)
+    const userApiKeys = await getUserApiKeys()
+    const userGithubToken = await getUserGitHubToken()
+    const githubUser = await getGitHubUser()
+
+    // Helper to get specific API key for the selected provider
+    const getProviderApiKey = (provider: string) => {
+      switch (provider) {
+        case 'openai': return userApiKeys.OPENAI_API_KEY;
+        case 'anthropic': return userApiKeys.ANTHROPIC_API_KEY;
+        case 'google': return userApiKeys.GOOGLE_API_KEY;
+        case 'google-vertex': return userApiKeys.GOOGLE_VERTEX_PROJECT;
+        case 'groq': return userApiKeys.GROQ_API_KEY;
+        case 'cerebras': return userApiKeys.CEREBRAS_API_KEY;
+        case 'openrouter': return userApiKeys.OPENROUTER_API_KEY;
+        case 'huggingface': return userApiKeys.HF_TOKEN;
+        case 'vercel': return userApiKeys.VERCEL_API_KEY;
+        case 'zai': return userApiKeys.ZAI_API_KEY;
+        case 'minimax': return userApiKeys.MINIMAX_API_KEY;
+        case 'azure': return userApiKeys.AZURE_OPENAI_API_KEY;
+        case 'opencode': return userApiKeys.OPENCODE_API_KEY;
+        case 'cohere': return userApiKeys.COHERE_API_KEY;
+        case 'deepseek': return userApiKeys.DEEPSEEK_API_KEY;
+        case 'moonshotai': return userApiKeys.MOONSHOT_API_KEY;
+        case 'zhipuai': return userApiKeys.ZHIPU_API_KEY;
+        default: return undefined;
+      }
+    }
+
+    const providerApiKey = getProviderApiKey(validatedData.selectedProvider || 'openai')
+
     // Generate AI branch name after response is sent (non-blocking)
     after(async () => {
       try {
-        // Check if AI Gateway API key is available
-        if (!process.env.AI_GATEWAY_API_KEY) {
-          console.log('AI_GATEWAY_API_KEY not available, skipping AI branch name generation')
+        // Check if AI key is available
+        if (!providerApiKey && !process.env.AI_GATEWAY_API_KEY) {
+          console.log('No API key available, skipping AI branch name generation')
           return
         }
 
@@ -122,6 +153,9 @@ export async function POST(request: NextRequest) {
           description: validatedData.prompt,
           repoName,
           context: `${validatedData.selectedProvider} provider task`,
+          provider: validatedData.selectedProvider as any,
+          apiKey: providerApiKey,
+          modelId: validatedData.selectedModel,
         })
 
         // Update task with AI-generated branch name
@@ -160,9 +194,9 @@ export async function POST(request: NextRequest) {
     // Generate AI title after response is sent (non-blocking)
     after(async () => {
       try {
-        // Check if AI Gateway API key is available
-        if (!process.env.AI_GATEWAY_API_KEY) {
-          console.log('AI_GATEWAY_API_KEY not available, skipping AI title generation')
+        // Check if AI key is available
+        if (!providerApiKey && !process.env.AI_GATEWAY_API_KEY) {
+          console.log('No API key available, skipping AI title generation')
           return
         }
 
@@ -183,6 +217,9 @@ export async function POST(request: NextRequest) {
           prompt: validatedData.prompt,
           repoName,
           context: `${validatedData.selectedProvider} provider task`,
+          provider: validatedData.selectedProvider as any,
+          apiKey: providerApiKey,
+          modelId: validatedData.selectedModel,
         })
 
         // Update task with AI-generated title
@@ -213,10 +250,6 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Get user's API keys, GitHub token, and GitHub user info BEFORE entering after() block (where session is not accessible)
-    const userApiKeys = await getUserApiKeys()
-    const userGithubToken = await getUserGitHubToken()
-    const githubUser = await getGitHubUser()
     // Get max sandbox duration for this user (user-specific > global > env var)
     const maxSandboxDuration = await getMaxSandboxDuration(session.user.id)
 
@@ -687,11 +720,40 @@ async function processTask(
           // Ignore URL parsing errors
         }
 
-        if (process.env.AI_GATEWAY_API_KEY) {
+        const getProviderApiKey = (provider: string) => {
+          if (!apiKeys) return undefined;
+          switch (provider) {
+            case 'openai': return apiKeys.OPENAI_API_KEY;
+            case 'anthropic': return apiKeys.ANTHROPIC_API_KEY;
+            case 'google': return apiKeys.GOOGLE_API_KEY;
+            case 'google-vertex': return apiKeys.GOOGLE_VERTEX_PROJECT;
+            case 'groq': return apiKeys.GROQ_API_KEY;
+            case 'cerebras': return apiKeys.CEREBRAS_API_KEY;
+            case 'openrouter': return apiKeys.OPENROUTER_API_KEY;
+            case 'huggingface': return apiKeys.HF_TOKEN;
+            case 'vercel': return apiKeys.VERCEL_API_KEY;
+            case 'zai': return apiKeys.ZAI_API_KEY;
+            case 'minimax': return apiKeys.MINIMAX_API_KEY;
+            case 'azure': return apiKeys.AZURE_OPENAI_API_KEY;
+            case 'opencode': return apiKeys.OPENCODE_API_KEY;
+            case 'cohere': return apiKeys.COHERE_API_KEY;
+            case 'deepseek': return apiKeys.DEEPSEEK_API_KEY;
+            case 'moonshotai': return apiKeys.MOONSHOT_API_KEY;
+            case 'zhipuai': return apiKeys.ZHIPU_API_KEY;
+            default: return undefined;
+          }
+        }
+
+        const providerApiKey = getProviderApiKey(selectedProvider)
+
+        if (providerApiKey || process.env.AI_GATEWAY_API_KEY) {
           commitMessage = await generateCommitMessage({
             description: prompt,
             repoName,
             context: `${selectedProvider} provider task`,
+            provider: selectedProvider as any,
+            apiKey: providerApiKey,
+            modelId: selectedModel,
           })
         } else {
           commitMessage = createFallbackCommitMessage(prompt)

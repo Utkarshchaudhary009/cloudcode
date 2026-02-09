@@ -1,16 +1,23 @@
 import { generateText } from 'ai'
+import { getAIModel } from './ai-model-resolver'
+import { type OpenCodeProviderId } from '@/lib/opencode/providers'
 
 export interface CommitMessageOptions {
   description: string
   repoName?: string
   context?: string
+  provider?: OpenCodeProviderId
+  apiKey?: string
+  modelId?: string
 }
 
 export async function generateCommitMessage(options: CommitMessageOptions): Promise<string> {
-  const { description, repoName, context } = options
+  const { description, repoName, context, provider = 'openai', apiKey, modelId } = options
 
-  if (!process.env.AI_GATEWAY_API_KEY) {
-    throw new Error('AI_GATEWAY_API_KEY environment variable is required')
+  // Fallback check
+  if (!apiKey && !process.env.AI_GATEWAY_API_KEY) {
+    console.warn('No API key or AI_GATEWAY_API_KEY provided for commit message generation')
+    return createFallbackCommitMessage(description)
   }
 
   // Create the prompt for commit message generation
@@ -38,9 +45,11 @@ Examples of good commit messages:
 Return ONLY the commit message, nothing else.`
 
   try {
-    // Generate commit message using AI SDK 5 with AI Gateway
+    // Generate commit message using the resolved model
+    const model = getAIModel(provider, apiKey, modelId)
+
     const result = await generateText({
-      model: 'openai/gpt-5-nano',
+      model,
       prompt,
       temperature: 0.3,
     })

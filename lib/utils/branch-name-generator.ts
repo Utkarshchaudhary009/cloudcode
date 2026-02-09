@@ -1,17 +1,25 @@
 import { generateText } from 'ai'
 import { customAlphabet } from 'nanoid'
+import { getAIModel } from './ai-model-resolver'
+import { type OpenCodeProviderId } from '@/lib/opencode/providers'
 
 export interface BranchNameOptions {
   description: string
   repoName?: string
   context?: string
+  provider?: OpenCodeProviderId
+  apiKey?: string
+  modelId?: string
 }
 
 export async function generateBranchName(options: BranchNameOptions): Promise<string> {
-  const { description, repoName, context } = options
+  const { description, repoName, context, provider = 'openai', apiKey, modelId } = options
 
-  if (!process.env.AI_GATEWAY_API_KEY) {
-    throw new Error('AI_GATEWAY_API_KEY environment variable is required')
+  // Fallback check
+  if (!apiKey && !process.env.AI_GATEWAY_API_KEY) {
+    console.warn('No API key or AI_GATEWAY_API_KEY provided for branch name generation')
+    // We don't have a task ID here, but we can return something generic that will be caught by the caller
+    throw new Error('No API key available for branch name generation')
   }
 
   // Create the prompt for branch name generation
@@ -37,9 +45,11 @@ Examples of good branch names:
 Return ONLY the branch name, nothing else.`
 
   try {
-    // Generate branch name using AI SDK 5 with AI Gateway
+    // Generate branch name using the resolved model
+    const model = getAIModel(provider, apiKey, modelId)
+
     const result = await generateText({
-      model: 'openai/gpt-5-nano',
+      model,
       prompt,
       temperature: 0.3,
     })
@@ -56,11 +66,13 @@ Return ONLY the branch name, nothing else.`
     // Validate the base branch name
     const branchNameRegex = /^[a-z0-9-\/]+$/
     if (!branchNameRegex.test(baseBranchName)) {
-      throw new Error(`Generated branch name contains invalid characters: ${baseBranchName}`)
+      // If AI failed to produce a valid branch name, use a sanitized version of the description
+      const sanitized = baseBranchName.toLowerCase().replace(/[^a-z0-9]/g, '-')
+      return `${sanitized.substring(0, 30)}-${hash}`
     }
 
     if (branchName.length > 50) {
-      throw new Error('Generated branch name is too long')
+      return `${baseBranchName.substring(0, 40)}-${hash}`
     }
 
     return branchName
