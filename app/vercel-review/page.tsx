@@ -189,7 +189,7 @@ export default function VercelReviewPage() {
             projectId: project.id,
             projectName: project.name,
             repoUrl: project.repoUrl,
-            selectedAgent: 'openai',
+            selectedProvider: 'opencode',
             maxAttempts: 5,
           }),
         })

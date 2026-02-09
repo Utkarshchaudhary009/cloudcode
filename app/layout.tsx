@@ -10,7 +10,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 
 export const metadata: Metadata = {
   title: 'CloudCode',
-  description: 'AI-powered coding agent built with OpenCode and Vercel Sandbox',
+  description: 'AI-powered coding platform built with OpenCode and Vercel Sandbox',
 }
 
 export default function RootLayout({

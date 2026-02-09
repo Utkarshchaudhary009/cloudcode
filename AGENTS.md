@@ -179,10 +179,10 @@ Never expose these in logs or to the client:
 - `SANDBOX_VERCEL_TOKEN` - Vercel API token
 - `SANDBOX_VERCEL_TEAM_ID` - Vercel team identifier
 - `SANDBOX_VERCEL_PROJECT_ID` - Vercel project identifier
-- `ANTHROPIC_API_KEY` - Anthropic/Claude API key
+- `ANTHROPIC_API_KEY` - Anthropic API key
 - `OPENAI_API_KEY` - OpenAI API key
 - `GEMINI_API_KEY` - Google Gemini API key
-- `CURSOR_API_KEY` - Cursor API key
+- `OPENCODE_API_KEY` - OpenCode API key
 - `GH_TOKEN` / `GITHUB_TOKEN` - GitHub personal access token
 - `JWE_SECRET` - Encryption secret
 - `ENCRYPTION_KEY` - Encryption key
@@ -243,6 +243,21 @@ To add a new tab to the repository page:
 4. Add an API route in `app/api/repos/[owner]/[repo]/[tab-name]/route.ts`
 5. Update the `tabs` array in `components/repo-layout.tsx` to include the new tab
 6. Follow the existing patterns for data fetching and error handling
+
+## OpenCode Agent Execution
+
+The platform uses the **OpenCode** agent for all coding tasks. It runs in a secure Vercel Sandbox and can be powered by various LLM providers.
+
+### Execution Flow
+1. **Planning**: OpenCode analyzes the task and creates a `plan.md` file.
+2. **Implementation**: OpenCode implements the changes described in the plan.
+3. **Review**: OpenCode reviews its own changes using subagents to ensure quality.
+
+### Provider Configuration
+OpenCode is configured via a dynamically generated `opencode.json` file in the sandbox, which includes:
+- API keys for the selected provider
+- Configured MCP servers
+- Sandbox-specific environment variables
 
 ## Compliance Checklist
 

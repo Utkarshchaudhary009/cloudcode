@@ -33,7 +33,7 @@ export interface SandboxConfig {
     vcpus?: number
   }
   taskPrompt?: string
-  selectedAgent?: string
+  selectedProvider?: string
   selectedModel?: string
   installDependencies?: boolean
   keepAlive?: boolean
@@ -61,5 +61,5 @@ export interface AgentExecutionResult {
   error?: string
   streamingLogs?: unknown[]
   logs?: LogEntry[]
-  sessionId?: string // For Cursor agent session resumption
+  opencodeSessionId?: string // For OpenCode session resumption
 }

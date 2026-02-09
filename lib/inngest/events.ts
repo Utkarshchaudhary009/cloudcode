@@ -8,7 +8,7 @@ export type Events = {
       repoUrl: string
       prompt: string
       taskType: string
-      selectedAgent: string
+      selectedProvider: string
       selectedModel?: string
     }
   }

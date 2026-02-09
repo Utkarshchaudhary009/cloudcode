@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm'
 import { Sandbox } from '@vercel/sandbox'
 import { createSandbox } from '@/lib/sandbox/creation'
 import { createTaskLogger } from '@/lib/utils/task-logger'
-import { executeAgentInSandbox, AgentType } from '@/lib/sandbox/agents'
+import { executeAgentInSandbox } from '@/lib/sandbox/agents'
 import { pushChangesToBranch, shutdownSandbox } from '@/lib/sandbox/git'
 import { unregisterSandbox } from '@/lib/sandbox/sandbox-registry'
 import { decrypt } from '@/lib/crypto'
@@ -170,7 +170,7 @@ export const executeBuildFix = inngest.createFunction(
             runtime: 'node22',
             resources: { vcpus: 4 },
             taskPrompt: `Fix the build error on branch ${buildFix.branch}`,
-            selectedAgent: subscription.selectedAgent || 'opencode',
+            selectedProvider: subscription.selectedProvider || 'opencode',
             selectedModel: subscription.selectedModel || undefined,
             installDependencies: true,
             preDeterminedBranchName: buildFix.branch,
@@ -205,7 +205,6 @@ Focus on fixing the root cause, not just the symptoms.
         const agentResult = await executeAgentInSandbox(
           sandbox,
           fixPrompt,
-          'opencode' as AgentType,
           logger,
           subscription.selectedModel || undefined,
           undefined, // No MCP servers

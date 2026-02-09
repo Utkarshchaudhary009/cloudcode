@@ -12,7 +12,7 @@ export const executeScheduledTask = inngest.createFunction(
   },
   { event: 'scheduled-task/execute' },
   async ({ event, step }: { event: any; step: any }) => {
-    const { scheduledTaskId, userId, repoUrl, prompt, taskType, selectedAgent, selectedModel } = event.data
+    const { scheduledTaskId, userId, repoUrl, prompt, taskType, selectedProvider, selectedModel } = event.data
 
     const taskId = await step.run('create-task', async () => {
       const id = nanoid()
@@ -21,7 +21,7 @@ export const executeScheduledTask = inngest.createFunction(
         userId,
         repoUrl,
         prompt: `[Scheduled: ${taskType}] ${prompt}`,
-        selectedAgent,
+        selectedProvider,
         selectedModel,
         status: 'pending',
       })

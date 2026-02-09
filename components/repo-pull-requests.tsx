@@ -78,7 +78,7 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
   const [showCloseDialog, setShowCloseDialog] = useState(false)
   const [selectedPR, setSelectedPR] = useState<PullRequest | null>(null)
   const [prToClose, setPrToClose] = useState<number | null>(null)
-  const [selectedAgent, setSelectedAgent] = useState<OpenCodeProviderId>(DEFAULT_OPENCODE_PROVIDER)
+  const [selectedProvider, setSelectedProvider] = useState<OpenCodeProviderId>(DEFAULT_OPENCODE_PROVIDER)
   const { providers, modelsByProvider, defaultModels } = useModelsDevCatalog()
   const [selectedModel, setSelectedModel] = useState<string>(defaultModels[DEFAULT_OPENCODE_PROVIDER])
   const [installDeps, setInstallDeps] = useState(false)
@@ -131,12 +131,12 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
   }, [owner, repo])
 
   useEffect(() => {
-    const providerModels = modelsByProvider[selectedAgent]
-    const defaultModel = defaultModels[selectedAgent]
+    const providerModels = modelsByProvider[selectedProvider]
+    const defaultModel = defaultModels[selectedProvider]
     if (providerModels && !providerModels.find((m) => m.value === selectedModel)) {
       setSelectedModel(defaultModel)
     }
-  }, [defaultModels, modelsByProvider, selectedAgent, selectedModel])
+  }, [defaultModels, modelsByProvider, selectedProvider, selectedModel])
 
   const handleCreateTaskFromPR = (pr: PullRequest) => {
     setSelectedPR(pr)
@@ -159,7 +159,7 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
         body: JSON.stringify({
           prompt,
           repoUrl,
-          selectedAgent,
+          selectedProvider,
           selectedModel,
           installDependencies: installDeps,
           maxDuration,
@@ -376,12 +376,12 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Provider</label>
-                <Select value={selectedAgent} onValueChange={(value) => setSelectedAgent(value as OpenCodeProviderId)}>
+                <Select value={selectedProvider} onValueChange={(value) => setSelectedProvider(value as OpenCodeProviderId)}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a provider">
-                      {selectedAgent
+                      {selectedProvider
                         ? (() => {
-                            const provider = providers.find((item) => item.value === selectedAgent)
+                            const provider = providers.find((item) => item.value === selectedProvider)
                             return provider ? (
                               <div className="flex items-center gap-2">
                                 <img
@@ -421,7 +421,7 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
                     <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {modelsByProvider[selectedAgent]?.map((model) => (
+                    {modelsByProvider[selectedProvider]?.map((model) => (
                       <SelectItem key={model.value} value={model.value}>
                         {model.label}
                       </SelectItem>

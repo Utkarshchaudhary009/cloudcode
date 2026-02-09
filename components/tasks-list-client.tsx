@@ -380,10 +380,10 @@ export function TasksListClient() {
                                     </span>
                                   </div>
                                 )}
-                                {task.selectedAgent && (
+                                {task.selectedProvider && (
                                   <div className="flex items-center gap-1">
                                     <OpenCode className="w-3 h-3" />
-                                    <span>{getProviderLabel(task.selectedAgent)}</span>
+                                    <span>{getProviderLabel(task.selectedProvider)}</span>
                                   </div>
                                 )}
                                 <div className="flex items-center gap-1">

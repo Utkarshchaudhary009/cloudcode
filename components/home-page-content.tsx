@@ -228,7 +228,7 @@ export function HomePageContent({
       const taskData = {
         prompt: 'Work on this repository',
         repoUrl: repoUrl,
-        selectedAgent: localStorage.getItem('last-selected-provider') || 'openai',
+        selectedProvider: localStorage.getItem('last-selected-provider') || 'openai',
         selectedModel: localStorage.getItem('last-selected-model-openai') || 'gpt-5',
         installDependencies: true,
         maxDuration: 300,
@@ -330,7 +330,7 @@ export function HomePageContent({
   const handleTaskSubmit = async (data: {
     prompt: string
     repoUrl: string
-    selectedAgent: string
+    selectedProvider: string
     selectedModel: string
     installDependencies: boolean
     maxDuration: number
@@ -374,7 +374,7 @@ export function HomePageContent({
         const { id } = addTaskOptimistically({
           prompt: data.prompt,
           repoUrl: repo.clone_url,
-          selectedAgent: data.selectedAgent,
+          selectedProvider: data.selectedProvider,
           selectedModel: data.selectedModel,
           installDependencies: data.installDependencies,
           maxDuration: data.maxDuration,
@@ -384,7 +384,7 @@ export function HomePageContent({
           id,
           prompt: data.prompt,
           repoUrl: repo.clone_url,
-          selectedAgent: data.selectedAgent,
+          selectedProvider: data.selectedProvider,
           selectedModel: data.selectedModel,
           installDependencies: data.installDependencies,
           maxDuration: data.maxDuration,

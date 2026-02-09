@@ -115,8 +115,8 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 
     // Configure Git user
     await logger.info('Configuring Git')
-    const gitName = githubUser?.name || githubUser?.username || 'Coding Agent'
-    const gitEmail = githubUser?.username ? `${githubUser.username}@users.noreply.github.com` : 'agent@example.com'
+    const gitName = githubUser?.name || githubUser?.username || 'OpenCode'
+    const gitEmail = githubUser?.username ? `${githubUser.username}@users.noreply.github.com` : 'opencode@example.com'
     await runInProject(sandbox, 'git', ['config', 'user.name', gitName])
     await runInProject(sandbox, 'git', ['config', 'user.email', gitEmail])
 

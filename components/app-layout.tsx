@@ -28,7 +28,7 @@ interface TasksContextType {
   addTaskOptimistically: (taskData: {
     prompt: string
     repoUrl: string
-    selectedAgent: string
+    selectedProvider: string
     selectedModel: string
     installDependencies: boolean
     maxDuration: number
@@ -247,7 +247,7 @@ export function AppLayout({ children, initialSidebarWidth, initialSidebarOpen, i
   const addTaskOptimistically = (taskData: {
     prompt: string
     repoUrl: string
-    selectedAgent: string
+    selectedProvider: string
     selectedModel: string
     installDependencies: boolean
     maxDuration: number
@@ -259,7 +259,7 @@ export function AppLayout({ children, initialSidebarWidth, initialSidebarOpen, i
       prompt: taskData.prompt,
       title: null,
       repoUrl: taskData.repoUrl,
-      selectedAgent: taskData.selectedAgent,
+      selectedProvider: taskData.selectedProvider,
       selectedModel: taskData.selectedModel,
       installDependencies: taskData.installDependencies,
       maxDuration: taskData.maxDuration,
@@ -271,7 +271,7 @@ export function AppLayout({ children, initialSidebarWidth, initialSidebarOpen, i
       error: null,
       branchName: null,
       sandboxId: null,
-      agentSessionId: null,
+      opencodeSessionId: null,
       sandboxUrl: null,
       previewUrl: null,
       mcpServerIds: null,

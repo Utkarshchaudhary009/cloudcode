@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { projectId, projectName, repoUrl, teamId, selectedAgent, selectedModel, maxAttempts } = body
+    const { projectId, projectName, repoUrl, teamId, selectedProvider, selectedModel, maxAttempts } = body
 
     if (!projectId || !projectName) {
       return NextResponse.json({ error: 'Project ID and name are required' }, { status: 400 })
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       teamId: teamId || null,
       webhookId,
       enabled: true,
-      selectedAgent: selectedAgent || 'opencode',
+      selectedProvider: selectedProvider || 'opencode',
       selectedModel: selectedModel || null,
       maxAttempts: maxAttempts || 5,
     })
@@ -193,7 +193,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, enabled, selectedAgent, selectedModel, maxAttempts } = body
+    const { id, enabled, selectedProvider, selectedModel, maxAttempts } = body
 
     if (!id) {
       return NextResponse.json({ error: 'Subscription ID is required' }, { status: 400 })
@@ -213,7 +213,7 @@ export async function PATCH(request: NextRequest) {
     // Update subscription
     const updateData: Record<string, unknown> = { updatedAt: new Date() }
     if (typeof enabled === 'boolean') updateData.enabled = enabled
-    if (selectedAgent) updateData.selectedAgent = selectedAgent
+    if (selectedProvider) updateData.selectedProvider = selectedProvider
     if (selectedModel !== undefined) updateData.selectedModel = selectedModel
     if (maxAttempts) updateData.maxAttempts = maxAttempts
 

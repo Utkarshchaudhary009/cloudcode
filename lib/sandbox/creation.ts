@@ -160,7 +160,7 @@ export async function createSandbox(config: SandboxConfig, logger: TaskLogger): 
     }
 
     // Validate required environment variables
-    const envValidation = validateEnvironmentVariables(config.selectedAgent, config.githubToken, config.apiKeys)
+    const envValidation = validateEnvironmentVariables(config.selectedProvider, config.githubToken, config.apiKeys)
     if (!envValidation.valid) {
       throw new Error(envValidation.error!)
     }
@@ -710,8 +710,8 @@ SKILL_EOF`
     }
 
     // Configure Git user
-    const gitName = config.gitAuthorName || 'Coding Agent'
-    const gitEmail = config.gitAuthorEmail || 'agent@example.com'
+    const gitName = config.gitAuthorName || 'OpenCode'
+    const gitEmail = config.gitAuthorEmail || 'opencode@example.com'
     await runInProject(sandbox, 'git', ['config', 'user.name', gitName])
     await runInProject(sandbox, 'git', ['config', 'user.email', gitEmail])
 
@@ -895,7 +895,7 @@ SKILL_EOF`
       // Fallback: Create a timestamp-based branch name
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)
       const suffix = generateId()
-      branchName = `agent/${timestamp}-${suffix}`
+      branchName = `opencode/${timestamp}-${suffix}`
 
       await logger.info('No predetermined branch name, using timestamp-based branch')
       const createBranch = await runAndLogCommand(sandbox, 'git', ['checkout', '-b', branchName], logger, PROJECT_DIR)

@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { setSelectedOwner, setSelectedRepo } from '@/lib/utils/cookies'
 import { Plus } from 'lucide-react'
 import { useHeaderActions } from '@/lib/hooks/use-header-actions'
+import { Button } from '@/components/ui/button'
 
 interface RepoLayoutProps {
   owner: string

@@ -5,6 +5,7 @@ import { RepoCommits } from '@/components/repo-commits'
 import { RepoPullRequests } from '@/components/repo-pull-requests'
 import { GitBranch, GitPullRequest } from 'lucide-react'
 import { useHeaderActions } from '@/lib/hooks/use-header-actions'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 interface RepoPageClientProps {
   owner: string
