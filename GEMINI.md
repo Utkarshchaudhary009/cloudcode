@@ -15,3 +15,7 @@
 
 ## Security
 - Follow all static logging and credential safety rules in `AGENTS.md`.
+
+## Learnings
+- **Unified Architecture:** Successfully migrated multi-agent fragmentation to a single OpenCode-powered provider system, improving maintainability and consistency.
+- **Communication Style:** User strongly values clear, architectural explanations behind code changes. Keep tone professional yet deeply descriptive of the "why."
