@@ -82,7 +82,7 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
   const { providers, modelsByProvider, defaultModels } = useModelsDevCatalog()
   const [selectedModel, setSelectedModel] = useState<string>(defaultModels[DEFAULT_OPENCODE_PROVIDER])
   const [installDeps, setInstallDeps] = useState(false)
-  const [maxDuration, setMaxDuration] = useState(300)
+  const [maxDuration, setMaxDuration] = useState(45)
   const [keepAlive, setKeepAlive] = useState(false)
   const [isCreatingTask, setIsCreatingTask] = useState(false)
   const [prTaskStatus, setPrTaskStatus] = useState<Record<number, { hasTask: boolean; taskId: string | null }>>({})
@@ -264,9 +264,8 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
               >
                 <div className="flex-shrink-0 mt-1">
                   <GitPullRequest
-                    className={`h-5 w-5 ${
-                      pr.merged_at ? 'text-purple-500' : pr.state === 'open' ? 'text-green-500' : 'text-red-500'
-                    }`}
+                    className={`h-5 w-5 ${pr.merged_at ? 'text-purple-500' : pr.state === 'open' ? 'text-green-500' : 'text-red-500'
+                      }`}
                   />
                 </div>
 
@@ -291,13 +290,12 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
                       )}
                       <Badge
                         variant={pr.merged_at ? 'default' : pr.state === 'open' ? 'default' : 'secondary'}
-                        className={`text-xs ${
-                          pr.merged_at
+                        className={`text-xs ${pr.merged_at
                             ? 'bg-purple-500 hover:bg-purple-600'
                             : pr.state === 'open'
                               ? 'bg-green-500 hover:bg-green-600'
                               : ''
-                        }`}
+                          }`}
                       >
                         {pr.merged_at ? 'Merged' : pr.state === 'open' ? 'Open' : 'Closed'}
                       </Badge>
@@ -381,19 +379,19 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
                     <SelectValue placeholder="Select a provider">
                       {selectedAgent
                         ? (() => {
-                            const provider = providers.find((item) => item.value === selectedAgent)
-                            return provider ? (
-                              <div className="flex items-center gap-2">
-                                <img
-                                  src={provider.logoUrl}
-                                  alt={`${provider.label} logo`}
-                                  className="h-4 w-4"
-                                  loading="lazy"
-                                />
-                                <span>{provider.label}</span>
-                              </div>
-                            ) : null
-                          })()
+                          const provider = providers.find((item) => item.value === selectedAgent)
+                          return provider ? (
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={provider.logoUrl}
+                                alt={`${provider.label} logo`}
+                                className="h-4 w-4"
+                                loading="lazy"
+                              />
+                              <span>{provider.label}</span>
+                            </div>
+                          ) : null
+                        })()
                         : null}
                     </SelectValue>
                   </SelectTrigger>
@@ -463,11 +461,6 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
                       <SelectItem value="15">15 minutes</SelectItem>
                       <SelectItem value="30">30 minutes</SelectItem>
                       <SelectItem value="45">45 minutes</SelectItem>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="120">2 hours</SelectItem>
-                      <SelectItem value="180">3 hours</SelectItem>
-                      <SelectItem value="240">4 hours</SelectItem>
-                      <SelectItem value="300">5 hours</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -482,7 +475,7 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
                     htmlFor="keep-alive"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    Keep Alive (300 minutes max)
+                    Keep Alive (45 minutes max)
                   </Label>
                 </div>
               </div>

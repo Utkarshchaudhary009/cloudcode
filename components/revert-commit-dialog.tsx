@@ -65,7 +65,7 @@ export function RevertCommitDialog({
   const { providers, modelsByProvider, defaultModels } = useModelsDevCatalog()
   const [selectedModel, setSelectedModel] = useState<string>(defaultModels[DEFAULT_OPENCODE_PROVIDER])
   const [installDependencies, setInstallDependencies] = useState(false)
-  const [maxDuration, setMaxDuration] = useState(300)
+  const [maxDuration, setMaxDuration] = useState(45)
   const [keepAlive, setKeepAlive] = useState(false)
   const [isReverting, setIsReverting] = useState(false)
 
@@ -125,19 +125,19 @@ export function RevertCommitDialog({
                   <SelectValue placeholder="Select a provider">
                     {selectedAgent
                       ? (() => {
-                          const provider = providers.find((item) => item.value === selectedAgent)
-                          return provider ? (
-                            <div className="flex items-center gap-2">
-                              <img
-                                src={provider.logoUrl}
-                                alt={`${provider.label} logo`}
-                                className="h-4 w-4"
-                                loading="lazy"
-                              />
-                              <span>{provider.label}</span>
-                            </div>
-                          ) : null
-                        })()
+                        const provider = providers.find((item) => item.value === selectedAgent)
+                        return provider ? (
+                          <div className="flex items-center gap-2">
+                            <img
+                              src={provider.logoUrl}
+                              alt={`${provider.label} logo`}
+                              className="h-4 w-4"
+                              loading="lazy"
+                            />
+                            <span>{provider.label}</span>
+                          </div>
+                        ) : null
+                      })()
                       : null}
                   </SelectValue>
                 </SelectTrigger>
@@ -202,11 +202,6 @@ export function RevertCommitDialog({
                     <SelectItem value="15">15 minutes</SelectItem>
                     <SelectItem value="30">30 minutes</SelectItem>
                     <SelectItem value="45">45 minutes</SelectItem>
-                    <SelectItem value="60">1 hour</SelectItem>
-                    <SelectItem value="120">2 hours</SelectItem>
-                    <SelectItem value="180">3 hours</SelectItem>
-                    <SelectItem value="240">4 hours</SelectItem>
-                    <SelectItem value="300">5 hours</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

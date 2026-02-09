@@ -172,7 +172,7 @@ export async function createSandbox(config: SandboxConfig, logger: TaskLogger): 
 
     // Use the specified timeout (maxDuration) for sandbox lifetime
     // keepAlive only controls whether we shutdown after task completion
-    const timeoutMs = config.timeout ? parseInt(config.timeout.replace(/\D/g, '')) * 60 * 1000 : 60 * 60 * 1000 // Default 1 hour
+    const timeoutMs = config.timeout ? parseInt(config.timeout.replace(/\D/g, '')) * 60 * 1000 : 45 * 60 * 1000 // Default 45 min (Hobby plan limit)
 
     // Determine ports based on project type (will be detected after cloning)
     // Default to both 3000 (Next.js) and 5173 (Vite) for now
@@ -524,7 +524,7 @@ fi
                   .split('\n')
                   .filter((line) => line.trim())
                 for (const line of lines) {
-                  logger.info(`[SERVER] ${line}`).catch(() => {})
+                  logger.info(`[SERVER] ${line}`).catch(() => { })
                 }
                 callback()
               },
@@ -537,7 +537,7 @@ fi
                   .split('\n')
                   .filter((line) => line.trim())
                 for (const line of lines) {
-                  logger.info(`[SERVER] ${line}`).catch(() => {})
+                  logger.info(`[SERVER] ${line}`).catch(() => { })
                 }
                 callback()
               },
