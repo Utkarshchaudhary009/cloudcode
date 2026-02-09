@@ -37,7 +37,7 @@ export function ScheduledTaskForm({ task: initialTask, taskId, onSuccess }: Sche
     timeSlot: initialTask?.timeSlot || '9am',
     days: initialTask?.days || ['daily'],
     timezone: initialTask?.timezone || 'UTC',
-    selectedAgent: initialTask?.selectedAgent || 'openai',
+    selectedProvider: initialTask?.selectedProvider || 'openai',
     selectedModel: initialTask?.selectedModel || '',
     enabled: initialTask?.enabled ?? true,
   })
@@ -73,7 +73,7 @@ export function ScheduledTaskForm({ task: initialTask, taskId, onSuccess }: Sche
         timeSlot: data.task.timeSlot || '9am',
         days: data.task.days || ['daily'],
         timezone: data.task.timezone || 'UTC',
-        selectedAgent: data.task.selectedAgent || 'openai',
+        selectedProvider: data.task.selectedProvider || 'openai',
         selectedModel: data.task.selectedModel || '',
         enabled: data.task.enabled ?? true,
       })
@@ -205,12 +205,12 @@ export function ScheduledTaskForm({ task: initialTask, taskId, onSuccess }: Sche
         </div>
 
         <div>
-          <Label htmlFor="selectedAgent">AI Provider</Label>
+          <Label htmlFor="selectedProvider">AI Provider</Label>
           <Select
-            value={formData.selectedAgent}
-            onValueChange={(value) => setFormData({ ...formData, selectedAgent: value })}
+            value={formData.selectedProvider}
+            onValueChange={(value) => setFormData({ ...formData, selectedProvider: value })}
           >
-            <SelectTrigger id="selectedAgent">
+            <SelectTrigger id="selectedProvider">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="max-h-60">

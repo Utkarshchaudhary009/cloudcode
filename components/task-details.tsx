@@ -118,9 +118,9 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
   const [showTryAgainDialog, setShowTryAgainDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isTryingAgain, setIsTryingAgain] = useState(false)
-  const [selectedAgent, setSelectedAgent] = useState(task.selectedAgent || DEFAULT_OPENCODE_PROVIDER)
+  const [selectedProvider, setSelectedProvider] = useState(task.selectedProvider || DEFAULT_OPENCODE_PROVIDER)
   const [selectedModel, setSelectedModel] = useState<string>(
-    task.selectedModel || defaultModels[normalizeOpenCodeProvider(task.selectedAgent || DEFAULT_OPENCODE_PROVIDER)],
+    task.selectedModel || defaultModels[normalizeOpenCodeProvider(task.selectedProvider || DEFAULT_OPENCODE_PROVIDER)],
   )
   const [tryAgainInstallDeps, setTryAgainInstallDeps] = useState(task.installDependencies || false)
   const [tryAgainMaxDuration, setTryAgainMaxDuration] = useState(task.maxDuration || maxSandboxDuration)
@@ -169,7 +169,7 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
 
   // Initialize model correctly on mount and when provider changes in Try Again dialog
   useEffect(() => {
-    const provider = normalizeOpenCodeProvider(selectedAgent)
+    const provider = normalizeOpenCodeProvider(selectedProvider)
     const taskModel = task.selectedModel
 
     // Check if the task's model exists in the provider's model list
@@ -182,7 +182,7 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
     if (correctModel !== selectedModel) {
       setSelectedModel(correctModel)
     }
-  }, [defaultModels, modelsByProvider, selectedAgent, task.selectedModel, selectedModel])
+  }, [defaultModels, modelsByProvider, selectedProvider, task.selectedModel, selectedModel])
 
   // File search state
   const [fileSearchQuery, setFileSearchQuery] = useState('')
@@ -1012,12 +1012,12 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
 
   // Update model when provider changes
   useEffect(() => {
-    if (selectedAgent) {
-      const provider = normalizeOpenCodeProvider(selectedAgent)
+    if (selectedProvider) {
+      const provider = normalizeOpenCodeProvider(selectedProvider)
       const defaultModel = defaultModels[provider]
       setSelectedModel(defaultModel)
     }
-  }, [defaultModels, selectedAgent])
+  }, [defaultModels, selectedProvider])
 
   // Scroll active tab into view when it changes
   useEffect(() => {
@@ -1140,7 +1140,7 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
         body: JSON.stringify({
           prompt: task.prompt,
           repoUrl: task.repoUrl,
-          selectedAgent,
+          selectedProvider,
           selectedModel,
           installDependencies: tryAgainInstallDeps,
           maxDuration: tryAgainMaxDuration,
@@ -1406,7 +1406,7 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
                   const params = new URLSearchParams()
                   if (owner) params.set('owner', owner)
                   if (repo) params.set('repo', repo)
-                  if (task.selectedAgent) params.set('provider', task.selectedAgent)
+                  if (task.selectedProvider) params.set('provider', task.selectedProvider)
                   if (task.selectedModel) params.set('model', task.selectedModel)
 
                   router.push(`/?${params.toString()}`)
@@ -1483,15 +1483,15 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
           )}
 
           {/* Provider */}
-          {(task.selectedAgent || task.selectedModel) && (
+          {(task.selectedProvider || task.selectedModel) && (
             <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
-              {task.selectedAgent && <OpenCode className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />}
-              {task.selectedAgent && (
-                <span className="text-muted-foreground whitespace-nowrap">{getProviderLabel(task.selectedAgent)}</span>
+              {task.selectedProvider && <OpenCode className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />}
+              {task.selectedProvider && (
+                <span className="text-muted-foreground whitespace-nowrap">{getProviderLabel(task.selectedProvider)}</span>
               )}
               {task.selectedModel && (
                 <span className="text-muted-foreground whitespace-nowrap">
-                  {getModelName(task.selectedModel, task.selectedAgent)}
+                  {getModelName(task.selectedModel, task.selectedProvider)}
                 </span>
               )}
             </div>
@@ -2369,12 +2369,12 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Provider</label>
-                <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+                <Select value={selectedProvider} onValueChange={setSelectedProvider}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a provider">
-                      {selectedAgent
+                      {selectedProvider
                         ? (() => {
-                            const provider = providers.find((item) => item.value === selectedAgent)
+                            const provider = providers.find((item) => item.value === selectedProvider)
                             return provider ? (
                               <div className="flex items-center gap-2">
                                 <img
@@ -2414,7 +2414,7 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
                     <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {modelsByProvider[normalizeOpenCodeProvider(selectedAgent)]?.map((model) => (
+                    {modelsByProvider[normalizeOpenCodeProvider(selectedProvider)]?.map((model) => (
                       <SelectItem key={model.value} value={model.value}>
                         {model.label}
                       </SelectItem>

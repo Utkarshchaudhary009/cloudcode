@@ -7,7 +7,7 @@ import { generateId } from '@/lib/utils/id'
 import { createTaskLogger } from '@/lib/utils/task-logger'
 import { Sandbox } from '@vercel/sandbox'
 import { createSandbox } from '@/lib/sandbox/creation'
-import { executeAgentInSandbox, AgentType } from '@/lib/sandbox/agents'
+import { executeAgentInSandbox } from '@/lib/sandbox/agents'
 import { pushChangesToBranch, shutdownSandbox } from '@/lib/sandbox/git'
 import { unregisterSandbox } from '@/lib/sandbox/sandbox-registry'
 import { decrypt } from '@/lib/crypto'
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ taskId
         task.repoUrl || '',
         task.branchName || '',
         task.maxDuration || maxSandboxDuration,
-        task.selectedAgent || 'openai',
+        task.selectedProvider || 'opencode',
         task.selectedModel || undefined,
         task.installDependencies || false,
         userApiKeys,
@@ -121,7 +121,7 @@ async function continueTask(
   repoUrl: string,
   branchName: string,
   maxDuration: number,
-  selectedAgent: string = 'opencode',
+  selectedProvider: string = 'opencode',
   selectedModel?: string,
   installDependencies: boolean = false,
   apiKeys?: {
@@ -216,17 +216,18 @@ async function continueTask(
           taskId,
           repoUrl,
           githubToken,
-          gitAuthorName: githubUser?.name || githubUser?.username || 'Coding Agent',
-          gitAuthorEmail: githubUser?.username
-            ? `${githubUser.username}@users.noreply.github.com`
-            : 'agent@example.com',
+          gitAuthorName: githubUser?.name || githubUser?.username || 'OpenCode',
+                  gitAuthorEmail: githubUser?.username
+                    ? `${githubUser.username}@users.noreply.github.com`
+                    : 'opencode@example.com',
+          
           apiKeys,
           timeout: `${maxDuration}m`,
           ports: [port],
           runtime: 'node22',
           resources: { vcpus: 4 },
           taskPrompt: prompt,
-          selectedAgent,
+          selectedProvider,
           selectedModel,
           installDependencies,
           preDeterminedBranchName: branchName, // Use existing branch
@@ -336,23 +337,22 @@ async function continueTask(
     const agentResult = await executeAgentInSandbox(
       sandbox,
       promptWithContext,
-      'opencode' as AgentType,
       logger,
       selectedModel,
       mcpServers,
       undefined,
       apiKeys,
       isResumedSandbox, // Pass whether this is a resumed sandbox
-      currentTask.agentSessionId || undefined, // Pass agent session ID for resumption
+      currentTask.opencodeSessionId || undefined, // Pass agent session ID for resumption
       taskId, // taskId for streaming updates
       agentMessageId, // agentMessageId for streaming updates
     )
 
     console.log('Agent execution completed')
 
-    // Update agent session ID if provided (for Cursor agent resumption)
-    if (agentResult.sessionId) {
-      await db.update(tasks).set({ agentSessionId: agentResult.sessionId }).where(eq(tasks.id, taskId))
+    // Update agent session ID if provided (for OpenCode resumption)
+    if (agentResult.opencodeSessionId) {
+      await db.update(tasks).set({ opencodeSessionId: agentResult.opencodeSessionId }).where(eq(tasks.id, taskId))
     }
 
     if (agentResult.success) {
@@ -394,7 +394,7 @@ async function continueTask(
           commitMessage = await generateCommitMessage({
             description: prompt,
             repoName,
-            context: `${selectedAgent} provider follow-up`,
+            context: `${selectedProvider} provider follow-up`,
           })
         } else {
           commitMessage = createFallbackCommitMessage(prompt)

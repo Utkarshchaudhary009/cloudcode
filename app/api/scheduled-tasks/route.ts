@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       timeSlot: body.timeSlot,
       days: body.days || ['daily'],
       timezone: body.timezone || 'UTC',
-      selectedAgent: body.selectedAgent,
+      selectedProvider: body.selectedProvider,
       selectedModel: body.selectedModel,
       enabled: body.enabled ?? true,
     })

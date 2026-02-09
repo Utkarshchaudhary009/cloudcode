@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: TaskPageProps): Promise<Metad
   }
 
   return {
-    title: `${pageTitle} - Coding Agent Platform`,
+    title: `${pageTitle} - CloudCode`,
     description: 'View task details and execution logs',
   }
 }

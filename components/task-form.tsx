@@ -22,7 +22,7 @@ import { ConnectorDialog } from '@/components/connectors/manage-connectors'
 import { toast } from 'sonner'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { taskPromptAtom } from '@/lib/atoms/task'
-import { lastSelectedAgentAtom, lastSelectedModelAtomFamily } from '@/lib/atoms/agent-selection'
+import { lastSelectedProviderAtom, lastSelectedModelAtomFamily } from '@/lib/atoms/agent-selection'
 import { githubReposAtomFamily } from '@/lib/atoms/github-cache'
 import { useSearchParams } from 'next/navigation'
 import { DEFAULT_OPENCODE_PROVIDER, isOpenCodeProvider, normalizeOpenCodeProvider } from '@/lib/opencode/providers'
@@ -42,7 +42,7 @@ interface TaskFormProps {
   onSubmit: (data: {
     prompt: string
     repoUrl: string
-    selectedAgent: string
+    selectedProvider: string
     selectedModel: string
     installDependencies: boolean
     maxDuration: number
@@ -73,12 +73,12 @@ export function TaskForm({
   maxSandboxDuration = 300,
 }: TaskFormProps) {
   const [prompt, setPrompt] = useAtom(taskPromptAtom)
-  const [savedAgent, setSavedAgent] = useAtom(lastSelectedAgentAtom)
-  const [selectedAgent, setSelectedAgent] = useState<Provider>(
-    normalizeOpenCodeProvider(savedAgent || DEFAULT_OPENCODE_PROVIDER),
+  const [savedProvider, setSavedProvider] = useAtom(lastSelectedProviderAtom)
+  const [selectedProvider, setSelectedProvider] = useState<Provider>(
+    normalizeOpenCodeProvider(savedProvider || DEFAULT_OPENCODE_PROVIDER),
   )
   const { providers, modelsByProvider, defaultModels } = useModelsDevCatalog()
-  const [selectedModel, setSelectedModel] = useState<string>(defaultModels[selectedAgent])
+  const [selectedModel, setSelectedModel] = useState<string>(defaultModels[selectedProvider])
   const [repos, setRepos] = useAtom(githubReposAtomFamily(selectedOwner))
   const [, setLoadingRepos] = useState(false)
 
@@ -142,21 +142,21 @@ export function TaskForm({
   // Load saved provider, model, and options on mount, and focus the prompt input
   useEffect(() => {
     // Check URL params first
-    const urlAgent = searchParams?.get('provider') || searchParams?.get('agent')
+    const urlProvider = searchParams?.get('provider') || searchParams?.get('agent')
     const urlModel = searchParams?.get('model')
 
-    if (urlAgent && isOpenCodeProvider(urlAgent)) {
-      setSelectedAgent(urlAgent as Provider)
+    if (urlProvider && isOpenCodeProvider(urlProvider)) {
+      setSelectedProvider(urlProvider as Provider)
       if (urlModel) {
-        const providerModels = modelsByProvider[urlAgent as OpenCodeProviderId]
+        const providerModels = modelsByProvider[urlProvider as OpenCodeProviderId]
         if (providerModels?.some((model) => model.value === urlModel)) {
           setSelectedModel(urlModel)
         }
       }
-    } else if (savedAgent) {
+    } else if (savedProvider) {
       // Fall back to saved provider from Jotai atom
-      if (isOpenCodeProvider(savedAgent)) {
-        setSelectedAgent(savedAgent as Provider)
+      if (isOpenCodeProvider(savedProvider)) {
+        setSelectedProvider(savedProvider as Provider)
       }
     }
 
@@ -166,28 +166,28 @@ export function TaskForm({
     if (textareaRef.current) {
       textareaRef.current.focus()
     }
-  }, [modelsByProvider, savedAgent, searchParams])
+  }, [modelsByProvider, savedProvider, searchParams])
 
   // Get saved model atom for current provider
-  const savedModelAtom = lastSelectedModelAtomFamily(selectedAgent)
+  const savedModelAtom = lastSelectedModelAtomFamily(selectedProvider)
   const savedModel = useAtomValue(savedModelAtom)
   const setSavedModel = useSetAtom(savedModelAtom)
 
   // Update model when provider changes
   useEffect(() => {
-    if (selectedAgent) {
+    if (selectedProvider) {
       // Load saved model for this provider or use default
-      const providerModels = modelsByProvider[selectedAgent as OpenCodeProviderId]
+      const providerModels = modelsByProvider[selectedProvider as OpenCodeProviderId]
       if (savedModel && providerModels?.some((model) => model.value === savedModel)) {
         setSelectedModel(savedModel)
       } else {
-        const defaultModel = defaultModels[selectedAgent]
+        const defaultModel = defaultModels[selectedProvider]
         if (defaultModel) {
           setSelectedModel(defaultModel)
         }
       }
     }
-  }, [defaultModels, modelsByProvider, savedModel, selectedAgent])
+  }, [defaultModels, modelsByProvider, savedModel, selectedProvider])
 
   // Fetch repositories when owner changes
   useEffect(() => {
@@ -232,7 +232,7 @@ export function TaskForm({
       onSubmit({
         prompt: prompt.trim(),
         repoUrl: '',
-        selectedAgent,
+        selectedProvider,
         selectedModel,
         installDependencies,
         maxDuration,
@@ -248,7 +248,7 @@ export function TaskForm({
 
     if (selectedRepoData) {
       try {
-        const response = await fetch(`/api/api-keys/check?provider=${selectedAgent}`)
+        const response = await fetch(`/api/api-keys/check?provider=${selectedProvider}`)
         const data = await response.json()
 
         if (!data.hasKey) {
@@ -269,7 +269,7 @@ export function TaskForm({
     onSubmit({
       prompt: prompt.trim(),
       repoUrl: selectedRepoData?.clone_url || '',
-      selectedAgent,
+      selectedProvider,
       selectedModel,
       installDependencies,
       maxDuration,
@@ -306,19 +306,19 @@ export function TaskForm({
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 {/* Provider Selection - Icon only on mobile, minimal width */}
                 <Select
-                  value={selectedAgent}
+                  value={selectedProvider}
                   onValueChange={(value) => {
-                    setSelectedAgent(value as Provider)
+                    setSelectedProvider(value as Provider)
                     // Save to Jotai atom immediately
-                    setSavedAgent(value)
+                    setSavedProvider(value)
                   }}
                   disabled={isSubmitting}
                 >
                   <SelectTrigger className="w-auto sm:min-w-[120px] border-0 bg-transparent shadow-none focus:ring-0 h-8 shrink-0">
                     <SelectValue placeholder="Provider">
-                      {selectedAgent &&
+                      {selectedProvider &&
                         (() => {
-                          const provider = providers.find((item) => item.value === selectedAgent)
+                          const provider = providers.find((item) => item.value === selectedProvider)
                           return provider ? (
                             <div className="flex items-center gap-2">
                               <img
@@ -365,7 +365,7 @@ export function TaskForm({
                     <SelectValue placeholder="Model" className="truncate" />
                   </SelectTrigger>
                   <SelectContent>
-                    {modelsByProvider[selectedAgent as OpenCodeProviderId]?.map((model) => (
+                    {modelsByProvider[selectedProvider as OpenCodeProviderId]?.map((model) => (
                       <SelectItem key={model.value} value={model.value}>
                         {model.label}
                       </SelectItem>

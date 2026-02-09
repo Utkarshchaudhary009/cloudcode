@@ -1,5 +1,5 @@
 export function validateEnvironmentVariables(
-  selectedAgent: string = 'opencode',
+  selectedProvider: string = 'opencode',
   githubToken?: string | null,
   apiKeys?: {
     OPENAI_API_KEY?: string
@@ -51,7 +51,7 @@ export function validateEnvironmentVariables(
   const hasMoonshot = apiKeys?.MOONSHOT_API_KEY || process.env.MOONSHOT_API_KEY
   const hasZhipu = apiKeys?.ZHIPU_API_KEY || process.env.ZHIPU_API_KEY
 
-  switch (selectedAgent) {
+  switch (selectedProvider) {
     case 'openai':
       if (!hasOpenAI) {
         errors.push('OPENAI_API_KEY is required for OpenCode with OpenAI.')

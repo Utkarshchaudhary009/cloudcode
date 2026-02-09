@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { TaskForm } from '@/components/task-form'
-import { SharedHeader } from '@/components/shared-header'
 import { RepoSelector } from '@/components/repo-selector'
 import { toast } from 'sonner'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -31,6 +30,7 @@ import { OpenRepoUrlDialog } from '@/components/open-repo-url-dialog'
 import { MultiRepoDialog } from '@/components/multi-repo-dialog'
 import { GreetingHero } from '@/components/greeting-hero'
 import { ActivityFeed } from '@/components/activity-feed'
+import { useHeaderActions } from '@/lib/hooks/use-header-actions'
 
 interface HomePageContentProps {
   initialSelectedOwner?: string
@@ -228,7 +228,7 @@ export function HomePageContent({
       const taskData = {
         prompt: 'Work on this repository',
         repoUrl: repoUrl,
-        selectedAgent: localStorage.getItem('last-selected-provider') || 'openai',
+        selectedProvider: localStorage.getItem('last-selected-provider') || 'openai',
         selectedModel: localStorage.getItem('last-selected-model-openai') || 'gpt-5',
         installDependencies: true,
         maxDuration: 300,
@@ -258,77 +258,79 @@ export function HomePageContent({
     }
   }
 
-  // Build leftActions for the header
-  const headerLeftActions = (
-    <div className="flex items-center gap-1 sm:gap-2 h-8 min-w-0 flex-1">
-      {!githubConnectionInitialized ? null : githubConnection.connected || isGitHubAuthUser ? (
-        <>
+  // Set header actions
+  useHeaderActions({
+    left: (
+      <div className="flex items-center gap-1 sm:gap-2 h-8 min-w-0 flex-1">
+        {!githubConnectionInitialized ? null : githubConnection.connected || isGitHubAuthUser ? (
+          <>
+            <RepoSelector
+              selectedOwner={selectedOwner}
+              selectedRepo={selectedRepo}
+              onOwnerChange={handleOwnerChange}
+              onRepoChange={handleRepoChange}
+              size="sm"
+              onMultiRepoClick={() => setShowMultiRepoDialog(true)}
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0" title="More options">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={handleNewRepo}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Repo
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowOpenRepoDialog(true)}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open Repo URL
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleRefreshOwners} disabled={isRefreshing}>
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Refresh Owners
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleRefreshRepos} disabled={isRefreshing}>
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Refresh Repos
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleReconfigureGitHub}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Manage Access
+                </DropdownMenuItem>
+                {!isGitHubAuthUser && (
+                  <DropdownMenuItem onClick={handleDisconnectGitHub}>
+                    <Unlink className="h-4 w-4 mr-2" />
+                    Disconnect GitHub
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        ) : user ? (
+          <Button onClick={handleConnectGitHub} variant="outline" size="sm" className="h-8 flex-shrink-0">
+            <GitHubIcon className="h-4 w-4 mr-2" />
+            Connect GitHub
+          </Button>
+        ) : selectedOwner || selectedRepo ? (
           <RepoSelector
             selectedOwner={selectedOwner}
             selectedRepo={selectedRepo}
             onOwnerChange={handleOwnerChange}
             onRepoChange={handleRepoChange}
             size="sm"
-            onMultiRepoClick={() => setShowMultiRepoDialog(true)}
           />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 flex-shrink-0" title="More options">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={handleNewRepo}>
-                <Plus className="h-4 w-4 mr-2" />
-                New Repo
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowOpenRepoDialog(true)}>
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Open Repo URL
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleRefreshOwners} disabled={isRefreshing}>
-                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Refresh Owners
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleRefreshRepos} disabled={isRefreshing}>
-                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Refresh Repos
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleReconfigureGitHub}>
-                <Settings className="h-4 w-4 mr-2" />
-                Manage Access
-              </DropdownMenuItem>
-              {!isGitHubAuthUser && (
-                <DropdownMenuItem onClick={handleDisconnectGitHub}>
-                  <Unlink className="h-4 w-4 mr-2" />
-                  Disconnect GitHub
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </>
-      ) : user ? (
-        <Button onClick={handleConnectGitHub} variant="outline" size="sm" className="h-8 flex-shrink-0">
-          <GitHubIcon className="h-4 w-4 mr-2" />
-          Connect GitHub
-        </Button>
-      ) : selectedOwner || selectedRepo ? (
-        <RepoSelector
-          selectedOwner={selectedOwner}
-          selectedRepo={selectedRepo}
-          onOwnerChange={handleOwnerChange}
-          onRepoChange={handleRepoChange}
-          size="sm"
-        />
-      ) : null}
-    </div>
-  )
+        ) : null}
+      </div>
+    ),
+  })
 
   const handleTaskSubmit = async (data: {
     prompt: string
     repoUrl: string
-    selectedAgent: string
+    selectedProvider: string
     selectedModel: string
     installDependencies: boolean
     maxDuration: number
@@ -372,7 +374,7 @@ export function HomePageContent({
         const { id } = addTaskOptimistically({
           prompt: data.prompt,
           repoUrl: repo.clone_url,
-          selectedAgent: data.selectedAgent,
+          selectedProvider: data.selectedProvider,
           selectedModel: data.selectedModel,
           installDependencies: data.installDependencies,
           maxDuration: data.maxDuration,
@@ -382,7 +384,7 @@ export function HomePageContent({
           id,
           prompt: data.prompt,
           repoUrl: repo.clone_url,
-          selectedAgent: data.selectedAgent,
+          selectedProvider: data.selectedProvider,
           selectedModel: data.selectedModel,
           installDependencies: data.installDependencies,
           maxDuration: data.maxDuration,
@@ -482,11 +484,7 @@ export function HomePageContent({
 
   return (
     <div className="flex-1 bg-background flex flex-col">
-      <div className="p-3">
-        <SharedHeader leftActions={headerLeftActions} />
-      </div>
-
-      <div className="flex-1 flex flex-col items-center justify-center px-4 pb-20 md:pb-4">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 pb-20 md:pb-4 gap-y-12">
         {/* Greeting Hero - show when logged in */}
         {user && <GreetingHero userName={user.username || user.name?.split(' ')[0]} />}
 
@@ -503,7 +501,7 @@ export function HomePageContent({
         />
 
         {/* Activity Feed - Search, Tabs, and Time-grouped items */}
-        <ActivityFeed className="mt-8 px-2" />
+        <ActivityFeed className="px-2" />
       </div>
 
       {/* Dialogs */}

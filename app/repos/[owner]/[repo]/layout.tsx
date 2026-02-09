@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: LayoutPageProps): Promise<Met
   const { owner, repo } = await params
 
   return {
-    title: `${owner}/${repo} - Coding Agent Platform`,
+    title: `${owner}/${repo} - CloudCode`,
     description: 'View repository commits, issues, and pull requests',
   }
 }

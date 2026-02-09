@@ -4,14 +4,21 @@ import { Button } from '@/components/ui/button'
 import { Menu } from 'lucide-react'
 import { useTasks } from '@/components/app-layout'
 import { User } from '@/components/auth/user'
+import { useAtomValue } from 'jotai'
+import { headerLeftActionsAtom, headerRightActionsAtom } from '@/lib/atoms/header'
 
 interface SharedHeaderProps {
   leftActions?: React.ReactNode
   extraActions?: React.ReactNode
 }
 
-export function SharedHeader({ leftActions, extraActions }: SharedHeaderProps) {
+export function SharedHeader({ leftActions: propLeftActions, extraActions: propExtraActions }: SharedHeaderProps) {
   const { toggleSidebar } = useTasks()
+  const atomLeftActions = useAtomValue(headerLeftActionsAtom)
+  const atomExtraActions = useAtomValue(headerRightActionsAtom)
+
+  const leftActions = propLeftActions || atomLeftActions
+  const extraActions = propExtraActions || atomExtraActions
 
   return (
     <div className="px-0 pt-0.5 md:pt-3 pb-1.5 md:pb-4 overflow-visible">

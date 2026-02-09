@@ -3,9 +3,9 @@
 import { useState, useMemo } from 'react'
 import { useTask } from '@/lib/hooks/use-task'
 import { TaskDetails } from '@/components/task-details'
-import { SharedHeader } from '@/components/shared-header'
 import { TaskActions } from '@/components/task-actions'
 import { LogsPane } from '@/components/logs-pane'
+import { useHeaderActions } from '@/lib/hooks/use-header-actions'
 
 interface TaskPageClientProps {
   taskId: string
@@ -35,20 +35,20 @@ export function TaskPageClient({ taskId, maxSandboxDuration = 300 }: TaskPageCli
 
   const repoInfo = useMemo(() => parseRepoFromUrl(task?.repoUrl ?? null), [task?.repoUrl])
 
-  const headerLeftActions = repoInfo ? (
-    <div className="flex items-center gap-2 min-w-0">
-      <h1 className="text-lg font-semibold truncate">
-        {repoInfo.owner}/{repoInfo.repo}
-      </h1>
-    </div>
-  ) : null
+  useHeaderActions({
+    left: repoInfo ? (
+      <div className="flex items-center gap-2 min-w-0">
+        <h1 className="text-lg font-semibold truncate">
+          {repoInfo.owner}/{repoInfo.repo}
+        </h1>
+      </div>
+    ) : null,
+    right: task ? <TaskActions task={task} /> : null,
+  })
 
   if (isLoading) {
     return (
       <div className="flex-1 bg-background">
-        <div className="p-3">
-          <SharedHeader />
-        </div>
       </div>
     )
   }
@@ -56,9 +56,6 @@ export function TaskPageClient({ taskId, maxSandboxDuration = 300 }: TaskPageCli
   if (error || !task) {
     return (
       <div className="flex-1 bg-background">
-        <div className="p-3">
-          <SharedHeader />
-        </div>
         <div className="mx-auto p-3">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -73,10 +70,6 @@ export function TaskPageClient({ taskId, maxSandboxDuration = 300 }: TaskPageCli
 
   return (
     <div className="flex-1 bg-background relative flex flex-col h-full overflow-hidden">
-      <div className="flex-shrink-0 px-3 py-2 border-b">
-        <SharedHeader leftActions={headerLeftActions} extraActions={<TaskActions task={task} />} />
-      </div>
-
       {/* Task details */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden" style={{ paddingBottom: `${logsPaneHeight}px` }}>
         <TaskDetails task={task} maxSandboxDuration={maxSandboxDuration} />

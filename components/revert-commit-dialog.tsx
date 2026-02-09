@@ -43,7 +43,7 @@ interface RevertCommitDialogProps {
   repo: string
   onRevert: (config: {
     commit: Commit
-    selectedAgent: string
+    selectedProvider: string
     selectedModel: string
     installDependencies: boolean
     maxDuration: number
@@ -61,7 +61,7 @@ export function RevertCommitDialog({
   onRevert,
   maxSandboxDuration = 300,
 }: RevertCommitDialogProps) {
-  const [selectedAgent, setSelectedAgent] = useState<OpenCodeProviderId>(DEFAULT_OPENCODE_PROVIDER)
+  const [selectedProvider, setSelectedProvider] = useState<OpenCodeProviderId>(DEFAULT_OPENCODE_PROVIDER)
   const { providers, modelsByProvider, defaultModels } = useModelsDevCatalog()
   const [selectedModel, setSelectedModel] = useState<string>(defaultModels[DEFAULT_OPENCODE_PROVIDER])
   const [installDependencies, setInstallDependencies] = useState(false)
@@ -71,9 +71,9 @@ export function RevertCommitDialog({
 
   // Update model when agent changes
   useEffect(() => {
-    if (selectedAgent) {
-      const agentModels = modelsByProvider[selectedAgent]
-      const defaultModel = defaultModels[selectedAgent]
+    if (selectedProvider) {
+      const agentModels = modelsByProvider[selectedProvider]
+      const defaultModel = defaultModels[selectedProvider]
       // Check if current model exists for the new agent, otherwise use default
       const modelExists = agentModels?.some((m) => m.value === selectedModel)
       if (!modelExists) {
@@ -83,7 +83,7 @@ export function RevertCommitDialog({
         })
       }
     }
-  }, [defaultModels, modelsByProvider, selectedAgent, selectedModel])
+  }, [defaultModels, modelsByProvider, selectedProvider, selectedModel])
 
   const handleRevert = () => {
     if (!commit) return
@@ -91,7 +91,7 @@ export function RevertCommitDialog({
     setIsReverting(true)
     onRevert({
       commit,
-      selectedAgent,
+      selectedProvider,
       selectedModel,
       installDependencies,
       maxDuration,
@@ -120,24 +120,24 @@ export function RevertCommitDialog({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Provider</label>
-              <Select value={selectedAgent} onValueChange={(value) => setSelectedAgent(value as OpenCodeProviderId)}>
+              <Select value={selectedProvider} onValueChange={(value) => setSelectedProvider(value as OpenCodeProviderId)}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a provider">
-                    {selectedAgent
+                    {selectedProvider
                       ? (() => {
-                        const provider = providers.find((item) => item.value === selectedAgent)
-                        return provider ? (
-                          <div className="flex items-center gap-2">
-                            <img
-                              src={provider.logoUrl}
-                              alt={`${provider.label} logo`}
-                              className="h-4 w-4"
-                              loading="lazy"
-                            />
-                            <span>{provider.label}</span>
-                          </div>
-                        ) : null
-                      })()
+                          const provider = providers.find((item) => item.value === selectedProvider)
+                          return provider ? (
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={provider.logoUrl}
+                                alt={`${provider.label} logo`}
+                                className="h-4 w-4"
+                                loading="lazy"
+                              />
+                              <span>{provider.label}</span>
+                            </div>
+                          ) : null
+                        })()
                       : null}
                   </SelectValue>
                 </SelectTrigger>
@@ -160,7 +160,7 @@ export function RevertCommitDialog({
                   <SelectValue placeholder="Select a model" />
                 </SelectTrigger>
                 <SelectContent>
-                  {modelsByProvider[selectedAgent]?.map((model) => (
+                  {modelsByProvider[selectedProvider]?.map((model) => (
                     <SelectItem key={model.value} value={model.value}>
                       {model.label}
                     </SelectItem>

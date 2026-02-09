@@ -82,7 +82,7 @@ export function RepoIssues({ owner, repo }: RepoIssuesProps) {
   const [error, setError] = useState<string | null>(null)
   const [showCreateTaskDialog, setShowCreateTaskDialog] = useState(false)
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null)
-  const [selectedAgent, setSelectedAgent] = useState<OpenCodeProviderId>(DEFAULT_OPENCODE_PROVIDER)
+  const [selectedProvider, setSelectedProvider] = useState<OpenCodeProviderId>(DEFAULT_OPENCODE_PROVIDER)
   const { providers, modelsByProvider, defaultModels } = useModelsDevCatalog()
   const [selectedModel, setSelectedModel] = useState<string>(defaultModels[DEFAULT_OPENCODE_PROVIDER])
   const [installDeps, setInstallDeps] = useState(false)
@@ -112,12 +112,12 @@ export function RepoIssues({ owner, repo }: RepoIssuesProps) {
   }, [owner, repo])
 
   useEffect(() => {
-    const providerModels = modelsByProvider[selectedAgent]
-    const defaultModel = defaultModels[selectedAgent]
+    const providerModels = modelsByProvider[selectedProvider]
+    const defaultModel = defaultModels[selectedProvider]
     if (providerModels && !providerModels.find((m) => m.value === selectedModel)) {
       setSelectedModel(defaultModel)
     }
-  }, [defaultModels, modelsByProvider, selectedAgent, selectedModel])
+  }, [defaultModels, modelsByProvider, selectedProvider, selectedModel])
 
   const handleCreateTaskFromIssue = (issue: Issue) => {
     setSelectedIssue(issue)
@@ -140,7 +140,7 @@ export function RepoIssues({ owner, repo }: RepoIssuesProps) {
         body: JSON.stringify({
           prompt,
           repoUrl,
-          selectedAgent,
+          selectedProvider,
           selectedModel,
           installDependencies: installDeps,
           maxDuration,
@@ -288,24 +288,24 @@ export function RepoIssues({ owner, repo }: RepoIssuesProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Provider</label>
-                <Select value={selectedAgent} onValueChange={(value) => setSelectedAgent(value as OpenCodeProviderId)}>
+                <Select value={selectedProvider} onValueChange={(value) => setSelectedProvider(value as OpenCodeProviderId)}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a provider">
-                      {selectedAgent
+                      {selectedProvider
                         ? (() => {
-                          const provider = providers.find((item) => item.value === selectedAgent)
-                          return provider ? (
-                            <div className="flex items-center gap-2">
-                              <img
-                                src={provider.logoUrl}
-                                alt={`${provider.label} logo`}
-                                className="h-4 w-4"
-                                loading="lazy"
-                              />
-                              <span>{provider.label}</span>
-                            </div>
-                          ) : null
-                        })()
+                            const provider = providers.find((item) => item.value === selectedProvider)
+                            return provider ? (
+                              <div className="flex items-center gap-2">
+                                <img
+                                  src={provider.logoUrl}
+                                  alt={`${provider.label} logo`}
+                                  className="h-4 w-4"
+                                  loading="lazy"
+                                />
+                                <span>{provider.label}</span>
+                              </div>
+                            ) : null
+                          })()
                         : null}
                     </SelectValue>
                   </SelectTrigger>
@@ -333,7 +333,7 @@ export function RepoIssues({ owner, repo }: RepoIssuesProps) {
                     <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
                   <SelectContent>
-                    {modelsByProvider[selectedAgent]?.map((model) => (
+                    {modelsByProvider[selectedProvider]?.map((model) => (
                       <SelectItem key={model.value} value={model.value}>
                         {model.label}
                       </SelectItem>

@@ -4,7 +4,7 @@ import { db } from '@/lib/db/client'
 import { tasks, insertTaskSchema, connectors, taskMessages, type Task } from '@/lib/db/schema'
 import { generateId } from '@/lib/utils/id'
 import { createSandbox } from '@/lib/sandbox/creation'
-import { executeAgentInSandbox, AgentType } from '@/lib/sandbox/agents'
+import { executeAgentInSandbox } from '@/lib/sandbox/agents'
 import { pushChangesToBranch, shutdownSandbox } from '@/lib/sandbox/git'
 import { unregisterSandbox } from '@/lib/sandbox/sandbox-registry'
 import { detectPackageManager } from '@/lib/sandbox/package-manager'
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         const aiBranchName = await generateBranchName({
           description: validatedData.prompt,
           repoName,
-          context: `${validatedData.selectedAgent} provider task`,
+          context: `${validatedData.selectedProvider} provider task`,
         })
 
         // Update task with AI-generated branch name
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
         const aiTitle = await generateTaskTitle({
           prompt: validatedData.prompt,
           repoName,
-          context: `${validatedData.selectedAgent} provider task`,
+          context: `${validatedData.selectedProvider} provider task`,
         })
 
         // Update task with AI-generated title
@@ -230,7 +230,7 @@ export async function POST(request: NextRequest) {
           validatedData.prompt,
           validatedData.repoUrl || '',
           validatedData.maxDuration || maxSandboxDuration,
-          validatedData.selectedAgent || 'openai',
+          validatedData.selectedProvider || 'opencode',
           validatedData.selectedModel,
           validatedData.installDependencies || false,
           validatedData.keepAlive || false,
@@ -270,7 +270,7 @@ async function processTaskWithTimeout(
   prompt: string,
   repoUrl: string,
   maxDuration: number,
-  selectedAgent: string = 'opencode',
+  selectedProvider: string = 'opencode',
   selectedModel?: string,
   installDependencies: boolean = false,
   keepAlive: boolean = false,
@@ -327,7 +327,7 @@ async function processTaskWithTimeout(
         prompt,
         repoUrl,
         maxDuration,
-        selectedAgent,
+        selectedProvider,
         selectedModel,
         installDependencies,
         keepAlive,
@@ -396,7 +396,7 @@ async function processTask(
   prompt: string,
   repoUrl: string,
   maxDuration: number,
-  selectedAgent: string = 'opencode',
+  selectedProvider: string = 'opencode',
   selectedModel?: string,
   installDependencies: boolean = false,
   keepAlive: boolean = false,
@@ -490,15 +490,15 @@ async function processTask(
         taskId,
         repoUrl,
         githubToken,
-        gitAuthorName: githubUser?.name || githubUser?.username || 'Coding Agent',
-        gitAuthorEmail: githubUser?.username ? `${githubUser.username}@users.noreply.github.com` : 'agent@example.com',
+        gitAuthorName: githubUser?.name || githubUser?.username || 'OpenCode',
+        gitAuthorEmail: githubUser?.username ? `${githubUser.username}@users.noreply.github.com` : 'opencode@example.com',
         apiKeys,
         timeout: `${maxDuration}m`,
         ports: [port],
         runtime: 'node22',
         resources: { vcpus: 4 },
         taskPrompt: prompt,
-        selectedAgent,
+        selectedProvider,
         selectedModel,
         installDependencies,
         keepAlive,
@@ -630,7 +630,6 @@ async function processTask(
     const agentResult = await executeAgentInSandbox(
       sandbox,
       sanitizedPrompt,
-      'opencode' as AgentType,
       logger,
       selectedModel,
       mcpServers,
@@ -644,9 +643,9 @@ async function processTask(
 
     console.log('Agent execution completed')
 
-    // Update agent session ID if provided (for Cursor agent resumption)
-    if (agentResult.sessionId) {
-      await db.update(tasks).set({ agentSessionId: agentResult.sessionId }).where(eq(tasks.id, taskId))
+    // Update agent session ID if provided (for OpenCode resumption)
+    if (agentResult.opencodeSessionId) {
+      await db.update(tasks).set({ opencodeSessionId: agentResult.opencodeSessionId }).where(eq(tasks.id, taskId))
     }
 
     if (agentResult.success) {
@@ -692,7 +691,7 @@ async function processTask(
           commitMessage = await generateCommitMessage({
             description: prompt,
             repoName,
-            context: `${selectedAgent} provider task`,
+            context: `${selectedProvider} provider task`,
           })
         } else {
           commitMessage = createFallbackCommitMessage(prompt)

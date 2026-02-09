@@ -10,7 +10,6 @@ import { RefreshCw, File } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { SharedHeader } from '@/components/shared-header'
 import { useAtomValue } from 'jotai'
 import { sessionAtom } from '@/lib/atoms/session'
 
@@ -170,10 +169,6 @@ export default function NewRepoPage() {
 
   return (
     <div className="flex-1 bg-background">
-      <div className="p-3">
-        <SharedHeader />
-      </div>
-
       <div className="px-3 pb-3">
         <div className="container max-w-2xl mx-auto">
           <div className="mb-6">

@@ -1,14 +1,14 @@
-# Coding Agent Template
+# CloudCode
 
-A template for building AI-powered coding agents that supports Claude Code, OpenAI's Codex CLI, GitHub Copilot CLI, Cursor CLI, Google Gemini CLI, and opencode with [Vercel Sandbox](https://vercel.com/docs/vercel-sandbox) to automatically execute coding tasks on your repositories.
+A platform for building AI-powered coding agents using **OpenCode** with [Vercel Sandbox](https://vercel.com/docs/vercel-sandbox) to automatically execute coding tasks on your repositories.
 
-![Coding Agent Template Screenshot](screenshot.png)
+![CloudCode Screenshot](screenshot.png)
 
 ## Deploy Your Own
 
-You can deploy your own version of the coding agent template to Vercel with one click:
+You can deploy your own version of CloudCode to Vercel with one click:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fcoding-agent-template&env=SANDBOX_VERCEL_TEAM_ID,SANDBOX_VERCEL_PROJECT_ID,SANDBOX_VERCEL_TOKEN,JWE_SECRET,ENCRYPTION_KEY&envDescription=Required+environment+variables+for+the+coding+agent+template.+You+must+also+configure+at+least+one+OAuth+provider+(GitHub+or+Vercel)+after+deployment.+Optional+API+keys+can+be+added+later.&stores=%5B%7B%22type%22%3A%22postgres%22%7D%5D&project-name=coding-agent-template&repository-name=coding-agent-template)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fcoding-agent-template&env=SANDBOX_VERCEL_TEAM_ID,SANDBOX_VERCEL_PROJECT_ID,SANDBOX_VERCEL_TOKEN,JWE_SECRET,ENCRYPTION_KEY&envDescription=Required+environment+variables+for+CloudCode.+You+must+also+configure+at+least+one+OAuth+provider+(GitHub+or+Vercel)+after+deployment.+Optional+API+keys+can+be+added+later.&stores=%5B%7B%22type%22%3A%22postgres%22%7D%5D&project-name=cloudcode&repository-name=cloudcode)
 
 **What happens during deployment:**
 - **Automatic Database Setup**: A Neon Postgres database is automatically created and connected to your project
@@ -17,7 +17,8 @@ You can deploy your own version of the coding agent template to Vercel with one 
 
 ## Features
 
-- **Multi-Agent Support**: Choose from Claude Code, OpenAI Codex CLI, GitHub Copilot CLI, Cursor CLI, Google Gemini CLI, or opencode to execute coding tasks
+- **OpenCode Agent**: A powerful, open-source coding agent that can analyze, plan, and execute complex coding tasks
+- **Multiple LLM Providers**: Power OpenCode with OpenAI, Anthropic, Google Gemini, Groq, and more
 - **User Authentication**: Secure sign-in with GitHub or Vercel OAuth
 - **Multi-User Support**: Each user has their own tasks, API keys, and GitHub connection
 - **Vercel Sandbox**: Runs code in isolated, secure sandboxes ([docs](https://vercel.com/docs/vercel-sandbox))
@@ -27,7 +28,7 @@ You can deploy your own version of the coding agent template to Vercel with one 
 - **Persistent Storage**: Tasks stored in Neon Postgres database
 - **Git Integration**: Automatically creates branches and commits changes
 - **Modern UI**: Clean, responsive interface built with Next.js and Tailwind CSS
-- **MCP Server Support**: Connect MCP servers to Claude Code for extended capabilities (Claude only)
+- **MCP Server Support**: Connect MCP servers to OpenCode for extended capabilities
 
 ## Quick Start
 
@@ -124,7 +125,7 @@ When Keep Alive is enabled, the sandbox stays alive after task completion for th
 1. **Task Creation**: When you submit a task, it's stored in the database
 2. **AI Branch Name Generation**: AI SDK 5 + AI Gateway automatically generates a descriptive branch name based on your task (non-blocking using Next.js 15's `after()`)
 3. **Sandbox Setup**: A Vercel sandbox is created with your repository
-4. **Agent Execution**: Your chosen coding agent (Claude Code, Codex CLI, GitHub Copilot CLI, Cursor CLI, Gemini CLI, or opencode) analyzes your prompt and makes changes
+4. **OpenCode Execution**: The OpenCode agent analyzes your prompt, creates a plan, and implements changes
 5. **Git Operations**: Changes are committed and pushed to the AI-generated branch
 6. **Cleanup**: The sandbox is shut down to free resources
 
@@ -151,14 +152,14 @@ The system automatically generates descriptive Git branch names using AI SDK 5 a
 - **UI Components**: shadcn/ui
 - **Database**: PostgreSQL with Drizzle ORM
 - **AI SDK**: AI SDK 5 with Vercel AI Gateway integration
-- **AI Agents**: Claude Code, OpenAI Codex CLI, GitHub Copilot CLI, Cursor CLI, Google Gemini CLI, opencode
+- **AI Agent**: OpenCode
 - **Sandbox**: [Vercel Sandbox](https://vercel.com/docs/vercel-sandbox)
 - **Authentication**: Next Auth (OAuth with GitHub/Vercel)
 - **Git**: Automated branching and commits with AI-generated branch names
 
 ## MCP Server Support
 
-Connect MCP Servers to extend Claude Code with additional tools and integrations. **Currently only works with Claude Code agent.**
+Connect MCP Servers to extend OpenCode with additional tools and integrations.
 
 ### How to Add MCP Servers
 
@@ -240,11 +241,12 @@ NEXT_PUBLIC_AUTH_PROVIDERS=github,vercel
 
 These API keys can be set globally (fallback for all users) or left unset to require users to provide their own:
 
-- `ANTHROPIC_API_KEY`: Anthropic API key for Claude agent (users can override in their profile)
-- `AI_GATEWAY_API_KEY`: AI Gateway API key for branch name generation and Codex (users can override)
-- `CURSOR_API_KEY`: For Cursor agent support (users can override)
-- `GEMINI_API_KEY`: For Google Gemini agent support (users can override)
-- `OPENAI_API_KEY`: For Codex and OpenCode agents (users can override)
+- `OPENAI_API_KEY`: For OpenCode with OpenAI (users can override in their profile)
+- `ANTHROPIC_API_KEY`: For OpenCode with Anthropic (users can override)
+- `GEMINI_API_KEY`: For OpenCode with Google Gemini (users can override)
+- `AI_GATEWAY_API_KEY`: Vercel AI Gateway API key for model routing and branch name generation
+- `OPENCODE_API_KEY`: For OpenCode Zen provider
+- `GROQ_API_KEY`, `DEEPSEEK_API_KEY`, etc.: Other supported LLM providers
 
 > **Note**: Users can provide their own API keys in their profile settings, which take precedence over global environment variables.
 
@@ -274,7 +276,7 @@ Based on your `NEXT_PUBLIC_AUTH_PROVIDERS` configuration, you'll need to create 
 1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
 2. Click "New OAuth App"
 3. Fill in the details:
-   - **Application name**: Your app name (e.g., "My Coding Agent")
+   - **Application name**: Your app name (e.g., "CloudCode")
    - **Homepage URL**: `http://localhost:3000` (or your production URL)
    - **Authorization callback URL**: `http://localhost:3000/api/auth/github/callback`
 4. Click "Register application"

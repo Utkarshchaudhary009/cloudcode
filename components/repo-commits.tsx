@@ -82,7 +82,7 @@ export function RepoCommits({ owner, repo }: RepoCommitsProps) {
 
   const handleRevertCommit = async (config: {
     commit: Commit
-    selectedAgent: string
+    selectedProvider: string
     selectedModel: string
     installDependencies: boolean
     maxDuration: number
@@ -98,7 +98,7 @@ export function RepoCommits({ owner, repo }: RepoCommitsProps) {
       const { id } = addTaskOptimistically({
         prompt,
         repoUrl,
-        selectedAgent: config.selectedAgent,
+        selectedProvider: config.selectedProvider,
         selectedModel: config.selectedModel,
         installDependencies: config.installDependencies,
         maxDuration: config.maxDuration,
@@ -117,7 +117,7 @@ export function RepoCommits({ owner, repo }: RepoCommitsProps) {
           id,
           prompt,
           repoUrl,
-          selectedAgent: config.selectedAgent,
+          selectedProvider: config.selectedProvider,
           selectedModel: config.selectedModel,
           installDependencies: config.installDependencies,
           maxDuration: config.maxDuration,

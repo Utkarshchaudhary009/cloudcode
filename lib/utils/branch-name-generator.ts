@@ -72,5 +72,5 @@ Return ONLY the branch name, nothing else.`
 
 export function createFallbackBranchName(taskId: string): string {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)
-  return `agent/${timestamp}-${taskId.slice(0, 8)}`
+  return `opencode/${timestamp}-${taskId.slice(0, 8)}`
 }
