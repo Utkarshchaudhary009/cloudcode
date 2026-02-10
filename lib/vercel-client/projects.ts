@@ -43,29 +43,51 @@ export async function listProjects(accessToken: string, teamId?: string): Promis
       bearerToken: accessToken,
     })
 
-    const response = await vercel.projects.getProjects({
-      teamId,
-      limit: '100', // Get up to 100 projects
-    })
+    let response: any
+    try {
+      response = await vercel.projects.getProjects({
+        teamId,
+        limit: '100', // Get up to 100 projects
+      })
+      console.log(`[listProjects] SDK response for teamId ${teamId} keys:`, Object.keys(response || {}))
+    } catch (sdkError) {
+      console.error(`[listProjects] SDK failed for teamId ${teamId}, falling back to fetch:`, sdkError)
+      const url = teamId 
+        ? `https://api.vercel.com/v9/projects?teamId=${teamId}&limit=100` 
+        : 'https://api.vercel.com/v9/projects?limit=100'
+      
+      const fetchRes = await fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      })
+      
+      if (fetchRes.ok) {
+        response = await fetchRes.json()
+        console.log(`[listProjects] Fetch fallback success for teamId ${teamId}`)
+      } else {
+        console.error(`[listProjects] Fetch fallback failed: ${fetchRes.status}`)
+        return []
+      }
+    }
 
-    console.log(`[listProjects] response for teamId ${teamId}:`, JSON.stringify(response).substring(0, 500))
-
-    // Response can be an array, or object with projects property, or potentially just the projects directly if it's a different SDK version behavior
+    // Response parsing
     let projects: any[] = []
     if (Array.isArray(response)) {
       projects = response
     } else if (response && typeof response === 'object') {
-      if ((response as any).projects && Array.isArray((response as any).projects)) {
-        projects = (response as any).projects
+      if (Array.isArray(response.projects)) {
+        projects = response.projects
+      } else if (response.data && Array.isArray(response.data)) {
+        projects = response.data
+      } else if (Array.isArray((response as any).data?.projects)) {
+        projects = (response as any).data.projects
       } else {
-        // Log keys if projects not found where expected
-        console.log(`[listProjects] response keys: ${Object.keys(response).join(', ')}`)
+        console.log(`[listProjects] Unknown response structure keys: ${Object.keys(response).join(', ')}`)
       }
     }
 
     console.log(`[listProjects] count for teamId ${teamId}: ${projects.length}`)
     if (projects.length > 0) {
-      console.log(`[listProjects] first project sample: ${JSON.stringify(projects[0]).substring(0, 200)}`)
+      console.log(`[listProjects] first project sample ID: ${projects[0].id}, name: ${projects[0].name}`)
     }
 
     if (!projects || projects.length === 0) {
