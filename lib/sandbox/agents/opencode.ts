@@ -57,17 +57,18 @@ async function runOpenCodeRun(
   const stderr = executeResult.error || ''
 
   if (stdout && stdout.trim()) {
-    await logger.info('OpenCode command completed with output')
+    await logger.info(`OpenCode command stdout (${stdout.length} chars): ${stdout.trim().substring(0, 200)}...`)
   }
+  
   if (stderr && stderr.trim()) {
-    if (executeResult.success) {
-      await logger.info(`OpenCode command produced output: ${stderr.trim().substring(0, 500)}`)
-    } else {
-      await logger.error(`OpenCode command returned errors: ${stderr.trim().substring(0, 1000)}`)
-    }
+    await logger.info(`OpenCode command stderr: ${stderr.trim().substring(0, 500)}`)
   }
 
-  await logger.info('OpenCode run completed')
+  if (!executeResult.success) {
+    await logger.error(`OpenCode command failed with exit code ${executeResult.exitCode}`)
+  } else {
+    await logger.info('OpenCode run completed successfully')
+  }
 
   return executeResult
 }
