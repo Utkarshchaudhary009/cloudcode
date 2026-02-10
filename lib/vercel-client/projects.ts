@@ -45,7 +45,7 @@ export async function listProjects(accessToken: string, teamId?: string): Promis
 
     const response = await vercel.projects.getProjects({
       teamId,
-      limit: 100, // Get up to 100 projects
+      limit: '100', // Get up to 100 projects
     })
 
     console.log(`[listProjects] response for teamId ${teamId}:`, JSON.stringify(response).substring(0, 200))
