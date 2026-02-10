@@ -48,10 +48,25 @@ export async function listProjects(accessToken: string, teamId?: string): Promis
       limit: '100', // Get up to 100 projects
     })
 
-    console.log(`[listProjects] response for teamId ${teamId}:`, JSON.stringify(response).substring(0, 200))
+    console.log(`[listProjects] response for teamId ${teamId}:`, JSON.stringify(response).substring(0, 500))
 
-    // Response can be an array or object with projects property
-    const projects: any[] = Array.isArray(response) ? response : (response as any).projects || []
+    // Response can be an array, or object with projects property, or potentially just the projects directly if it's a different SDK version behavior
+    let projects: any[] = []
+    if (Array.isArray(response)) {
+      projects = response
+    } else if (response && typeof response === 'object') {
+      if ((response as any).projects && Array.isArray((response as any).projects)) {
+        projects = (response as any).projects
+      } else {
+        // Log keys if projects not found where expected
+        console.log(`[listProjects] response keys: ${Object.keys(response).join(', ')}`)
+      }
+    }
+
+    console.log(`[listProjects] count for teamId ${teamId}: ${projects.length}`)
+    if (projects.length > 0) {
+      console.log(`[listProjects] first project sample: ${JSON.stringify(projects[0]).substring(0, 200)}`)
+    }
 
     if (!projects || projects.length === 0) {
       return []
