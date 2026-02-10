@@ -33,6 +33,7 @@ export interface VercelProject {
 
 /**
  * List all Vercel projects for the authenticated user/team
+ * Uses the official @vercel/sdk which targets GET /v10/projects
  * @param accessToken - Vercel access token
  * @param teamId - Optional team ID (omit for personal account)
  * @returns Array of projects with key info
@@ -43,84 +44,46 @@ export async function listProjects(accessToken: string, teamId?: string): Promis
       bearerToken: accessToken,
     })
 
-    let response: any
-    let projects: any[] = []
-    
-    console.log(`[listProjects] Starting fetch for teamId: ${teamId || 'personal'}`)
+    const allProjects: VercelProject[] = []
+    let from: string | undefined
+    let hasMore = true
 
-    // 1. Try V9 endpoint (standard)
-    try {
-      const url = teamId 
-        ? `https://api.vercel.com/v9/projects?teamId=${teamId}&limit=100` 
-        : 'https://api.vercel.com/v9/projects?limit=100'
-      
-      console.log(`[listProjects] Trying API V9: ${url}`)
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        cache: 'no-store'
+    while (hasMore) {
+      const result = await vercel.projects.getProjects({
+        ...(teamId ? { teamId } : {}),
+        limit: '100',
+        ...(from ? { from } : {}),
       })
-      
-      if (res.ok) {
-        const data = await res.json()
-        projects = data.projects || data.data || (Array.isArray(data) ? data : [])
-        console.log(`[listProjects] V9 success. Found ${projects.length} projects. Keys: ${Object.keys(data).join(', ')}`)
-      } else {
-        console.error(`[listProjects] V9 failed: ${res.status} ${await res.text()}`)
-      }
-    } catch (err) {
-      console.error(`[listProjects] V9 error:`, err)
-    }
 
-    // 2. If V9 empty, try V4 endpoint (legacy/alternative)
-    if (projects.length === 0) {
-      try {
-        const url = teamId 
-          ? `https://api.vercel.com/v4/projects?teamId=${teamId}` 
-          : 'https://api.vercel.com/v4/projects'
-        
-        console.log(`[listProjects] Trying API V4: ${url}`)
-        const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          cache: 'no-store'
+      const projects = Array.isArray(result) ? result : []
+
+      for (const project of projects) {
+        allProjects.push({
+          id: project.id,
+          name: project.name,
+          framework: (project.framework as VercelProject['framework']) || null,
+          repoUrl:
+            project.link && 'org' in project.link && 'repo' in project.link && project.link.type === 'github'
+              ? `https://github.com/${project.link.org}/${project.link.repo}`
+              : null,
+          latestDeploymentStatus:
+            (project.latestDeployments?.[0]?.readyState as VercelProject['latestDeploymentStatus']) || null,
+          latestDeploymentUrl: project.latestDeployments?.[0]?.url
+            ? `https://${project.latestDeployments[0].url}`
+            : null,
+          updatedAt: project.updatedAt || Date.now(),
         })
-        
-        if (res.ok) {
-          const data = await res.json()
-          const v4Projects = data.projects || (Array.isArray(data) ? data : [])
-          if (v4Projects.length > 0) {
-            projects = v4Projects
-            console.log(`[listProjects] V4 success. Found ${projects.length} projects.`)
-          }
-        }
-      } catch (err) {
-        console.error(`[listProjects] V4 error:`, err)
+      }
+
+      if (projects.length < 100) {
+        hasMore = false
+      } else {
+        const lastProject = projects[projects.length - 1]
+        from = String(lastProject.updatedAt || lastProject.id)
       }
     }
 
-    // 3. Last resort: Try SDK
-    if (projects.length === 0) {
-      try {
-        console.log(`[listProjects] Trying SDK as last resort`)
-        const sdkRes = await vercel.projects.getProjects({ teamId, limit: '100' })
-        projects = (sdkRes as any).projects || (Array.isArray(sdkRes) ? sdkRes : [])
-        console.log(`[listProjects] SDK result count: ${projects.length}`)
-      } catch (sdkErr) {
-        console.error(`[listProjects] SDK error:`, sdkErr)
-      }
-    }
-
-    console.log(`[listProjects] Final count for ${teamId || 'personal'}: ${projects.length}`)
-    
-    return projects.map((project) => ({
-      id: project.id,
-      name: project.name,
-      framework: project.framework || null,
-      repoUrl: project.link?.type === 'github' ? `https://github.com/${project.link.org}/${project.link.repo}` : null,
-      latestDeploymentStatus:
-        (project.latestDeployments?.[0]?.readyState as VercelProject['latestDeploymentStatus']) || null,
-      latestDeploymentUrl: project.latestDeployments?.[0]?.url ? `https://${project.latestDeployments[0].url}` : null,
-      updatedAt: project.updatedAt || Date.now(),
-    }))
+    return allProjects
   } catch (error) {
     console.error('Error listing Vercel projects:', error)
     throw error

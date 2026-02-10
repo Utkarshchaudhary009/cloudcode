@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Repository URL is required' }, { status: 400 })
     }
 
-    const appSlug = process.env.GITHUB_APP_SLUG
+    const appSlug = process.env.GITHUB_APP_SLUG || 'cloudcode'
     if (!appSlug) {
       return NextResponse.json({ error: 'GitHub App slug not configured (GITHUB_APP_SLUG)' }, { status: 500 })
     }

@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch projects from Vercel
     const projects = await listProjects(vercelToken, teamId)
-    console.log(`[api/vercel/projects] Found ${projects.length} projects for teamId: ${teamId}`)
+    console.log('[api/vercel/projects] Projects fetched successfully')
 
     // Get user's existing subscriptions
     const subscriptions = await db
