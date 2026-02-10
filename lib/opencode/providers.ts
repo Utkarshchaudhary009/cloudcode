@@ -54,7 +54,7 @@ export const SUPPORTED_OPENCODE_PROVIDER_INPUTS = [
   ...OPENCODE_PROVIDER_ALIAS_KEYS,
 ] as const satisfies ReadonlyArray<OpenCodeProviderInput>
 
-export const DEFAULT_OPENCODE_PROVIDER: OpenCodeProviderId = 'openai'
+export const DEFAULT_OPENCODE_PROVIDER: OpenCodeProviderId = 'opencode'
 
 export const OPENCODE_PROVIDER_LABELS: Record<OpenCodeProviderId, string> = {
   openai: 'OpenAI',

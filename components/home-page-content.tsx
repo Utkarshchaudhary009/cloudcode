@@ -228,8 +228,8 @@ export function HomePageContent({
       const taskData = {
         prompt: 'Work on this repository',
         repoUrl: repoUrl,
-        selectedProvider: localStorage.getItem('last-selected-provider') || 'openai',
-        selectedModel: localStorage.getItem('last-selected-model-openai') || 'gpt-5',
+        selectedProvider: localStorage.getItem('last-selected-provider') || 'opencode',
+        selectedModel: localStorage.getItem('last-selected-model-opencode') || 'opencode-default',
         installDependencies: true,
         maxDuration: 300,
         keepAlive: false,

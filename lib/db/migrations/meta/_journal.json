@@ -169,6 +169,20 @@
       "when": 1770476770855,
       "tag": "0023_white_wiccan",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1770729451616,
+      "tag": "0024_watery_norrin_radd",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1770732015860,
+      "tag": "0025_shallow_ulik",
+      "breakpoints": true
     }
   ]
 }

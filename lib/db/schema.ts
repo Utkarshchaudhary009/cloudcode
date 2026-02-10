@@ -627,7 +627,8 @@ export const reviews = pgTable(
       }>
     >(),
     score: integer('score'),
-    selectedProvider: text('selected_provider'),
+    selectedProvider: text('selected_provider').default('opencode'),
+    selectedModel: text('selected_model'),
     reviewRules: jsonb('review_rules'),
     startedAt: timestamp('started_at'),
     completedAt: timestamp('completed_at'),
@@ -665,7 +666,8 @@ export const insertReviewSchema = z.object({
     )
     .optional(),
   score: z.number().int().min(0).max(100).optional(),
-  selectedProvider: z.string().optional(),
+  selectedProvider: z.string().default('opencode'),
+  selectedModel: z.string().optional(),
   reviewRules: z.any().optional(),
   startedAt: z.date().optional(),
   completedAt: z.date().optional(),
@@ -700,6 +702,7 @@ export const selectReviewSchema = z.object({
     .nullable(),
   score: z.number().int().nullable(),
   selectedProvider: z.string().nullable(),
+  selectedModel: z.string().nullable(),
   reviewRules: z.any().nullable(),
   startedAt: z.date().nullable(),
   completedAt: z.date().nullable(),

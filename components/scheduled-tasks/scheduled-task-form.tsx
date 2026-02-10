@@ -37,7 +37,7 @@ export function ScheduledTaskForm({ task: initialTask, taskId, onSuccess }: Sche
     timeSlot: initialTask?.timeSlot || '9am',
     days: initialTask?.days || ['daily'],
     timezone: initialTask?.timezone || 'UTC',
-    selectedProvider: initialTask?.selectedProvider || 'openai',
+    selectedProvider: initialTask?.selectedProvider || 'opencode',
     selectedModel: initialTask?.selectedModel || '',
     enabled: initialTask?.enabled ?? true,
   })
@@ -73,7 +73,7 @@ export function ScheduledTaskForm({ task: initialTask, taskId, onSuccess }: Sche
         timeSlot: data.task.timeSlot || '9am',
         days: data.task.days || ['daily'],
         timezone: data.task.timezone || 'UTC',
-        selectedProvider: data.task.selectedProvider || 'openai',
+        selectedProvider: data.task.selectedProvider || 'opencode',
         selectedModel: data.task.selectedModel || '',
         enabled: data.task.enabled ?? true,
       })
