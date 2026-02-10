@@ -57,7 +57,26 @@ export async function getOAuthToken(
         }
       }
     } else if (provider === 'vercel') {
-      // Vercel is only available as a primary account
+      // Check if user has Vercel as a connected account
+      const account = await db
+        .select({
+          accessToken: accounts.accessToken,
+          refreshToken: accounts.refreshToken,
+          expiresAt: accounts.expiresAt,
+        })
+        .from(accounts)
+        .where(and(eq(accounts.userId, userId), eq(accounts.provider, 'vercel')))
+        .limit(1)
+
+      if (account[0]?.accessToken) {
+        return {
+          accessToken: decrypt(account[0].accessToken),
+          refreshToken: account[0].refreshToken ? decrypt(account[0].refreshToken) : null,
+          expiresAt: account[0].expiresAt,
+        }
+      }
+
+      // Fall back to checking if user signed in with Vercel (primary account)
       const user = await db
         .select({
           accessToken: users.accessToken,

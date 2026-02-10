@@ -253,7 +253,7 @@ export type Connector = z.infer<typeof selectConnectorSchema>
 export type InsertConnector = z.infer<typeof insertConnectorSchema>
 
 // Accounts table - Additional accounts linked to users
-// Currently only GitHub can be connected as an additional account
+// Currently GitHub and Vercel can be connected as additional accounts
 // (e.g., Vercel users can connect their GitHub account)
 // Multiple users can connect to the same external account (each as a separate record)
 export const accounts = pgTable(
@@ -264,16 +264,16 @@ export const accounts = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }), // Foreign key to users table
     provider: text('provider', {
-      enum: ['github'],
+      enum: ['github', 'vercel'],
     })
       .notNull()
-      .default('github'), // Only GitHub for now
-    externalUserId: text('external_user_id').notNull(), // GitHub user ID
+      .default('github'),
+    externalUserId: text('external_user_id').notNull(), // GitHub user ID or Vercel user ID
     accessToken: text('access_token').notNull(), // Encrypted OAuth access token
     refreshToken: text('refresh_token'), // Encrypted OAuth refresh token
     expiresAt: timestamp('expires_at'),
     scope: text('scope'),
-    username: text('username').notNull(), // GitHub username
+    username: text('username').notNull(), // Provider username
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
@@ -286,7 +286,7 @@ export const accounts = pgTable(
 export const insertAccountSchema = z.object({
   id: z.string().optional(),
   userId: z.string(),
-  provider: z.enum(['github']).default('github'),
+  provider: z.enum(['github', 'vercel']).default('github'),
   externalUserId: z.string().min(1, 'External user ID is required'),
   accessToken: z.string(),
   refreshToken: z.string().optional(),
@@ -300,7 +300,7 @@ export const insertAccountSchema = z.object({
 export const selectAccountSchema = z.object({
   id: z.string(),
   userId: z.string(),
-  provider: z.enum(['github']),
+  provider: z.enum(['github', 'vercel']),
   externalUserId: z.string(),
   accessToken: z.string(),
   refreshToken: z.string().nullable(),

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         .where(and(eq(keys.userId, session.user.id), eq(keys.provider, 'vercel')))
         .limit(1)
 
-      vercelToken = vercelKey ? decrypt(vercelKey.value) : process.env.VERCEL_API_KEY
+      vercelToken = vercelKey ? decrypt(vercelKey.value) : undefined
     }
 
     if (!vercelToken) {

@@ -26,8 +26,7 @@ async function getVercelToken(userId: string): Promise<string | null> {
     return decrypt(vercelKey.value)
   }
 
-  // Fall back to system Vercel token
-  return process.env.VERCEL_API_KEY || null
+  return null
 }
 
 // GET - List user's subscriptions

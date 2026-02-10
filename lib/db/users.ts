@@ -74,6 +74,36 @@ export async function upsertUser(
     }
   }
 
+  // Third check: Is this a Vercel account already connected to an existing user via accounts table?
+  // This prevents duplicate accounts when someone:
+  // 1. Signs in with GitHub
+  // 2. Connects Vercel
+  // 3. Later signs in directly with Vercel
+  if (provider === 'vercel') {
+    const existingAccount = await db
+      .select({ userId: accounts.userId })
+      .from(accounts)
+      .where(and(eq(accounts.provider, 'vercel'), eq(accounts.externalUserId, externalId)))
+      .limit(1)
+
+    if (existingAccount.length > 0) {
+      console.log(
+        `[upsertUser] Vercel account (${externalId}) is already connected to user ${existingAccount[0].userId}. Using existing user.`,
+      )
+
+      // Update the existing user's last login
+      await db
+        .update(users)
+        .set({
+          updatedAt: new Date(),
+          lastLoginAt: new Date(),
+        })
+        .where(eq(users.id, existingAccount[0].userId))
+
+      return existingAccount[0].userId
+    }
+  }
+
   // User doesn't exist at all - create new
   const userId = nanoid()
   const now = new Date()

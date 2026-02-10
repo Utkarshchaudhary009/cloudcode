@@ -11,6 +11,7 @@ This document contains critical rules, persona definitions, and guidelines for A
   3. Detail selected path.
   4. **Approval Required:** Get user OK before *any* code change or verification.
   5. **Cleanup:** Delete `plan.md` after task completion.
+- **Tooling Availability:** You can use the Vercel and Neon CLI if needed.
 
 ## Learnings
 - **Unified Architecture:** Successfully migrated multi-agent fragmentation to a single OpenCode-powered provider system, improving maintainability and consistency.
