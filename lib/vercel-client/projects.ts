@@ -44,56 +44,73 @@ export async function listProjects(accessToken: string, teamId?: string): Promis
     })
 
     let response: any
+    let projects: any[] = []
+    
+    console.log(`[listProjects] Starting fetch for teamId: ${teamId || 'personal'}`)
+
+    // 1. Try V9 endpoint (standard)
     try {
-      response = await vercel.projects.getProjects({
-        teamId,
-        limit: '100', // Get up to 100 projects
-      })
-      console.log(`[listProjects] SDK response for teamId ${teamId} keys:`, Object.keys(response || {}))
-    } catch (sdkError) {
-      console.error(`[listProjects] SDK failed for teamId ${teamId}, falling back to fetch:`, sdkError)
       const url = teamId 
         ? `https://api.vercel.com/v9/projects?teamId=${teamId}&limit=100` 
         : 'https://api.vercel.com/v9/projects?limit=100'
       
-      const fetchRes = await fetch(url, {
-        headers: { Authorization: `Bearer ${accessToken}` }
+      console.log(`[listProjects] Trying API V9: ${url}`)
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        cache: 'no-store'
       })
       
-      if (fetchRes.ok) {
-        response = await fetchRes.json()
-        console.log(`[listProjects] Fetch fallback success for teamId ${teamId}`)
+      if (res.ok) {
+        const data = await res.json()
+        projects = data.projects || data.data || (Array.isArray(data) ? data : [])
+        console.log(`[listProjects] V9 success. Found ${projects.length} projects. Keys: ${Object.keys(data).join(', ')}`)
       } else {
-        console.error(`[listProjects] Fetch fallback failed: ${fetchRes.status}`)
-        return []
+        console.error(`[listProjects] V9 failed: ${res.status} ${await res.text()}`)
+      }
+    } catch (err) {
+      console.error(`[listProjects] V9 error:`, err)
+    }
+
+    // 2. If V9 empty, try V4 endpoint (legacy/alternative)
+    if (projects.length === 0) {
+      try {
+        const url = teamId 
+          ? `https://api.vercel.com/v4/projects?teamId=${teamId}` 
+          : 'https://api.vercel.com/v4/projects'
+        
+        console.log(`[listProjects] Trying API V4: ${url}`)
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          cache: 'no-store'
+        })
+        
+        if (res.ok) {
+          const data = await res.json()
+          const v4Projects = data.projects || (Array.isArray(data) ? data : [])
+          if (v4Projects.length > 0) {
+            projects = v4Projects
+            console.log(`[listProjects] V4 success. Found ${projects.length} projects.`)
+          }
+        }
+      } catch (err) {
+        console.error(`[listProjects] V4 error:`, err)
       }
     }
 
-    // Response parsing
-    let projects: any[] = []
-    if (Array.isArray(response)) {
-      projects = response
-    } else if (response && typeof response === 'object') {
-      if (Array.isArray(response.projects)) {
-        projects = response.projects
-      } else if (response.data && Array.isArray(response.data)) {
-        projects = response.data
-      } else if (Array.isArray((response as any).data?.projects)) {
-        projects = (response as any).data.projects
-      } else {
-        console.log(`[listProjects] Unknown response structure keys: ${Object.keys(response).join(', ')}`)
+    // 3. Last resort: Try SDK
+    if (projects.length === 0) {
+      try {
+        console.log(`[listProjects] Trying SDK as last resort`)
+        const sdkRes = await vercel.projects.getProjects({ teamId, limit: '100' })
+        projects = (sdkRes as any).projects || (Array.isArray(sdkRes) ? sdkRes : [])
+        console.log(`[listProjects] SDK result count: ${projects.length}`)
+      } catch (sdkErr) {
+        console.error(`[listProjects] SDK error:`, sdkErr)
       }
     }
 
-    console.log(`[listProjects] count for teamId ${teamId}: ${projects.length}`)
-    if (projects.length > 0) {
-      console.log(`[listProjects] first project sample ID: ${projects[0].id}, name: ${projects[0].name}`)
-    }
-
-    if (!projects || projects.length === 0) {
-      return []
-    }
-
+    console.log(`[listProjects] Final count for ${teamId || 'personal'}: ${projects.length}`)
+    
     return projects.map((project) => ({
       id: project.id,
       name: project.name,
