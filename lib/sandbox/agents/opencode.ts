@@ -48,7 +48,7 @@ async function runOpenCodeRun(
   await logger.info('Starting OpenCode run')
 
   const escapedPrompt = prompt.replace(/"/g, '\\"')
-  const fullCommand = `${opencodeCmdToUse} run${modelFlag}${sessionFlags} "${escapedPrompt}"`
+  const fullCommand = `${opencodeCmdToUse} run --quiet${modelFlag}${sessionFlags} "${escapedPrompt}"`
 
   await logger.command('Executing OpenCode command')
   const executeResult = await runCommandInSandbox(sandbox, 'sh', ['-c', fullCommand])
@@ -212,12 +212,27 @@ export async function executeOpenCodeInSandbox(
 
     const opencodeConfig: {
       $schema: string
+      model?: string
       mcp: Record<string, MCPConfig>
       providers: Record<string, ProviderConfig>
     } = {
       $schema: 'https://opencode.ai/config.json',
       mcp: {},
       providers: {},
+    }
+
+    // Set the default model at the root level if provided
+    if (selectedModel) {
+      // If the model already has a provider prefix, use it as is
+      // Otherwise, assume it belongs to the selected provider
+      if (selectedModel.includes('/')) {
+        opencodeConfig.model = selectedModel
+      } else if (selectedProvider) {
+        opencodeConfig.model = `${selectedProvider}/${selectedModel}`
+      }
+    } else if (getApiKey('OPENCODE_API_KEY')) {
+      // Fallback to a sensible OpenCode Zen default if no model selected
+      opencodeConfig.model = 'opencode/gpt-5.2-codex'
     }
 
     // Configure MCP servers if provided
