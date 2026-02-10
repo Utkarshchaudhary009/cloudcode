@@ -214,11 +214,11 @@ export async function executeOpenCodeInSandbox(
       $schema: string
       model?: string
       mcp: Record<string, MCPConfig>
-      providers: Record<string, ProviderConfig>
+      provider: Record<string, ProviderConfig>
     } = {
       $schema: 'https://opencode.ai/config.json',
       mcp: {},
-      providers: {},
+      provider: {},
     }
 
     // Extract provider and model if provided in model/provider format
@@ -299,7 +299,7 @@ export async function executeOpenCodeInSandbox(
     // OpenAI and OpenAI-Compatible
     const openaiKey = getApiKey('OPENAI_API_KEY')
     if (openaiKey) {
-      opencodeConfig.providers.openai = {
+      opencodeConfig.provider.openai = {
         apiKey: openaiKey,
         ...(getApiKey('OPENAI_BASE_URL') ? { baseUrl: getApiKey('OPENAI_BASE_URL') } : {}),
       }
@@ -309,7 +309,7 @@ export async function executeOpenCodeInSandbox(
     // Anthropic and Anthropic-Compatible
     const anthropicKey = getApiKey('ANTHROPIC_API_KEY')
     if (anthropicKey) {
-      opencodeConfig.providers.anthropic = {
+      opencodeConfig.provider.anthropic = {
         apiKey: anthropicKey,
         ...(getApiKey('ANTHROPIC_BASE_URL') ? { baseUrl: getApiKey('ANTHROPIC_BASE_URL') } : {}),
       }
@@ -319,62 +319,62 @@ export async function executeOpenCodeInSandbox(
     // Google/Gemini
     const googleKey = getApiKey('GOOGLE_API_KEY') ?? getApiKey('GEMINI_API_KEY')
     if (googleKey) {
-      opencodeConfig.providers.google = { apiKey: googleKey }
+      opencodeConfig.provider.google = { apiKey: googleKey }
       await logger.info('Configured Google provider')
     }
 
     // Google Vertex (formerly Vertex AI)
     const vertexProject = getApiKey('GOOGLE_VERTEX_PROJECT') || getApiKey('VERTEXAI_PROJECT')
     if (vertexProject) {
-      opencodeConfig.providers['google-vertex'] = { apiKey: vertexProject }
+      opencodeConfig.provider['google-vertex'] = { apiKey: vertexProject }
       await logger.info('Configured Google Vertex provider')
     }
 
     // Other providers
     if (getApiKey('GROQ_API_KEY')) {
-      opencodeConfig.providers.groq = { apiKey: getApiKey('GROQ_API_KEY')! }
+      opencodeConfig.provider.groq = { apiKey: getApiKey('GROQ_API_KEY')! }
       await logger.info('Configured Groq provider')
     }
     if (getApiKey('OPENROUTER_API_KEY')) {
-      opencodeConfig.providers.openrouter = { apiKey: getApiKey('OPENROUTER_API_KEY')! }
+      opencodeConfig.provider.openrouter = { apiKey: getApiKey('OPENROUTER_API_KEY')! }
       await logger.info('Configured OpenRouter provider')
     }
     if (getApiKey('VERCEL_API_KEY')) {
-      opencodeConfig.providers.vercel = { apiKey: getApiKey('VERCEL_API_KEY')! }
+      opencodeConfig.provider.vercel = { apiKey: getApiKey('VERCEL_API_KEY')! }
       await logger.info('Configured Vercel AI Gateway provider')
     }
     if (getApiKey('SYNTHETIC_API_KEY')) {
-      opencodeConfig.providers.synthetic = { apiKey: getApiKey('SYNTHETIC_API_KEY')! }
+      opencodeConfig.provider.synthetic = { apiKey: getApiKey('SYNTHETIC_API_KEY')! }
       await logger.info('Configured Synthetic provider')
     }
     if (getApiKey('ZAI_API_KEY')) {
-      opencodeConfig.providers.zai = { apiKey: getApiKey('ZAI_API_KEY')! }
+      opencodeConfig.provider.zai = { apiKey: getApiKey('ZAI_API_KEY')! }
       await logger.info('Configured Z.ai provider')
     }
     if (getApiKey('HF_TOKEN')) {
-      opencodeConfig.providers.huggingface = { apiKey: getApiKey('HF_TOKEN')! }
+      opencodeConfig.provider.huggingface = { apiKey: getApiKey('HF_TOKEN')! }
       await logger.info('Configured Hugging Face provider')
     }
     if (getApiKey('CEREBRAS_API_KEY')) {
-      opencodeConfig.providers.cerebras = { apiKey: getApiKey('CEREBRAS_API_KEY')! }
+      opencodeConfig.provider.cerebras = { apiKey: getApiKey('CEREBRAS_API_KEY')! }
       await logger.info('Configured Cerebras provider')
     }
     if (getApiKey('AWS_ACCESS_KEY_ID')) {
-      opencodeConfig.providers.bedrock = { apiKey: getApiKey('AWS_ACCESS_KEY_ID')! }
+      opencodeConfig.provider.bedrock = { apiKey: getApiKey('AWS_ACCESS_KEY_ID')! }
       await logger.info('Configured Amazon Bedrock provider')
     }
     if (getApiKey('AZURE_OPENAI_API_KEY')) {
-      opencodeConfig.providers.azure = { apiKey: getApiKey('AZURE_OPENAI_API_KEY')! }
+      opencodeConfig.provider.azure = { apiKey: getApiKey('AZURE_OPENAI_API_KEY')! }
       await logger.info('Configured Azure OpenAI provider')
     }
     if (getApiKey('MINIMAX_API_KEY')) {
-      opencodeConfig.providers.minimax = { apiKey: getApiKey('MINIMAX_API_KEY')! }
+      opencodeConfig.provider.minimax = { apiKey: getApiKey('MINIMAX_API_KEY')! }
       await logger.info('Configured MiniMax provider')
     }
 
     const opencodeKey = getApiKey('OPENCODE_API_KEY')
     if (opencodeKey) {
-      opencodeConfig.providers.opencode = { apiKey: opencodeKey }
+      opencodeConfig.provider.opencode = { apiKey: opencodeKey }
       await logger.info('Configured OpenCode provider')
     }
 
