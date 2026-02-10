@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch projects from Vercel
     const projects = await listProjects(vercelToken, teamId)
+    console.log(`[api/vercel/projects] Found ${projects.length} projects for teamId: ${teamId}`)
 
     // Get user's existing subscriptions
     const subscriptions = await db
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest) {
       projects: projectsWithStatus,
     })
   } catch (error) {
-    console.error('Error fetching Vercel projects', error)
+    console.error('Error fetching Vercel projects:', error)
     const statusCode =
       typeof error === 'object' && error && 'statusCode' in error ? Number(error.statusCode) : undefined
 
@@ -106,6 +107,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch projects',
+        projects: [],
+      },
+      { status: 500 },
+    )
   }
 }

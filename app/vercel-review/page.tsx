@@ -42,6 +42,7 @@ const statusConfig = {
 export default function VercelReviewPage() {
   const [projects, setProjects] = useState<VercelProject[]>([])
   const [loading, setLoading] = useState(true)
+  const [scopesLoading, setScopesLoading] = useState(true)
   const [needsVercelAuth, setNeedsVercelAuth] = useState(false)
   const [togglingProject, setTogglingProject] = useState<string | null>(null)
   const [connectingVercel, setConnectingVercel] = useState(false)
@@ -50,6 +51,7 @@ export default function VercelReviewPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
   const loadScopes = useCallback(async () => {
+    setScopesLoading(true)
     try {
       const res = await fetch('/api/vercel/teams')
       if (!res.ok) {
@@ -62,6 +64,8 @@ export default function VercelReviewPage() {
       }
     } catch (error) {
       // Silently fail
+    } finally {
+      setScopesLoading(false)
     }
   }, [])
 
@@ -81,11 +85,11 @@ export default function VercelReviewPage() {
   }, [])
 
   const fetchProjects = useCallback(
-    async (scopeId: string) => {
+    async (scopeId: string, currentScopes: VercelScope[]) => {
       setLoading(true)
       try {
         if (scopeId === 'all') {
-          if (scopes.length === 0) {
+          if (currentScopes.length === 0) {
             const res = await fetch('/api/vercel/projects')
             const data = await res.json()
             if (data.needsVercelAuth) {
@@ -94,13 +98,19 @@ export default function VercelReviewPage() {
             } else if (data.success) {
               setProjects(sortProjects(data.projects))
               setNeedsVercelAuth(false)
+            } else {
+              toast.error(data.error || 'Failed to load projects')
             }
             return
           }
           const responses = await Promise.all(
-            scopes.map(async (scope) => {
-              const res = await fetch(buildProjectsUrl(scope))
-              return res.json()
+            currentScopes.map(async (scope) => {
+              try {
+                const res = await fetch(buildProjectsUrl(scope))
+                return res.json()
+              } catch (e) {
+                return { success: false, error: 'Network error' }
+              }
             }),
           )
           if (responses.some((r) => r.needsVercelAuth)) {
@@ -114,9 +124,13 @@ export default function VercelReviewPage() {
             })
             setProjects(sortProjects([...unique.values()]))
             setNeedsVercelAuth(false)
+
+            if (responses.every((r) => !r.success) && currentScopes.length > 0) {
+              toast.error('Failed to load projects from any scope')
+            }
           }
         } else {
-          const scope = scopes.find((s) => s.id === scopeId)
+          const scope = currentScopes.find((s) => s.id === scopeId)
           const res = await fetch(buildProjectsUrl(scope))
           const data = await res.json()
           if (data.needsVercelAuth) {
@@ -125,6 +139,8 @@ export default function VercelReviewPage() {
           } else if (data.success) {
             setProjects(sortProjects(data.projects))
             setNeedsVercelAuth(false)
+          } else {
+            toast.error(data.error || 'Failed to load projects')
           }
         }
       } catch (error) {
@@ -133,7 +149,7 @@ export default function VercelReviewPage() {
         setLoading(false)
       }
     },
-    [buildProjectsUrl, scopes, sortProjects],
+    [buildProjectsUrl, sortProjects],
   )
 
   useEffect(() => {
@@ -141,8 +157,10 @@ export default function VercelReviewPage() {
   }, [loadScopes])
 
   useEffect(() => {
-    fetchProjects(selectedScopeId)
-  }, [fetchProjects, selectedScopeId])
+    if (!scopesLoading) {
+      fetchProjects(selectedScopeId, scopes)
+    }
+  }, [fetchProjects, selectedScopeId, scopes, scopesLoading])
 
   const handleConnectVercel = async () => {
     setConnectingVercel(true)
@@ -300,7 +318,7 @@ export default function VercelReviewPage() {
             <Button variant="outline" asChild>
               <Link href="/vercel-fixes">View Build Fixes</Link>
             </Button>
-            <Button variant="outline" onClick={() => fetchProjects(selectedScopeId)}>
+            <Button variant="outline" onClick={() => fetchProjects(selectedScopeId, scopes)}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
