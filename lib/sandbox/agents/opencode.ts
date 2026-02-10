@@ -221,15 +221,19 @@ export async function executeOpenCodeInSandbox(
       providers: {},
     }
 
+    // Extract provider and model if provided in model/provider format
+    let effectiveProvider = ''
+    let effectiveModel = selectedModel || ''
+
+    if (effectiveModel.includes('/')) {
+      const parts = effectiveModel.split('/')
+      effectiveProvider = parts[0]
+      effectiveModel = parts[1]
+    }
+
     // Set the default model at the root level if provided
     if (selectedModel) {
-      // If the model already has a provider prefix, use it as is
-      // Otherwise, assume it belongs to the selected provider
-      if (selectedModel.includes('/')) {
-        opencodeConfig.model = selectedModel
-      } else if (selectedProvider) {
-        opencodeConfig.model = `${selectedProvider}/${selectedModel}`
-      }
+      opencodeConfig.model = selectedModel
     } else if (getApiKey('OPENCODE_API_KEY')) {
       // Fallback to a sensible OpenCode Zen default if no model selected
       opencodeConfig.model = 'opencode/gpt-5.2-codex'
