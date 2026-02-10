@@ -122,50 +122,60 @@ async function upsertInstallationRepo(
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const installationIdParam = searchParams.get('installation_id')
-  const stateParam = searchParams.get('state')
+  try {
+    const { searchParams } = new URL(request.url)
+    const installationIdParam = searchParams.get('installation_id')
+    const stateParam = searchParams.get('state')
 
-  const fallbackRedirect = new URL('/settings/integrations', request.url)
+    const fallbackRedirect = new URL('/settings/integrations', request.url)
 
-  if (!installationIdParam || !stateParam) {
-    fallbackRedirect.searchParams.set('installation', 'error')
-    return NextResponse.redirect(fallbackRedirect)
-  }
+    if (!installationIdParam || !stateParam) {
+      console.warn('Missing installation_id or state in GitHub callback')
+      fallbackRedirect.searchParams.set('installation', 'error')
+      return NextResponse.redirect(fallbackRedirect)
+    }
 
-  const state = await decryptJWE<InstallState>(stateParam)
-  if (!state?.userId) {
-    fallbackRedirect.searchParams.set('installation', 'error')
-    return NextResponse.redirect(fallbackRedirect)
-  }
+    const state = await decryptJWE<InstallState>(stateParam)
+    if (!state?.userId) {
+      console.warn('Invalid or expired state in GitHub callback')
+      fallbackRedirect.searchParams.set('installation', 'error')
+      return NextResponse.redirect(fallbackRedirect)
+    }
 
-  const installationId = Number(installationIdParam)
-  if (!Number.isFinite(installationId)) {
-    fallbackRedirect.searchParams.set('installation', 'error')
-    return NextResponse.redirect(fallbackRedirect)
-  }
+    const installationId = Number(installationIdParam)
+    if (!Number.isFinite(installationId)) {
+      console.warn('Invalid installation_id in GitHub callback:', installationIdParam)
+      fallbackRedirect.searchParams.set('installation', 'error')
+      return NextResponse.redirect(fallbackRedirect)
+    }
 
-  const repositories = await listInstallationRepos(installationId)
-  const repoUrls = repositories.map(buildRepoUrl).filter(Boolean)
-  const repoUrlList = repoUrls.length > 0 ? repoUrls : [state.repoUrl].filter(Boolean)
+    const repositories = await listInstallationRepos(installationId)
+    const repoUrls = repositories.map(buildRepoUrl).filter(Boolean)
+    const repoUrlList = repoUrls.length > 0 ? repoUrls : [state.repoUrl].filter(Boolean)
 
-  await Promise.all(
-    repoUrlList.map((repoUrl) =>
-      upsertInstallationRepo(
-        state.userId,
-        installationIdParam,
-        repoUrl,
-        state.autoReviewEnabled ?? true,
-        state.reviewOnDraft ?? false,
+    await Promise.all(
+      repoUrlList.map((repoUrl) =>
+        upsertInstallationRepo(
+          state.userId,
+          installationIdParam,
+          repoUrl,
+          state.autoReviewEnabled ?? true,
+          state.reviewOnDraft ?? false,
+        ),
       ),
-    ),
-  )
+    )
 
-  const redirectUrl = new URL(state.returnPath || '/settings/integrations', request.url)
-  redirectUrl.searchParams.set('installation', 'success')
-  if (state.repoUrl) {
-    redirectUrl.searchParams.set('repo', state.repoUrl)
+    const redirectUrl = new URL(state.returnPath || '/settings/integrations', request.url)
+    redirectUrl.searchParams.set('installation', 'success')
+    if (state.repoUrl) {
+      redirectUrl.searchParams.set('repo', state.repoUrl)
+    }
+
+    return NextResponse.redirect(redirectUrl)
+  } catch (error) {
+    console.error('Error in GitHub installation callback:', error)
+    const fallbackRedirect = new URL('/settings/integrations', request.url)
+    fallbackRedirect.searchParams.set('installation', 'error')
+    return NextResponse.redirect(fallbackRedirect)
   }
-
-  return NextResponse.redirect(redirectUrl)
 }

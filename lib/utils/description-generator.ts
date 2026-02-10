@@ -29,8 +29,12 @@ ${prompt}`
 User Request: ${prompt}
 ${repoName ? `Repository: ${repoName}` : ''}
 ${context ? `Additional context: ${context}` : ''}
-${changes ? `Actual changes performed:
-${changes}` : ''}
+${
+  changes
+    ? `Actual changes performed:
+${changes}`
+    : ''
+}
 
 Requirements:
 - Use Markdown formatting

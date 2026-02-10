@@ -40,7 +40,6 @@ export const SUPPORTED_OPENCODE_PROVIDERS = [
 export const OPENCODE_PROVIDER_ALIASES = {
   gemini: 'google',
   vertexai: 'google-vertex',
-  zen: 'opencode',
   'openai-compat': 'openai',
   'anthropic-compat': 'anthropic',
 } as const
@@ -70,7 +69,7 @@ export const OPENCODE_PROVIDER_LABELS: Record<OpenCodeProviderId, string> = {
   zai: 'Z.ai',
   minimax: 'MiniMax',
   azure: 'Azure',
-  opencode: 'OpenCode Zen',
+  opencode: 'OpenCode',
   cohere: 'Cohere',
   deepseek: 'DeepSeek',
   moonshotai: 'Moonshot AI',

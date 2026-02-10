@@ -22,6 +22,7 @@ import Link from 'next/link'
 import { StatusDot } from '@/components/status-badge'
 import { useAtomValue } from 'jotai'
 import { sessionAtom } from '@/lib/atoms/session'
+import type { Session } from '@/lib/session/types'
 
 type FeedTab = 'all' | 'tasks' | 'code-review' | 'vercel' | 'scheduled'
 
@@ -38,6 +39,7 @@ interface FeedItem {
 
 interface ActivityFeedProps {
   className?: string
+  user?: Session['user'] | null
 }
 
 // Helper to group items by time
@@ -56,6 +58,8 @@ function groupByTime(items: FeedItem[]): Record<string, FeedItem[]> {
 
   items.forEach((item) => {
     const itemDate = new Date(item.createdAt)
+    if (isNaN(itemDate.getTime())) return // Skip invalid dates
+
     if (itemDate >= today) {
       groups['Today'].push(item)
     } else if (itemDate >= yesterday) {
@@ -78,16 +82,17 @@ const tabs: { id: FeedTab; label: string; icon: React.ComponentType<{ className?
   { id: 'scheduled', label: 'Scheduled', icon: Clock },
 ]
 
-export function ActivityFeed({ className }: ActivityFeedProps) {
+export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
   const [activeTab, setActiveTab] = useState<FeedTab>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [items, setItems] = useState<FeedItem[]>([])
   const [loading, setLoading] = useState(true)
   const session = useAtomValue(sessionAtom)
+  const user = propUser || session.user
 
   // Fetch all data
   const fetchData = useCallback(async () => {
-    if (!session.user) {
+    if (!user) {
       setItems([])
       setLoading(false)
       return
@@ -95,77 +100,74 @@ export function ActivityFeed({ className }: ActivityFeedProps) {
 
     setLoading(true)
     try {
-      const [tasksRes, reviewsRes, vercelRes, scheduledRes] = await Promise.all([
-        fetch('/api/tasks').catch(() => null),
-        fetch('/api/reviews').catch(() => null),
-        fetch('/api/vercel/build-fixes').catch(() => null),
-        fetch('/api/scheduled-tasks').catch(() => null),
-      ])
-
       const allItems: FeedItem[] = []
 
-      // Parse tasks
-      if (tasksRes?.ok) {
-        const data = await tasksRes.json()
-        const tasks = (data.tasks || []).map((task: any) => ({
-          id: task.id,
-          type: 'task' as const,
-          title: task.title || task.prompt?.slice(0, 60) || 'Untitled task',
-          subtitle: task.repoUrl ? extractRepoName(task.repoUrl) : undefined,
-          status: task.status,
-          repoName: task.repoUrl ? extractRepoName(task.repoUrl) : undefined,
-          createdAt: new Date(task.createdAt),
-          href: `/tasks/${task.id}`,
-        }))
-        allItems.push(...tasks)
-      }
+      // Fetch each category independently
+      const results = await Promise.allSettled([
+        fetch('/api/tasks').then(async (res) => {
+          if (!res.ok) throw new Error('Failed to fetch tasks')
+          const data = await res.json()
+          return (data.tasks || []).map((task: any) => ({
+            id: task.id,
+            type: 'task' as const,
+            title: task.title || task.prompt?.slice(0, 60) || 'Untitled task',
+            subtitle: task.repoUrl ? extractRepoName(task.repoUrl) : undefined,
+            status: task.status,
+            repoName: task.repoUrl ? extractRepoName(task.repoUrl) : undefined,
+            createdAt: task.createdAt ? new Date(task.createdAt) : new Date(),
+            href: `/tasks/${task.id}`,
+          }))
+        }),
+        fetch('/api/reviews').then(async (res) => {
+          if (!res.ok) throw new Error('Failed to fetch reviews')
+          const data = await res.json()
+          return (data.reviews || []).map((review: any) => ({
+            id: review.id,
+            type: 'review' as const,
+            title: review.prTitle || `PR #${review.prNumber}` || 'Code Review',
+            subtitle: review.repoUrl ? extractRepoName(review.repoUrl) : undefined,
+            status: review.status,
+            repoName: review.repoUrl ? extractRepoName(review.repoUrl) : undefined,
+            createdAt: review.createdAt ? new Date(review.createdAt) : new Date(),
+            href: `/reviews/${review.id}`,
+          }))
+        }),
+        fetch('/api/vercel/build-fixes').then(async (res) => {
+          if (!res.ok) throw new Error('Failed to fetch build fixes')
+          const data = await res.json()
+          return (data.fixes || []).map((fix: any) => ({
+            id: fix.id,
+            type: 'vercel-fix' as const,
+            title: fix.projectName || 'Build Fix',
+            subtitle: fix.status,
+            status: fix.status,
+            createdAt: fix.createdAt ? new Date(fix.createdAt) : new Date(),
+            href: `/vercel-fixes/${fix.id}`,
+          }))
+        }),
+        fetch('/api/scheduled-tasks').then(async (res) => {
+          if (!res.ok) throw new Error('Failed to fetch scheduled tasks')
+          const data = await res.json()
+          return (data.tasks || []).map((task: any) => ({
+            id: task.id,
+            type: 'scheduled' as const,
+            title: task.name || task.prompt?.slice(0, 60) || 'Scheduled Task',
+            subtitle: task.timeSlot || 'Scheduled',
+            status: task.enabled ? 'active' : 'paused',
+            repoName: task.repoUrl ? extractRepoName(task.repoUrl) : undefined,
+            createdAt: task.createdAt ? new Date(task.createdAt) : new Date(),
+            href: `/scheduled-tasks/${task.id}`,
+          }))
+        }),
+      ])
 
-      // Parse reviews
-      if (reviewsRes?.ok) {
-        const data = await reviewsRes.json()
-        const reviews = (data.reviews || []).map((review: any) => ({
-          id: review.id,
-          type: 'review' as const,
-          title: review.prTitle || `PR #${review.prNumber}` || 'Code Review',
-          subtitle: review.repoUrl ? extractRepoName(review.repoUrl) : undefined,
-          status: review.status,
-          repoName: review.repoUrl ? extractRepoName(review.repoUrl) : undefined,
-          createdAt: new Date(review.createdAt || Date.now()),
-          href: `/reviews/${review.id}`,
-        }))
-        allItems.push(...reviews)
-      }
-
-      // Parse vercel fixes
-      if (vercelRes?.ok) {
-        const data = await vercelRes.json()
-        const fixes = (data.fixes || []).map((fix: any) => ({
-          id: fix.id,
-          type: 'vercel-fix' as const,
-          title: fix.projectName || 'Build Fix',
-          subtitle: fix.status,
-          status: fix.status,
-          createdAt: new Date(fix.createdAt || Date.now()),
-          href: `/vercel-fixes/${fix.id}`,
-        }))
-        allItems.push(...fixes)
-      }
-
-      // Parse scheduled tasks
-      if (scheduledRes?.ok) {
-        const data = await scheduledRes.json()
-        const scheduled = (data.tasks || []).map((task: any) => ({
-          id: task.id,
-          type: 'scheduled' as const,
-          title: task.name || task.prompt?.slice(0, 60) || 'Scheduled Task',
-          subtitle: task.schedule,
-          status: task.enabled ? 'active' : 'paused',
-          repoName: task.repoUrl ? extractRepoName(task.repoUrl) : undefined,
-          createdAt: new Date(task.createdAt || Date.now()),
-          href: `/scheduled-tasks/${task.id}`,
-        }))
-        allItems.push(...scheduled)
-      }
+      results.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          allItems.push(...result.value)
+        } else {
+          console.error('Error fetching one of the feed categories:', result.reason)
+        }
+      })
 
       // Sort by date (newest first)
       allItems.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
@@ -175,7 +177,7 @@ export function ActivityFeed({ className }: ActivityFeedProps) {
     } finally {
       setLoading(false)
     }
-  }, [session.user])
+  }, [user])
 
   useEffect(() => {
     fetchData()
@@ -239,7 +241,7 @@ export function ActivityFeed({ className }: ActivityFeedProps) {
     }
   }
 
-  if (!session.user) {
+  if (!user) {
     return null
   }
 

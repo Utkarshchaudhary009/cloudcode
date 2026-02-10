@@ -120,7 +120,10 @@ export function RevertCommitDialog({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Provider</label>
-              <Select value={selectedProvider} onValueChange={(value) => setSelectedProvider(value as OpenCodeProviderId)}>
+              <Select
+                value={selectedProvider}
+                onValueChange={(value) => setSelectedProvider(value as OpenCodeProviderId)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a provider">
                     {selectedProvider

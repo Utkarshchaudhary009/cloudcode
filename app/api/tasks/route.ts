@@ -101,24 +101,42 @@ export async function POST(request: NextRequest) {
     // Helper to get specific API key for the selected provider
     const getProviderApiKey = (provider: string) => {
       switch (provider) {
-        case 'openai': return userApiKeys.OPENAI_API_KEY;
-        case 'anthropic': return userApiKeys.ANTHROPIC_API_KEY;
-        case 'google': return userApiKeys.GOOGLE_API_KEY;
-        case 'google-vertex': return userApiKeys.GOOGLE_VERTEX_PROJECT;
-        case 'groq': return userApiKeys.GROQ_API_KEY;
-        case 'cerebras': return userApiKeys.CEREBRAS_API_KEY;
-        case 'openrouter': return userApiKeys.OPENROUTER_API_KEY;
-        case 'huggingface': return userApiKeys.HF_TOKEN;
-        case 'vercel': return userApiKeys.VERCEL_API_KEY;
-        case 'zai': return userApiKeys.ZAI_API_KEY;
-        case 'minimax': return userApiKeys.MINIMAX_API_KEY;
-        case 'azure': return userApiKeys.AZURE_OPENAI_API_KEY;
-        case 'opencode': return userApiKeys.OPENCODE_API_KEY;
-        case 'cohere': return userApiKeys.COHERE_API_KEY;
-        case 'deepseek': return userApiKeys.DEEPSEEK_API_KEY;
-        case 'moonshotai': return userApiKeys.MOONSHOT_API_KEY;
-        case 'zhipuai': return userApiKeys.ZHIPU_API_KEY;
-        default: return undefined;
+        case 'openai':
+          return userApiKeys.OPENAI_API_KEY
+        case 'anthropic':
+          return userApiKeys.ANTHROPIC_API_KEY
+        case 'google':
+          return userApiKeys.GOOGLE_API_KEY
+        case 'google-vertex':
+          return userApiKeys.GOOGLE_VERTEX_PROJECT
+        case 'groq':
+          return userApiKeys.GROQ_API_KEY
+        case 'cerebras':
+          return userApiKeys.CEREBRAS_API_KEY
+        case 'openrouter':
+          return userApiKeys.OPENROUTER_API_KEY
+        case 'huggingface':
+          return userApiKeys.HF_TOKEN
+        case 'vercel':
+          return userApiKeys.VERCEL_API_KEY
+        case 'zai':
+          return userApiKeys.ZAI_API_KEY
+        case 'minimax':
+          return userApiKeys.MINIMAX_API_KEY
+        case 'azure':
+          return userApiKeys.AZURE_OPENAI_API_KEY
+        case 'opencode':
+          return userApiKeys.OPENCODE_API_KEY
+        case 'cohere':
+          return userApiKeys.COHERE_API_KEY
+        case 'deepseek':
+          return userApiKeys.DEEPSEEK_API_KEY
+        case 'moonshotai':
+          return userApiKeys.MOONSHOT_API_KEY
+        case 'zhipuai':
+          return userApiKeys.ZHIPU_API_KEY
+        default:
+          return undefined
       }
     }
 
@@ -524,7 +542,9 @@ async function processTask(
         repoUrl,
         githubToken,
         gitAuthorName: githubUser?.name || githubUser?.username || 'OpenCode',
-        gitAuthorEmail: githubUser?.username ? `${githubUser.username}@users.noreply.github.com` : 'opencode@example.com',
+        gitAuthorEmail: githubUser?.username
+          ? `${githubUser.username}@users.noreply.github.com`
+          : 'opencode@example.com',
         apiKeys,
         timeout: `${maxDuration}m`,
         ports: [port],
@@ -721,26 +741,44 @@ async function processTask(
         }
 
         const getProviderApiKey = (provider: string) => {
-          if (!apiKeys) return undefined;
+          if (!apiKeys) return undefined
           switch (provider) {
-            case 'openai': return apiKeys.OPENAI_API_KEY;
-            case 'anthropic': return apiKeys.ANTHROPIC_API_KEY;
-            case 'google': return apiKeys.GOOGLE_API_KEY;
-            case 'google-vertex': return apiKeys.GOOGLE_VERTEX_PROJECT;
-            case 'groq': return apiKeys.GROQ_API_KEY;
-            case 'cerebras': return apiKeys.CEREBRAS_API_KEY;
-            case 'openrouter': return apiKeys.OPENROUTER_API_KEY;
-            case 'huggingface': return apiKeys.HF_TOKEN;
-            case 'vercel': return apiKeys.VERCEL_API_KEY;
-            case 'zai': return apiKeys.ZAI_API_KEY;
-            case 'minimax': return apiKeys.MINIMAX_API_KEY;
-            case 'azure': return apiKeys.AZURE_OPENAI_API_KEY;
-            case 'opencode': return apiKeys.OPENCODE_API_KEY;
-            case 'cohere': return apiKeys.COHERE_API_KEY;
-            case 'deepseek': return apiKeys.DEEPSEEK_API_KEY;
-            case 'moonshotai': return apiKeys.MOONSHOT_API_KEY;
-            case 'zhipuai': return apiKeys.ZHIPU_API_KEY;
-            default: return undefined;
+            case 'openai':
+              return apiKeys.OPENAI_API_KEY
+            case 'anthropic':
+              return apiKeys.ANTHROPIC_API_KEY
+            case 'google':
+              return apiKeys.GOOGLE_API_KEY
+            case 'google-vertex':
+              return apiKeys.GOOGLE_VERTEX_PROJECT
+            case 'groq':
+              return apiKeys.GROQ_API_KEY
+            case 'cerebras':
+              return apiKeys.CEREBRAS_API_KEY
+            case 'openrouter':
+              return apiKeys.OPENROUTER_API_KEY
+            case 'huggingface':
+              return apiKeys.HF_TOKEN
+            case 'vercel':
+              return apiKeys.VERCEL_API_KEY
+            case 'zai':
+              return apiKeys.ZAI_API_KEY
+            case 'minimax':
+              return apiKeys.MINIMAX_API_KEY
+            case 'azure':
+              return apiKeys.AZURE_OPENAI_API_KEY
+            case 'opencode':
+              return apiKeys.OPENCODE_API_KEY
+            case 'cohere':
+              return apiKeys.COHERE_API_KEY
+            case 'deepseek':
+              return apiKeys.DEEPSEEK_API_KEY
+            case 'moonshotai':
+              return apiKeys.MOONSHOT_API_KEY
+            case 'zhipuai':
+              return apiKeys.ZHIPU_API_KEY
+            default:
+              return undefined
           }
         }
 

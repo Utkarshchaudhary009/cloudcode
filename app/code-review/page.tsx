@@ -160,14 +160,18 @@ export default function CodeReviewPage() {
         }),
       })
 
-      if (!response.ok) throw new Error('Failed to start GitHub App install')
       const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to start GitHub App install')
+      }
 
       if (data.installUrl) {
         window.location.assign(data.installUrl)
       }
     } catch (error) {
-      toast.error('Failed to install GitHub App')
+      console.error('Error installing GitHub App:', error)
+      const message = error instanceof Error ? error.message : 'Failed to install GitHub App'
+      toast.error(message)
     } finally {
       setInstalling(false)
     }
@@ -255,165 +259,165 @@ export default function CodeReviewPage() {
         </div>
 
         {/* Stats Banner */}
-      {enabledCount > 0 && (
-        <Card className="mb-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 border-green-500/20">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+        {enabledCount > 0 && (
+          <Card className="mb-6 bg-gradient-to-r from-green-500/10 to-blue-500/10 border-green-500/20">
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">{enabledCount} repositories with auto-review</p>
+                    <p className="text-sm text-muted-foreground">PRs will be automatically reviewed</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold">{enabledCount} repositories with auto-review</p>
-                  <p className="text-sm text-muted-foreground">PRs will be automatically reviewed</p>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/reviews">View Reviews →</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Add Repository Card */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Github className="h-5 w-5" />
+              Add Repository
+            </CardTitle>
+            <CardDescription>Install the GitHub App on a repository to enable auto-reviews.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleInstall} className="flex flex-wrap gap-4 items-end">
+              <div className="flex-1 min-w-[200px]">
+                <Label className="mb-2 block">Repository</Label>
+                <RepoSelector
+                  selectedOwner={selectedOwner}
+                  selectedRepo={selectedRepo}
+                  onOwnerChange={(owner) => {
+                    setSelectedOwner(owner)
+                    setSelectedRepo('')
+                  }}
+                  onRepoChange={setSelectedRepo}
+                  size="default"
+                />
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Switch id="auto-review" checked={autoReviewEnabled} onCheckedChange={setAutoReviewEnabled} />
+                  <Label htmlFor="auto-review" className="text-sm">
+                    Auto-review PRs
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch id="draft-review" checked={reviewOnDraft} onCheckedChange={setReviewOnDraft} />
+                  <Label htmlFor="draft-review" className="text-sm">
+                    Include drafts
+                  </Label>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/reviews">View Reviews →</Link>
+              <Button type="submit" disabled={installing || !repoUrl}>
+                {installing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Github className="h-4 w-4 mr-2" />}
+                Install
               </Button>
-            </div>
+            </form>
           </CardContent>
         </Card>
-      )}
 
-      {/* Add Repository Card */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Github className="h-5 w-5" />
-            Add Repository
-          </CardTitle>
-          <CardDescription>Install the GitHub App on a repository to enable auto-reviews.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleInstall} className="flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-[200px]">
-              <Label className="mb-2 block">Repository</Label>
-              <RepoSelector
-                selectedOwner={selectedOwner}
-                selectedRepo={selectedRepo}
-                onOwnerChange={(owner) => {
-                  setSelectedOwner(owner)
-                  setSelectedRepo('')
-                }}
-                onRepoChange={setSelectedRepo}
-                size="default"
-              />
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Switch id="auto-review" checked={autoReviewEnabled} onCheckedChange={setAutoReviewEnabled} />
-                <Label htmlFor="auto-review" className="text-sm">
-                  Auto-review PRs
-                </Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch id="draft-review" checked={reviewOnDraft} onCheckedChange={setReviewOnDraft} />
-                <Label htmlFor="draft-review" className="text-sm">
-                  Include drafts
-                </Label>
-              </div>
-            </div>
-            <Button type="submit" disabled={installing || !repoUrl}>
-              {installing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Github className="h-4 w-4 mr-2" />}
-              Install
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+        {/* Search */}
+        {repos.length > 0 && (
+          <div className="mb-4 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search repositories..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-9"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        )}
 
-      {/* Search */}
-      {repos.length > 0 && (
-        <div className="mb-4 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search repositories..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-9"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Repos Table */}
-      {loading ? (
-        <Card>
-          <CardContent className="py-12 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
-      ) : filteredRepos.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Github className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">
-              {searchQuery ? 'No matching repositories' : 'No repositories found'}
-            </h3>
-            <p className="text-muted-foreground">
-              {searchQuery ? 'Try a different search term.' : 'Connect repositories using the form above.'}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Repository</TableHead>
-                <TableHead>Visibility</TableHead>
-                <TableHead>Auto-Review</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRepos.map((repo) => (
-                <TableRow key={repo.full_name}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{repo.full_name}</p>
-                      {repo.description && (
-                        <p className="text-sm text-muted-foreground truncate max-w-md">{repo.description}</p>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={repo.private ? 'secondary' : 'outline'}>
-                      {repo.private ? 'Private' : 'Public'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {togglingRepo === repo.full_name ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Switch
-                        checked={repo.autoReviewEnabled}
-                        onCheckedChange={() => handleToggleAutoReview(repo)}
-                        disabled={!repo.subscriptionId}
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm" asChild>
-                      <a href={`https://github.com/${repo.full_name}`} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  </TableCell>
+        {/* Repos Table */}
+        {loading ? (
+          <Card>
+            <CardContent className="py-12 flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </CardContent>
+          </Card>
+        ) : filteredRepos.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Github className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">
+                {searchQuery ? 'No matching repositories' : 'No repositories found'}
+              </h3>
+              <p className="text-muted-foreground">
+                {searchQuery ? 'Try a different search term.' : 'Connect repositories using the form above.'}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Repository</TableHead>
+                  <TableHead>Visibility</TableHead>
+                  <TableHead>Auto-Review</TableHead>
+                  <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
-      )}
+              </TableHeader>
+              <TableBody>
+                {filteredRepos.map((repo) => (
+                  <TableRow key={repo.full_name}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{repo.full_name}</p>
+                        {repo.description && (
+                          <p className="text-sm text-muted-foreground truncate max-w-md">{repo.description}</p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={repo.private ? 'secondary' : 'outline'}>
+                        {repo.private ? 'Private' : 'Public'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {togglingRepo === repo.full_name ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Switch
+                          checked={repo.autoReviewEnabled}
+                          onCheckedChange={() => handleToggleAutoReview(repo)}
+                          disabled={!repo.subscriptionId}
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" asChild>
+                        <a href={`https://github.com/${repo.full_name}`} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        )}
+      </div>
     </div>
-  </div>
-)
+  )
 }

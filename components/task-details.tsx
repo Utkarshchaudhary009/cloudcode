@@ -1487,7 +1487,9 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
             <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
               {task.selectedProvider && <OpenCode className="w-3.5 h-3.5 md:w-4 md:h-4 flex-shrink-0" />}
               {task.selectedProvider && (
-                <span className="text-muted-foreground whitespace-nowrap">{getProviderLabel(task.selectedProvider)}</span>
+                <span className="text-muted-foreground whitespace-nowrap">
+                  {getProviderLabel(task.selectedProvider)}
+                </span>
               )}
               {task.selectedModel && (
                 <span className="text-muted-foreground whitespace-nowrap">

@@ -164,7 +164,9 @@ export function CreatePRDialog({
               </div>
               <Textarea
                 id="body"
-                placeholder={isGenerating ? "AI is generating description..." : "Detailed description of the changes (optional)"}
+                placeholder={
+                  isGenerating ? 'AI is generating description...' : 'Detailed description of the changes (optional)'
+                }
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 disabled={isCreating || isGenerating}

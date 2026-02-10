@@ -30,11 +30,7 @@ export const PROVIDER_DEFAULT_MODELS: Record<string, string> = {
   zhipuai: 'glm-4',
 }
 
-export function getAIModel(
-  providerId: OpenCodeProviderId,
-  apiKey?: string,
-  modelId?: string,
-): any {
+export function getAIModel(providerId: OpenCodeProviderId, apiKey?: string, modelId?: string): any {
   const model = modelId || PROVIDER_DEFAULT_MODELS[providerId] || 'gpt-4o-mini'
 
   switch (providerId) {

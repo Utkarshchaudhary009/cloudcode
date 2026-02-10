@@ -3,23 +3,40 @@ import { getServerSession } from '@/lib/session/get-server-session'
 import { getOAuthToken } from '@/lib/session/get-oauth-token'
 import { fetchTeams } from '@/lib/vercel-client/teams'
 import { fetchUser } from '@/lib/vercel-client/user'
+import { db } from '@/lib/db/client'
+import { keys } from '@/lib/db/schema'
+import { eq, and } from 'drizzle-orm'
+import { decrypt } from '@/lib/crypto'
 
 export async function GET() {
   try {
     const session = await getServerSession()
 
-    if (!session?.user?.id || session.authProvider !== 'vercel') {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get Vercel access token
+    // Get Vercel access token from multiple possible sources
     const tokenData = await getOAuthToken(session.user.id, 'vercel')
-    if (!tokenData) {
+    let vercelToken = tokenData?.accessToken
+
+    if (!vercelToken) {
+      // Check for manually added API key
+      const [vercelKey] = await db
+        .select()
+        .from(keys)
+        .where(and(eq(keys.userId, session.user.id), eq(keys.provider, 'vercel')))
+        .limit(1)
+
+      vercelToken = vercelKey ? decrypt(vercelKey.value) : process.env.VERCEL_API_KEY
+    }
+
+    if (!vercelToken) {
       return NextResponse.json({ error: 'No Vercel token found' }, { status: 401 })
     }
 
     // Fetch user info and teams
-    const [user, teams] = await Promise.all([fetchUser(tokenData.accessToken), fetchTeams(tokenData.accessToken)])
+    const [user, teams] = await Promise.all([fetchUser(vercelToken), fetchTeams(vercelToken)])
 
     if (!user) {
       return NextResponse.json({ error: 'Failed to fetch user info' }, { status: 500 })

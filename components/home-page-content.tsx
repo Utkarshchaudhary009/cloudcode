@@ -501,7 +501,7 @@ export function HomePageContent({
         />
 
         {/* Activity Feed - Search, Tabs, and Time-grouped items */}
-        <ActivityFeed className="px-2" />
+        <ActivityFeed className="px-2" user={user} />
       </div>
 
       {/* Dialogs */}

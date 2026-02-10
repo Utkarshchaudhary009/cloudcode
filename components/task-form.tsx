@@ -211,7 +211,7 @@ export function TaskForm({
           setRepos(reposList)
         }
       } catch (error) {
-        console.error('Error fetching repositories:', error)
+        console.error('Error fetching repositories')
       } finally {
         setLoadingRepos(false)
       }
@@ -249,6 +249,18 @@ export function TaskForm({
     if (selectedRepoData) {
       try {
         const response = await fetch(`/api/api-keys/check?provider=${selectedProvider}`)
+
+        if (response.status === 400) {
+          toast.error('Provider not supported', {
+            description: 'Please select a valid provider.',
+          })
+          return
+        }
+
+        if (!response.ok) {
+          throw new Error('Failed to check API key')
+        }
+
         const data = await response.json()
 
         if (!data.hasKey) {
@@ -261,7 +273,7 @@ export function TaskForm({
           return
         }
       } catch (error) {
-        console.error('Error checking API key:', error)
+        console.error('Error checking API key')
         // Don't show error toast - might just be not authenticated, let parent handle it
       }
     }

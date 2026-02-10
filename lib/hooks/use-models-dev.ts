@@ -14,7 +14,6 @@ const CACHE_TTL_MS = 1000 * 60 * 60 * 24
 const MODELS_DEV_PROVIDER_ID_MAP: Record<string, OpenCodeProviderId> = {
   gemini: 'google',
   vertexai: 'google-vertex',
-  zen: 'opencode',
 }
 
 export type ModelsDevProviderOption = {

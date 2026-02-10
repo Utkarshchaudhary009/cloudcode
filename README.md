@@ -245,7 +245,7 @@ These API keys can be set globally (fallback for all users) or left unset to req
 - `ANTHROPIC_API_KEY`: For OpenCode with Anthropic (users can override)
 - `GEMINI_API_KEY`: For OpenCode with Google Gemini (users can override)
 - `AI_GATEWAY_API_KEY`: Vercel AI Gateway API key for model routing and branch name generation
-- `OPENCODE_API_KEY`: For OpenCode Zen provider
+- `OPENCODE_API_KEY`: For OpenCode provider
 - `GROQ_API_KEY`, `DEEPSEEK_API_KEY`, etc.: Other supported LLM providers
 
 > **Note**: Users can provide their own API keys in their profile settings, which take precedence over global environment variables.

@@ -264,8 +264,9 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
               >
                 <div className="flex-shrink-0 mt-1">
                   <GitPullRequest
-                    className={`h-5 w-5 ${pr.merged_at ? 'text-purple-500' : pr.state === 'open' ? 'text-green-500' : 'text-red-500'
-                      }`}
+                    className={`h-5 w-5 ${
+                      pr.merged_at ? 'text-purple-500' : pr.state === 'open' ? 'text-green-500' : 'text-red-500'
+                    }`}
                   />
                 </div>
 
@@ -290,12 +291,13 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
                       )}
                       <Badge
                         variant={pr.merged_at ? 'default' : pr.state === 'open' ? 'default' : 'secondary'}
-                        className={`text-xs ${pr.merged_at
+                        className={`text-xs ${
+                          pr.merged_at
                             ? 'bg-purple-500 hover:bg-purple-600'
                             : pr.state === 'open'
                               ? 'bg-green-500 hover:bg-green-600'
                               : ''
-                          }`}
+                        }`}
                       >
                         {pr.merged_at ? 'Merged' : pr.state === 'open' ? 'Open' : 'Closed'}
                       </Badge>
@@ -374,7 +376,10 @@ export function RepoPullRequests({ owner, repo }: RepoPullRequestsProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Provider</label>
-                <Select value={selectedProvider} onValueChange={(value) => setSelectedProvider(value as OpenCodeProviderId)}>
+                <Select
+                  value={selectedProvider}
+                  onValueChange={(value) => setSelectedProvider(value as OpenCodeProviderId)}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a provider">
                       {selectedProvider

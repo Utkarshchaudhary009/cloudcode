@@ -217,10 +217,10 @@ async function continueTask(
           repoUrl,
           githubToken,
           gitAuthorName: githubUser?.name || githubUser?.username || 'OpenCode',
-                  gitAuthorEmail: githubUser?.username
-                    ? `${githubUser.username}@users.noreply.github.com`
-                    : 'opencode@example.com',
-          
+          gitAuthorEmail: githubUser?.username
+            ? `${githubUser.username}@users.noreply.github.com`
+            : 'opencode@example.com',
+
           apiKeys,
           timeout: `${maxDuration}m`,
           ports: [port],

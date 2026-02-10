@@ -35,9 +35,8 @@ export const scheduledTasksDispatcher4am = inngest.createFunction(
           repoUrl: task.repoUrl,
           prompt: task.prompt,
           taskType: task.taskType,
-                  selectedProvider: task.selectedProvider,
-                  selectedModel: task.selectedModel,
-          
+          selectedProvider: task.selectedProvider,
+          selectedModel: task.selectedModel,
         },
       })),
     )

@@ -13,7 +13,7 @@ export const API_KEY_PROVIDERS = [
   { id: 'zai', name: 'Z.ai', placeholder: 'zai_...' },
   { id: 'minimax', name: 'MiniMax', placeholder: 'minimax_...' },
   { id: 'azure', name: 'Azure OpenAI', placeholder: 'azure_...' },
-  { id: 'opencode', name: 'OpenCode Zen', placeholder: 'zen_...' },
+  { id: 'opencode', name: 'OpenCode', placeholder: 'sk-...' },
   { id: 'cohere', name: 'Cohere', placeholder: 'cohere_...' },
   { id: 'deepseek', name: 'DeepSeek', placeholder: 'deepseek_...' },
   { id: 'moonshotai', name: 'Moonshot AI', placeholder: 'moonshot_...' },

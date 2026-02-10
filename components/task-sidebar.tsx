@@ -43,17 +43,8 @@ import { useTasks } from '@/components/app-layout'
 import { useAtomValue } from 'jotai'
 import { sessionAtom } from '@/lib/atoms/session'
 import { githubConnectionAtom } from '@/lib/atoms/github-connection'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface TaskSidebarProps {
   tasks: Task[]
@@ -292,7 +283,10 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
 
   return (
     <div
-      className={cn('pb-12 min-h-screen border-r bg-background transition-all duration-300 ease-in-out flex flex-col', isCollapsed ? 'w-[60px]' : 'w-72')}
+      className={cn(
+        'pb-12 min-h-screen border-r bg-background transition-all duration-300 ease-in-out flex flex-col',
+        isCollapsed ? 'w-[60px]' : 'w-72',
+      )}
       style={{ width: isCollapsed ? 60 : width }}
     >
       <div className="space-y-4 py-4">
@@ -312,9 +306,7 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
                           onClick={handleLinkClick}
                           className={cn(
                             'flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:text-foreground md:h-8 md:w-8 mx-auto mb-1',
-                            isActive
-                              ? 'bg-accent text-accent-foreground'
-                              : 'text-muted-foreground hover:bg-accent',
+                            isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent',
                           )}
                         >
                           <Icon className="h-5 w-5" />
@@ -401,7 +393,7 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
                 {/* Repos list */}
                 <div className="space-y-1 max-h-48 overflow-y-auto">
                   {(reposLoading && repos.length === 0 && !isSearching) ||
-                    (searchLoading && searchResults.length === 0 && isSearching) ? (
+                  (searchLoading && searchResults.length === 0 && isSearching) ? (
                     <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
                       <Loader2 className="h-3 w-3 animate-spin" />
                       {isSearching ? 'Searching...' : 'Loading...'}
@@ -427,7 +419,9 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
                               )}
                             >
                               <GitBranch className="h-3 w-3 flex-shrink-0" />
-                              <span className="truncate">{repo.owner}/{repo.name}</span>
+                              <span className="truncate">
+                                {repo.owner}/{repo.name}
+                              </span>
                               {repo.private && (
                                 <span className="text-[9px] bg-muted px-1 py-0.5 rounded ml-auto">Private</span>
                               )}
@@ -522,6 +516,6 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div >
+    </div>
   )
 }

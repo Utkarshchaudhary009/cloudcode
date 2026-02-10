@@ -70,11 +70,11 @@ export function GitHubAppInstall() {
         }),
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to start GitHub App install')
-      }
+      const data = await response.json()
 
-      const data = (await response.json()) as { installUrl?: string }
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to start GitHub App install')
+      }
 
       if (!data.installUrl) {
         throw new Error('Install URL missing')
@@ -82,8 +82,9 @@ export function GitHubAppInstall() {
 
       window.location.assign(data.installUrl)
     } catch (error) {
-      console.error('Error installing GitHub App')
-      toast.error('Failed to install GitHub App')
+      console.error('Error installing GitHub App:', error)
+      const message = error instanceof Error ? error.message : 'Failed to install GitHub App'
+      toast.error(message)
     } finally {
       setLoading(false)
     }

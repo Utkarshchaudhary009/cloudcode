@@ -22,7 +22,6 @@ export function validateEnvironmentVariables(
     // Legacy support
     GEMINI_API_KEY?: string
     VERTEXAI_PROJECT?: string
-    ZEN_API_KEY?: string
   },
 ) {
   const errors: string[] = []
@@ -44,8 +43,7 @@ export function validateEnvironmentVariables(
   const hasCerebras = apiKeys?.CEREBRAS_API_KEY || process.env.CEREBRAS_API_KEY
   const hasAzure = apiKeys?.AZURE_OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY
   const hasMinimax = apiKeys?.MINIMAX_API_KEY || process.env.MINIMAX_API_KEY
-  const hasOpenCode =
-    apiKeys?.OPENCODE_API_KEY || process.env.OPENCODE_API_KEY || apiKeys?.ZEN_API_KEY || process.env.ZEN_API_KEY
+  const hasOpenCode = apiKeys?.OPENCODE_API_KEY || process.env.OPENCODE_API_KEY
   const hasCohere = apiKeys?.COHERE_API_KEY || process.env.COHERE_API_KEY
   const hasDeepSeek = apiKeys?.DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY
   const hasMoonshot = apiKeys?.MOONSHOT_API_KEY || process.env.MOONSHOT_API_KEY
@@ -115,9 +113,8 @@ export function validateEnvironmentVariables(
       }
       break
     case 'opencode':
-    case 'zen':
       if (!hasOpenCode) {
-        errors.push('OPENCODE_API_KEY is required for OpenCode Zen.')
+        errors.push('OPENCODE_API_KEY is required for OpenCode.')
       }
       break
     case 'cohere':

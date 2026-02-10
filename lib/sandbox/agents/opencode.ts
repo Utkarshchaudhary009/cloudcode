@@ -106,7 +106,6 @@ export async function executeOpenCodeInSandbox(
       !getApiKey('MINIMAX_API_KEY') &&
       !getApiKey('AZURE_OPENAI_API_KEY') &&
       !getApiKey('OPENCODE_API_KEY') &&
-      !getApiKey('ZEN_API_KEY') &&
       !getApiKey('COHERE_API_KEY') &&
       !getApiKey('DEEPSEEK_API_KEY') &&
       !getApiKey('MOONSHOT_API_KEY') &&
@@ -354,10 +353,10 @@ export async function executeOpenCodeInSandbox(
       await logger.info('Configured MiniMax provider')
     }
 
-    const opencodeKey = getApiKey('OPENCODE_API_KEY') ?? getApiKey('ZEN_API_KEY')
+    const opencodeKey = getApiKey('OPENCODE_API_KEY')
     if (opencodeKey) {
       opencodeConfig.providers.opencode = { apiKey: opencodeKey }
-      await logger.info('Configured OpenCode Zen provider')
+      await logger.info('Configured OpenCode provider')
     }
 
     // Write the opencode.json file to the OpenCode config directory (not project directory)

@@ -47,10 +47,7 @@ export function TaskPageClient({ taskId, maxSandboxDuration = 300 }: TaskPageCli
   })
 
   if (isLoading) {
-    return (
-      <div className="flex-1 bg-background">
-      </div>
-    )
+    return <div className="flex-1 bg-background"></div>
   }
 
   if (error || !task) {

@@ -1330,8 +1330,7 @@ export function FileBrowser({
             <div className="space-y-2">
               <h4 className="text-sm md:text-base font-medium">Branch Not Created Yet</h4>
               <p className="text-xs md:text-sm text-muted-foreground max-w-xs px-2 md:px-0">
-                OpenCode is still working on this task. File changes will appear here once the agent creates a
-                branch.
+                OpenCode is still working on this task. File changes will appear here once the agent creates a branch.
               </p>
             </div>
             <div className="text-xs text-muted-foreground">Check the logs for progress updates</div>

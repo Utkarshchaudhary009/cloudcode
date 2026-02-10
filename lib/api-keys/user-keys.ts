@@ -64,7 +64,7 @@ export async function getUserApiKeys(): Promise<{
     ZAI_API_KEY: process.env.ZAI_API_KEY,
     MINIMAX_API_KEY: process.env.MINIMAX_API_KEY,
     AZURE_OPENAI_API_KEY: process.env.AZURE_OPENAI_API_KEY,
-    OPENCODE_API_KEY: process.env.OPENCODE_API_KEY || process.env.ZEN_API_KEY,
+    OPENCODE_API_KEY: process.env.OPENCODE_API_KEY,
     COHERE_API_KEY: process.env.COHERE_API_KEY,
     DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY,
     MOONSHOT_API_KEY: process.env.MOONSHOT_API_KEY,
@@ -122,7 +122,6 @@ export async function getUserApiKeys(): Promise<{
           apiKeys.AZURE_OPENAI_API_KEY = decryptedValue
           break
         case 'opencode':
-        case 'zen': // Legacy
           apiKeys.OPENCODE_API_KEY = decryptedValue
           break
         case 'cohere':
@@ -183,7 +182,7 @@ export async function getUserApiKeysForUser(userId: string): Promise<{
     ZAI_API_KEY: process.env.ZAI_API_KEY,
     MINIMAX_API_KEY: process.env.MINIMAX_API_KEY,
     AZURE_OPENAI_API_KEY: process.env.AZURE_OPENAI_API_KEY,
-    OPENCODE_API_KEY: process.env.OPENCODE_API_KEY || process.env.ZEN_API_KEY,
+    OPENCODE_API_KEY: process.env.OPENCODE_API_KEY,
     COHERE_API_KEY: process.env.COHERE_API_KEY,
     DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY,
     MOONSHOT_API_KEY: process.env.MOONSHOT_API_KEY,
@@ -236,7 +235,6 @@ export async function getUserApiKeysForUser(userId: string): Promise<{
           apiKeys.AZURE_OPENAI_API_KEY = decryptedValue
           break
         case 'opencode':
-        case 'zen':
           apiKeys.OPENCODE_API_KEY = decryptedValue
           break
         case 'cohere':
@@ -311,8 +309,7 @@ export async function getUserApiKey(provider: Provider): Promise<string | undefi
       systemValue = process.env.AZURE_OPENAI_API_KEY
       break
     case 'opencode':
-      systemValue = process.env.OPENCODE_API_KEY || process.env.ZEN_API_KEY
-      legacyProviderName = 'zen'
+      systemValue = process.env.OPENCODE_API_KEY
       break
     case 'cohere':
       systemValue = process.env.COHERE_API_KEY
