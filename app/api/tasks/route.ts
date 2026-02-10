@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const providerApiKey = getProviderApiKey(validatedData.selectedProvider || 'openai')
+    const providerApiKey = getProviderApiKey(validatedData.selectedProvider || 'opencode')
 
     // Generate AI branch name after response is sent (non-blocking)
     after(async () => {

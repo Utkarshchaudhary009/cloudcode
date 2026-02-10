@@ -61,9 +61,9 @@ async function runOpenCodeRun(
   }
   if (stderr && stderr.trim()) {
     if (executeResult.success) {
-      await logger.info('OpenCode command produced output')
+      await logger.info(`OpenCode command produced output: ${stderr.trim().substring(0, 500)}`)
     } else {
-      await logger.error('OpenCode command returned errors')
+      await logger.error(`OpenCode command returned errors: ${stderr.trim().substring(0, 1000)}`)
     }
   }
 

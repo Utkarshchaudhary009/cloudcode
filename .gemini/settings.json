@@ -1,7 +1,4 @@
 {
-  "context": {
-    "fileName": ["GEMINI.md", "CODEX.md", "OPENCODE.md"]
-  },
   "experimental": {
     "enableAgents": true
   }
