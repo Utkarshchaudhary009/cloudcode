@@ -18,28 +18,20 @@ export async function GET(req: NextRequest): Promise<Response> {
   const storedRedirectTo = cookieStore.get(`vercel_oauth_redirect_to`)?.value ?? null
   const storedUserId = cookieStore.get(`vercel_oauth_user_id`)?.value ?? null // Required for connect flow
 
-  if (!code) {
-    return new Response('Missing code param', { status: 400 })
-  }
-  if (!state) {
-    return new Response('Missing state param', { status: 400 })
-  }
-  if (!storedState) {
-    return new Response('Missing stored state cookie', { status: 400 })
-  }
-  if (!storedVerifier) {
-    return new Response('Missing stored verifier cookie', { status: 400 })
+  // Determine a safe redirect target for error cases
+  const errorRedirect = storedRedirectTo ?? '/'
+
+  if (!code || !state || !storedState || !storedVerifier || !storedRedirectTo) {
+    console.error('[Vercel Callback] Missing required OAuth parameters or cookies')
+    const missing = !storedState || !storedVerifier || !storedRedirectTo ? 'oauth_expired' : 'missing_params'
+    return Response.redirect(new URL(`${errorRedirect}?error=${missing}`, req.nextUrl.origin))
   }
   if (storedState !== state) {
-    return new Response('State mismatch', { status: 400 })
-  }
-  if (!storedRedirectTo) {
-    return new Response('Missing stored redirect cookie', { status: 400 })
+    console.error('[Vercel Callback] State mismatch')
+    return Response.redirect(new URL(`${errorRedirect}?error=state_mismatch`, req.nextUrl.origin))
   }
 
   const redirectUri = `${req.nextUrl.origin}/api/auth/callback/vercel`
-  console.log('[Vercel Callback] Origin:', req.nextUrl.origin)
-  console.log('[Vercel Callback] Redirect URI:', redirectUri)
 
   const client = new OAuth2Client(
     process.env.NEXT_PUBLIC_VERCEL_CLIENT_ID ?? '',
@@ -52,15 +44,8 @@ export async function GET(req: NextRequest): Promise<Response> {
   try {
     tokens = await client.validateAuthorizationCode('https://api.vercel.com/login/oauth/token', code, storedVerifier)
   } catch (error) {
-    console.error('[Vercel Callback] Validation failed:', error)
-    if (error instanceof Error) {
-      console.error('[Vercel Callback] Error Name:', error.name)
-      console.error('[Vercel Callback] Error Message:', error.message)
-    }
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return new Response(`Failed to validate authorization code: ${errorMessage}`, {
-      status: 400,
-    })
+    console.error('[Vercel Callback] Authorization code validation failed:', error)
+    return Response.redirect(new URL(`${errorRedirect}?error=token_exchange_failed`, req.nextUrl.origin))
   }
 
   // Handle PKCE/token expiration safety
@@ -77,12 +62,13 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   if (storedUserId) {
     // CONNECT FLOW: Add Vercel account to existing GitHub user
-    console.log('[Vercel Callback] Connect flow for user:', storedUserId)
+    console.log('[Vercel Callback] Connect flow detected')
 
     // Fetch Vercel user info to get their Vercel UID
     const vercelUser = await fetchUser(tokens.accessToken())
     if (!vercelUser) {
-      return new Response('Failed to fetch Vercel user info', { status: 500 })
+      console.error('[Vercel Callback] Failed to fetch Vercel user info')
+      return Response.redirect(new URL(`${errorRedirect}?error=vercel_user_fetch_failed`, req.nextUrl.origin))
     }
 
     const externalId = vercelUser.uid || vercelUser.id || vercelUser.username
@@ -101,9 +87,7 @@ export async function GET(req: NextRequest): Promise<Response> {
 
       // If the Vercel account belongs to a different user, we need to merge accounts
       if (connectedUserId !== storedUserId) {
-        console.log(
-          `[Vercel Callback] Merging accounts: Vercel account ${externalId} belongs to user ${connectedUserId}, connecting to user ${storedUserId}`,
-        )
+        console.log('[Vercel Callback] Merging accounts from different users')
 
         // Transfer all tasks, connectors, accounts, and keys from old user to new user
         await db.update(tasks).set({ userId: storedUserId }).where(eq(tasks.userId, connectedUserId))
@@ -114,7 +98,7 @@ export async function GET(req: NextRequest): Promise<Response> {
         // Delete the old user record (this will cascade delete their accounts/keys)
         await db.delete(users).where(eq(users.id, connectedUserId))
 
-        console.log(`[Vercel Callback] Account merge complete. Old user ${connectedUserId} merged into ${storedUserId}`)
+        console.log('[Vercel Callback] Account merge complete')
 
         // Update the Vercel account token
         await db
