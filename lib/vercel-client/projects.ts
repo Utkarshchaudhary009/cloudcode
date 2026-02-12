@@ -55,31 +55,41 @@ export async function listProjects(accessToken: string, teamId?: string): Promis
         ...(from ? { from } : {}),
       })
 
-      const projects = Array.isArray(result) ? result : []
+      const projects = Array.isArray(result)
+        ? result
+        : result && typeof result === 'object' && 'projects' in result
+          ? (result as { projects: Array<Record<string, unknown>> }).projects
+          : []
 
       for (const project of projects) {
+        const p = project as Record<string, unknown>
+        const link = p.link as Record<string, unknown> | undefined
+        const latestDeployments = p.latestDeployments as Array<Record<string, unknown>> | undefined
+
         allProjects.push({
-          id: project.id,
-          name: project.name,
-          framework: (project.framework as VercelProject['framework']) || null,
+          id: p.id as string,
+          name: p.name as string,
+          framework: (p.framework as VercelProject['framework']) || null,
           repoUrl:
-            project.link && 'org' in project.link && 'repo' in project.link && project.link.type === 'github'
-              ? `https://github.com/${project.link.org}/${project.link.repo}`
+            link && link.type === 'github' && link.org && link.repo
+              ? `https://github.com/${link.org}/${link.repo}`
               : null,
           latestDeploymentStatus:
-            (project.latestDeployments?.[0]?.readyState as VercelProject['latestDeploymentStatus']) || null,
-          latestDeploymentUrl: project.latestDeployments?.[0]?.url
-            ? `https://${project.latestDeployments[0].url}`
-            : null,
-          updatedAt: project.updatedAt || Date.now(),
+            (latestDeployments?.[0]?.readyState as VercelProject['latestDeploymentStatus']) || null,
+          latestDeploymentUrl: latestDeployments?.[0]?.url ? `https://${latestDeployments[0].url}` : null,
+          updatedAt: (p.updatedAt as number) || Date.now(),
         })
       }
 
-      if (projects.length < 100) {
+      const pagination =
+        !Array.isArray(result) && result && typeof result === 'object' && 'pagination' in result
+          ? (result as { pagination: { next?: number | null } }).pagination
+          : null
+
+      if (projects.length < 100 || !pagination?.next) {
         hasMore = false
       } else {
-        const lastProject = projects[projects.length - 1]
-        from = String(lastProject.updatedAt || lastProject.id)
+        from = String(pagination.next)
       }
     }
 
