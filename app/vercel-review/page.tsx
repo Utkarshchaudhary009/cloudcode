@@ -256,7 +256,7 @@ export default function VercelReviewPage() {
 
   if (loading) {
     return (
-      <div className="container py-8 max-w-5xl">
+      <div className="container px-4 py-8 max-w-5xl">
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -267,7 +267,7 @@ export default function VercelReviewPage() {
   if (needsVercelAuth) {
     return (
       <div className="flex-1 bg-background flex flex-col">
-        <div className="container py-8 max-w-5xl">
+        <div className="container px-4 py-8 max-w-5xl">
           <div className="mb-8">
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Zap className="h-8 w-8" />
@@ -302,7 +302,7 @@ export default function VercelReviewPage() {
 
   return (
     <div className="flex-1 bg-background flex flex-col">
-      <div className="container py-8 max-w-5xl">
+      <div className="container px-4 py-8 max-w-5xl">
         {/* Header */}
         <div className="mb-8 flex items-start justify-between">
           <div>

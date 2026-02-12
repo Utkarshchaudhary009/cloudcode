@@ -97,7 +97,7 @@ export default function VercelFixesPage() {
 
   return (
     <div className="flex-1 bg-background flex flex-col">
-      <div className="container py-8 max-w-5xl">
+      <div className="container px-4 py-8 max-w-5xl">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
