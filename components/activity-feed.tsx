@@ -562,27 +562,33 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
     },
 
-    {
+        {
 
-      header: 'Repository',
+          header: 'Repository',
 
-      cell: (item) => (
+          cell: (item) => (
 
-        item.repoName ? (
+            item.repoName ? (
 
-          <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Link 
 
-            <GitBranch className="h-3 w-3" />
+                href={`/repos/${item.repoName}`}
 
-            <span className="text-xs">{item.repoName}</span>
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:underline transition-colors"
 
-          </div>
+              >
 
-        ) : <span className="text-muted-foreground">-</span>
+                <GitBranch className="h-3 w-3" />
 
-      ),
+                <span className="text-xs">{item.repoName}</span>
 
-    },
+              </Link>
+
+            ) : <span className="text-muted-foreground">-</span>
+
+          ),
+
+        },
 
     {
 
@@ -860,19 +866,19 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
                     const Icon = getItemIcon(item.type)
 
-                    return (
+                                        return (
 
-                      <Link key={item.id} href={item.href}>
+                                          <Link key={item.id} href={item.href}>
 
-                        <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
+                                            <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
 
-                          <CardContent className="p-3 flex items-center gap-3">
+                                              <CardContent className="p-2 flex items-center gap-3">
 
-                            <div
+                                                <div
 
-                              className={cn(
+                                                  className={cn(
 
-                                'h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0',
+                                                    'h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0',
 
                                 item.type === 'task' && 'bg-blue-500/10 text-blue-500',
 

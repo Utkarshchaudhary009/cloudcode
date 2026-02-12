@@ -4,6 +4,7 @@ import * as React from 'react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export interface Column<T> {
   header: React.ReactNode
@@ -66,7 +67,7 @@ export function DataTable<T>({
               className={onRowClick ? 'cursor-pointer' : ''}
             >
               {columns.map((column, colIndex) => (
-                <TableCell key={colIndex} className={column.className}>
+                <TableCell key={colIndex} className={cn('py-1', column.className)}>
                   {column.cell(item)}
                 </TableCell>
               ))}
