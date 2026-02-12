@@ -7,7 +7,7 @@ export default function NewReviewRulePage() {
   const router = useRouter()
 
   return (
-    <div className="container py-8 max-w-2xl">
+    <div className="container px-4 py-8 max-w-2xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Create Review Rule</h1>
         <p className="text-muted-foreground">Define a custom rule for automated code reviews</p>

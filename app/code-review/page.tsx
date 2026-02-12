@@ -234,7 +234,7 @@ export default function CodeReviewPage() {
   // Not signed in
   if (!session.user) {
     return (
-      <div className="container py-8 max-w-5xl">
+      <div className="container px-4 py-8 max-w-5xl">
         <Card className="border-dashed">
           <CardContent className="py-16 text-center">
             <Github className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -249,7 +249,7 @@ export default function CodeReviewPage() {
   // GitHub not connected
   if (!githubConnection.connected) {
     return (
-      <div className="container py-8 max-w-5xl">
+      <div className="container px-4 py-8 max-w-5xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <GitPullRequest className="h-8 w-8" />
@@ -279,7 +279,7 @@ export default function CodeReviewPage() {
 
   return (
     <div className="flex-1 bg-background flex flex-col">
-      <div className="container py-8 max-w-5xl">
+      <div className="container px-4 py-8 max-w-5xl">
         {/* Header */}
         <div className="mb-8 flex items-start justify-between">
           <div>

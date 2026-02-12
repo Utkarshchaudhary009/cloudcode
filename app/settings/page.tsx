@@ -4,7 +4,7 @@ import { FileText, ChevronRight } from 'lucide-react'
 
 export default function SettingsPage() {
   return (
-    <div className="container py-8 max-w-3xl">
+    <div className="container px-4 py-8 max-w-3xl">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold mb-1">Settings</h1>
         <p className="text-muted-foreground text-sm">Manage your preferences and integrations</p>

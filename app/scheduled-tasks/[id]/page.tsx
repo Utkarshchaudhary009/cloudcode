@@ -5,7 +5,7 @@ export default async function EditScheduledTaskPage({ params }: { params: Promis
   const { id } = await params
   return (
     <div className="flex-1 bg-background flex flex-col">
-      <div className="container py-8 max-w-2xl">
+      <div className="container px-4 py-8 max-w-2xl">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Edit Scheduled Task</h1>
           <p className="text-muted-foreground">Modify your scheduled task configuration</p>
