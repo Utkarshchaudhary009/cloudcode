@@ -41,6 +41,7 @@ import {
 import { cn } from '@/lib/utils'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 import { StatusDot } from '@/components/status-badge'
 
@@ -55,6 +56,9 @@ import { DataTable, Column } from '@/components/data-table'
 import { PRStatusIcon } from '@/components/pr-status-icon'
 
 
+
+import { TaskCard } from './task-card'
+import { Task } from '@/lib/db/schema'
 
 type FeedTab = 'all' | 'tasks' | 'code-review' | 'vercel' | 'scheduled' | 'repos'
 
@@ -86,6 +90,7 @@ interface FeedItem {
 
   prNumber?: number
 
+  rawTask?: Task
 }
 
 
@@ -196,6 +201,8 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
   const user = propUser || session.user
 
+  const router = useRouter()
+
 
 
   // Fetch all data
@@ -255,6 +262,8 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
             prStatus: task.prStatus,
 
             prNumber: task.prNumber,
+
+            rawTask: task,
 
           }))
 
@@ -498,7 +507,7 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
       }
 
-    } catch {}
+    } catch { }
 
     return url
 
@@ -562,33 +571,34 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
     },
 
-        {
+    {
 
-          header: 'Repository',
+      header: 'Repository',
 
-          cell: (item) => (
+      cell: (item) => (
 
-            item.repoName ? (
+        item.repoName ? (
 
-              <Link 
+          <Link
 
-                href={`/repos/${item.repoName}`}
+            href={`/repos/${item.repoName}`}
 
-                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:underline transition-colors"
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:underline transition-colors"
 
-              >
+          >
 
-                <GitBranch className="h-3 w-3" />
+            <GitBranch className="h-3 w-3" />
 
-                <span className="text-xs">{item.repoName}</span>
+            <span className="text-xs hidden sm:inline">{item.repoName}</span>
+            <span className="text-xs inline sm:hidden">{item.repoName.split('/')[1]}</span>
 
-              </Link>
+          </Link>
 
-            ) : <span className="text-muted-foreground">-</span>
+        ) : <span className="text-muted-foreground">-</span>
 
-          ),
+      ),
 
-        },
+    },
 
     {
 
@@ -690,7 +700,7 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
   return (
 
-    <div className={cn('w-full max-w-2xl mx-auto', className)}>
+    <div className={cn('w-full max-w-xl mx-auto', className)}>
 
       {/* Search Bar */}
 
@@ -734,71 +744,71 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
       <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1">
 
-                {tabs.map((tab) => {
+        {tabs.map((tab) => {
 
-                  const Icon = tab.icon
+          const Icon = tab.icon
 
-                  const isActive = activeTab === tab.id
+          const isActive = activeTab === tab.id
 
-                  
 
-                  // Calculate unfinished/active count based on tab type
 
-                  let count = 0
+          // Calculate unfinished/active count based on tab type
 
-                  
+          let count = 0
 
-                  if (tab.id === 'tasks') {
 
-                    count = items.filter(i => i.type === 'task' && (i.status === 'pending' || i.status === 'processing')).length
 
-                  } else if (tab.id === 'code-review') {
+          if (tab.id === 'tasks') {
 
-                    count = items.filter(i => i.type === 'review' && (i.status === 'pending' || i.status === 'in_progress')).length
+            count = items.filter(i => i.type === 'task' && (i.status === 'pending' || i.status === 'processing')).length
 
-                  } else if (tab.id === 'vercel') {
+          } else if (tab.id === 'code-review') {
 
-                    count = items.filter(i => i.type === 'vercel-fix' && (i.status === 'pending' || i.status === 'fixing')).length
+            count = items.filter(i => i.type === 'review' && (i.status === 'pending' || i.status === 'in_progress')).length
 
-                  }
+          } else if (tab.id === 'vercel') {
 
-        
+            count = items.filter(i => i.type === 'vercel-fix' && (i.status === 'pending' || i.status === 'fixing')).length
 
-                  return (
+          }
 
-                    <Button
 
-                      key={tab.id}
 
-                      variant={isActive ? 'secondary' : 'ghost'}
+          return (
 
-                      size="sm"
+            <Button
 
-                      onClick={() => setActiveTab(tab.id)}
+              key={tab.id}
 
-                      className={cn('h-8 px-3 text-xs gap-1.5 flex-shrink-0', isActive && 'bg-accent')}
+              variant={isActive ? 'secondary' : 'ghost'}
 
-                    >
+              size="sm"
 
-                      <Icon className="h-3.5 w-3.5" />
+              onClick={() => setActiveTab(tab.id)}
 
-                      {tab.label}
+              className={cn('h-8 px-3 text-xs gap-1.5 flex-shrink-0', isActive && 'bg-accent')}
 
-                      {count > 0 && (
+            >
 
-                        <Badge variant="destructive" className="ml-1 h-4 px-1.5 text-[10px] rounded-full min-w-[1.25rem] justify-center">
+              <Icon className="h-3.5 w-3.5" />
 
-                          {count}
+              {tab.label}
 
-                        </Badge>
+              {count > 0 && (
 
-                      )}
+                <Badge variant="destructive" className="ml-1 h-4 px-1.5 text-[10px] rounded-full min-w-[1.25rem] justify-center">
 
-                    </Button>
+                  {count}
 
-                  )
+                </Badge>
 
-                })}
+              )}
+
+            </Button>
+
+          )
+
+        })}
 
       </div>
 
@@ -846,7 +856,7 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
       ) : (
 
-        <div className="space-y-10">
+        <div className="space-y-6">
 
           {Object.entries(groupedItems).map(([label, groupItems]) => {
 
@@ -866,19 +876,31 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
                     const Icon = getItemIcon(item.type)
 
-                                        return (
+                    if (item.type === 'task' && item.rawTask) {
+                      return (
+                        <div key={item.id}>
+                          <TaskCard
+                            task={item.rawTask}
+                            showCheckbox={false}
+                            onClick={() => router.push(item.href)}
+                          />
+                        </div>
+                      )
+                    }
 
-                                          <Link key={item.id} href={item.href}>
+                    return (
 
-                                            <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
+                      <Link key={item.id} href={item.href}>
 
-                                              <CardContent className="p-2 flex items-center gap-3">
+                        <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
 
-                                                <div
+                          <CardContent className="p-2 flex items-center gap-3">
 
-                                                  className={cn(
+                            <div
 
-                                                    'h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0',
+                              className={cn(
+
+                                'h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0',
 
                                 item.type === 'task' && 'bg-blue-500/10 text-blue-500',
 
