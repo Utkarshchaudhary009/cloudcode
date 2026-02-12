@@ -1,4 +1,4 @@
-import { type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { isRelativeUrl } from '@/lib/utils/is-relative-url'
 import { CodeChallengeMethod, OAuth2Client, generateCodeVerifier, generateState } from 'arctic'
@@ -59,5 +59,5 @@ export async function GET(req: NextRequest): Promise<Response> {
 
 export async function POST(req: NextRequest): Promise<Response> {
   const url = await getVercelAuthUrl(req)
-  return Response.json({ url })
+  return NextResponse.json({ url })
 }
