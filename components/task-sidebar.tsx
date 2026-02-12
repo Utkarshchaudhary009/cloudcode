@@ -337,112 +337,136 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
         </div>
       </div>
 
-      {/* Repos Section (Collapsible) */}
+      {/* Repos Section */}
       <div className="flex-1 overflow-y-auto px-2 md:px-3">
-        <Collapsible open={reposOpen} onOpenChange={setReposOpen}>
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-between h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <span className="flex items-center gap-2">
-                <GitBranch className="h-3.5 w-3.5" />
+        {isCollapsed ? (
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    toggleSidebar()
+                    setReposOpen(true)
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground md:h-8 md:w-8 mx-auto mt-2"
+                >
+                  <GitBranch className="h-5 w-5" />
+                  <span className="sr-only">Repositories</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="flex items-center gap-4">
                 Repositories
-              </span>
-              {reposOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-2 pt-2">
-            {!session.user ? (
-              <Card>
-                <CardContent className="p-3 text-center text-xs text-muted-foreground">
-                  Sign in to view repositories
-                </CardContent>
-              </Card>
-            ) : !githubConnection.connected ? (
-              <Card>
-                <CardContent className="p-3 text-center text-xs text-muted-foreground">
-                  Connect GitHub to view repositories
-                </CardContent>
-              </Card>
-            ) : (
-              <>
-                {/* Search input */}
-                {(repos.length > 0 || repoSearchQuery) && (
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Search repos..."
-                      value={repoSearchQuery}
-                      onChange={(e) => setRepoSearchQuery(e.target.value)}
-                      className="h-7 pl-7 pr-7 text-xs"
-                    />
-                    {repoSearchQuery && (
-                      <button
-                        onClick={() => setRepoSearchQuery('')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <Collapsible open={reposOpen} onOpenChange={setReposOpen}>
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-between h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <span className="flex items-center gap-2">
+                  <GitBranch className="h-3.5 w-3.5" />
+                  Repositories
+                </span>
+                {reposOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-2 pt-2">
+              {!session.user ? (
+                <Card>
+                  <CardContent className="p-3 text-center text-xs text-muted-foreground">
+                    Sign in to view repositories
+                  </CardContent>
+                </Card>
+              ) : !githubConnection.connected ? (
+                <Card>
+                  <CardContent className="p-3 text-center text-xs text-muted-foreground">
+                    Connect GitHub to view repositories
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  {/* Search input */}
+                  {(repos.length > 0 || repoSearchQuery) && (
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder="Search repos..."
+                        value={repoSearchQuery}
+                        onChange={(e) => setRepoSearchQuery(e.target.value)}
+                        className="h-7 pl-7 pr-7 text-xs"
+                      />
+                      {repoSearchQuery && (
+                        <button
+                          onClick={() => setRepoSearchQuery('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Repos list */}
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {(reposLoading && repos.length === 0 && !isSearching) ||
+                    (searchLoading && searchResults.length === 0 && isSearching) ? (
+                      <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        {isSearching ? 'Searching...' : 'Loading...'}
+                      </div>
+                    ) : displayedRepos.length === 0 ? (
+                      <p className="text-xs text-muted-foreground text-center py-2">
+                        {isSearching ? `No repos match "${repoSearchQuery}"` : 'No repositories found'}
+                      </p>
+                    ) : (
+                      <>
+                        {displayedRepos.map((repo) => {
+                          const repoPath = `/repos/${repo.owner}/${repo.name}`
+                          const isActive = pathname === repoPath || pathname.startsWith(repoPath + '/')
+
+                          return (
+                            <Link key={`${repo.owner}/${repo.name}`} href={repoPath} onClick={handleLinkClick}>
+                              <div
+                                className={cn(
+                                  'flex items-center gap-2 px-2 py-1.5 rounded text-xs cursor-pointer transition-colors',
+                                  isActive
+                                    ? 'bg-accent text-accent-foreground'
+                                    : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+                                )}
+                              >
+                                <GitBranch className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">
+                                  {repo.owner}/{repo.name}
+                                </span>
+                                {repo.private && (
+                                  <span className="text-[9px] bg-muted px-1 py-0.5 rounded ml-auto">Private</span>
+                                )}
+                              </div>
+                            </Link>
+                          )
+                        })}
+                        {displayedHasMore && (
+                          <div ref={loadMoreRef} className="py-1 flex justify-center">
+                            {(isSearching ? searchLoading : reposLoading) && (
+                              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                            )}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
-                )}
-
-                {/* Repos list */}
-                <div className="space-y-1 max-h-48 overflow-y-auto">
-                  {(reposLoading && repos.length === 0 && !isSearching) ||
-                  (searchLoading && searchResults.length === 0 && isSearching) ? (
-                    <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      {isSearching ? 'Searching...' : 'Loading...'}
-                    </div>
-                  ) : displayedRepos.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-2">
-                      {isSearching ? `No repos match "${repoSearchQuery}"` : 'No repositories found'}
-                    </p>
-                  ) : (
-                    <>
-                      {displayedRepos.map((repo) => {
-                        const repoPath = `/repos/${repo.owner}/${repo.name}`
-                        const isActive = pathname === repoPath || pathname.startsWith(repoPath + '/')
-
-                        return (
-                          <Link key={`${repo.owner}/${repo.name}`} href={repoPath} onClick={handleLinkClick}>
-                            <div
-                              className={cn(
-                                'flex items-center gap-2 px-2 py-1.5 rounded text-xs cursor-pointer transition-colors',
-                                isActive
-                                  ? 'bg-accent text-accent-foreground'
-                                  : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-                              )}
-                            >
-                              <GitBranch className="h-3 w-3 flex-shrink-0" />
-                              <span className="truncate">
-                                {repo.owner}/{repo.name}
-                              </span>
-                              {repo.private && (
-                                <span className="text-[9px] bg-muted px-1 py-0.5 rounded ml-auto">Private</span>
-                              )}
-                            </div>
-                          </Link>
-                        )
-                      })}
-                      {displayedHasMore && (
-                        <div ref={loadMoreRef} className="py-1 flex justify-center">
-                          {(isSearching ? searchLoading : reposLoading) && (
-                            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                          )}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
+                </>
+              )}
+            </CollapsibleContent>
+          </Collapsible>
+        )}
       </div>
 
       {/* Delete Tasks Dialog */}
