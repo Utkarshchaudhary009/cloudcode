@@ -287,6 +287,14 @@ export function HomePageContent({
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Open Repo URL
                 </DropdownMenuItem>
+                {selectedOwner && selectedRepo && (
+                  <DropdownMenuItem asChild>
+                    <a href={`/repos/${selectedOwner}/${selectedRepo}`} target="_blank">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Go to Repository
+                    </a>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleRefreshOwners} disabled={isRefreshing}>
                   <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />

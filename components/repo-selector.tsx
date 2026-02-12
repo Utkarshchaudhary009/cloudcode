@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Lock, Loader2, Layers } from 'lucide-react'
+import { Lock, Loader2, Layers, ExternalLink } from 'lucide-react'
 import { useAtomValue, useSetAtom, useAtom } from 'jotai'
 import { githubConnectionAtom } from '@/lib/atoms/github-connection'
 import { githubOwnersAtom, githubReposAtomFamily } from '@/lib/atoms/github-cache'
@@ -620,6 +620,17 @@ export function RepoSelector({
                 )}
               </SelectContent>
             </Select>
+
+            {/* Go to Repo Button */}
+            <a
+              href={`/repos/${selectedOwner}/${selectedRepo}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+              title="Go to Repository"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </a>
           </>
         )
       )}

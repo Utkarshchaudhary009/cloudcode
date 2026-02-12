@@ -5,6 +5,7 @@ export interface VercelUser {
   uid?: string
   id?: string
   username: string
+  defaultTeamId?: string | null
 }
 
 export interface VercelTeam {

@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
 import {
   Github,
@@ -25,6 +24,7 @@ import { githubConnectionAtom } from '@/lib/atoms/github-connection'
 import { sessionAtom } from '@/lib/atoms/session'
 import { RepoSelector } from '@/components/repo-selector'
 import { Label } from '@/components/ui/label'
+import { DataTable, Column } from '@/components/data-table'
 
 interface RepoWithReviewStatus {
   owner: string
@@ -185,6 +185,51 @@ export default function CodeReviewPage() {
   )
 
   const enabledCount = repos.filter((r) => r.autoReviewEnabled).length
+
+  // Define columns for the table
+  const columns: Column<RepoWithReviewStatus>[] = [
+    {
+      header: 'Repository',
+      cell: (repo) => (
+        <div>
+          <Link href={`/repos/${repo.full_name}`} className="font-medium hover:underline">
+            {repo.full_name}
+          </Link>
+          {repo.description && <p className="text-sm text-muted-foreground truncate max-w-md">{repo.description}</p>}
+        </div>
+      ),
+    },
+    {
+      header: 'Visibility',
+      cell: (repo) => (
+        <Badge variant={repo.private ? 'secondary' : 'outline'}>{repo.private ? 'Private' : 'Public'}</Badge>
+      ),
+    },
+    {
+      header: 'Auto-Review',
+      cell: (repo) =>
+        togglingRepo === repo.full_name ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Switch
+            checked={repo.autoReviewEnabled}
+            onCheckedChange={() => handleToggleAutoReview(repo)}
+            disabled={!repo.subscriptionId}
+          />
+        ),
+    },
+    {
+      header: 'Actions',
+      className: 'w-[100px]',
+      cell: (repo) => (
+        <Button variant="ghost" size="sm" asChild>
+          <a href={`https://github.com/${repo.full_name}`} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="h-4 w-4" />
+          </a>
+        </Button>
+      ),
+    },
+  ]
 
   // Not signed in
   if (!session.user) {
@@ -348,75 +393,12 @@ export default function CodeReviewPage() {
         )}
 
         {/* Repos Table */}
-        {loading ? (
-          <Card>
-            <CardContent className="py-12 flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </CardContent>
-          </Card>
-        ) : filteredRepos.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Github className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">
-                {searchQuery ? 'No matching repositories' : 'No repositories found'}
-              </h3>
-              <p className="text-muted-foreground">
-                {searchQuery ? 'Try a different search term.' : 'Connect repositories using the form above.'}
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Repository</TableHead>
-                  <TableHead>Visibility</TableHead>
-                  <TableHead>Auto-Review</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRepos.map((repo) => (
-                  <TableRow key={repo.full_name}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{repo.full_name}</p>
-                        {repo.description && (
-                          <p className="text-sm text-muted-foreground truncate max-w-md">{repo.description}</p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={repo.private ? 'secondary' : 'outline'}>
-                        {repo.private ? 'Private' : 'Public'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {togglingRepo === repo.full_name ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Switch
-                          checked={repo.autoReviewEnabled}
-                          onCheckedChange={() => handleToggleAutoReview(repo)}
-                          disabled={!repo.subscriptionId}
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm" asChild>
-                        <a href={`https://github.com/${repo.full_name}`} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
-        )}
+        <DataTable
+          data={filteredRepos}
+          columns={columns}
+          isLoading={loading}
+          emptyMessage={searchQuery ? 'No matching repositories' : 'Connect repositories using the form above.'}
+        />
       </div>
     </div>
   )

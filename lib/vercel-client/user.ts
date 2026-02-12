@@ -1,7 +1,21 @@
 import type { VercelUser } from './types'
 
 export async function fetchUser(accessToken: string): Promise<VercelUser | undefined> {
-  // First try the OAuth userinfo endpoint (for tokens from /login/oauth/token)
+  // Try v2/user endpoint first (returns defaultTeamId which is needed for project listing)
+  const response = await fetch('https://api.vercel.com/v2/user', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: 'no-store',
+  })
+
+  if (response.ok) {
+    const data = (await response.json()) as unknown
+    const user = extractUser(data)
+    if (user) {
+      return user
+    }
+  }
+
+  // Fallback to OAuth userinfo endpoint
   const userInfoResponse = await fetch('https://api.vercel.com/login/oauth/userinfo', {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -16,7 +30,6 @@ export async function fetchUser(accessToken: string): Promise<VercelUser | undef
       preferred_username?: string
       picture?: string
     }
-    console.log('[fetchUser] Got userinfo:', userInfo.preferred_username, 'sub:', userInfo.sub)
 
     if (userInfo.sub && userInfo.preferred_username && userInfo.email) {
       return {
@@ -30,27 +43,8 @@ export async function fetchUser(accessToken: string): Promise<VercelUser | undef
     }
   }
 
-  // Fallback to v2/user endpoint
-  const response = await fetch('https://api.vercel.com/v2/user', {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    cache: 'no-store',
-  })
-
-  if (response.status !== 200) {
-    console.error('[fetchUser] Failed to fetch user from both endpoints')
-    return undefined
-  }
-
-  const data = (await response.json()) as unknown
-  const user = extractUser(data)
-
-  if (!user) {
-    console.error('[fetchUser] Could not extract user from response')
-    return undefined
-  }
-
-  console.log('[fetchUser] Extracted user:', user.username, 'uid:', user.uid, 'id:', user.id)
-  return user
+  console.error('Failed to fetch user from all endpoints')
+  return undefined
 }
 
 function extractUser(payload: unknown): VercelUser | undefined {

@@ -70,7 +70,7 @@ export default function VercelReviewPage() {
   }, [])
 
   const buildProjectsUrl = useCallback((scope?: VercelScope) => {
-    if (scope?.type === 'team' && scope.id) {
+    if (scope?.id) {
       return `/api/vercel/projects?teamId=${scope.id}`
     }
     return '/api/vercel/projects'

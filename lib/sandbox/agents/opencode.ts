@@ -59,7 +59,7 @@ async function runOpenCodeRun(
   if (stdout && stdout.trim()) {
     await logger.info(`OpenCode command stdout (${stdout.length} chars): ${stdout.trim().substring(0, 200)}...`)
   }
-  
+
   if (stderr && stderr.trim()) {
     await logger.info(`OpenCode command stderr: ${stderr.trim().substring(0, 500)}`)
   }

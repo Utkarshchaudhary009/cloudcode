@@ -43,19 +43,23 @@ export async function GET() {
     }
 
     // Build scopes list: personal account + teams
+    // Use defaultTeamId for personal scope (Vercel now requires teamId even for hobby accounts)
+    const personalId = user.defaultTeamId || user.uid || user.id || ''
     const scopes = [
       {
-        id: user.uid || user.id || '',
+        id: personalId,
         slug: user.username,
         name: user.name || user.username,
         type: 'personal' as const,
       },
-      ...(teams || []).map((team) => ({
-        id: team.id,
-        slug: team.slug,
-        name: team.name,
-        type: 'team' as const,
-      })),
+      ...(teams || [])
+        .filter((team) => team.id !== personalId)
+        .map((team) => ({
+          id: team.id,
+          slug: team.slug,
+          name: team.name,
+          type: 'team' as const,
+        })),
     ]
 
     return NextResponse.json({ scopes })

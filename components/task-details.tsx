@@ -1415,6 +1415,21 @@ export function TaskDetails({ task, maxSandboxDuration = 300 }: TaskDetailsProps
                 <Plus className="h-4 w-4 mr-2" />
                 New Task
               </DropdownMenuItem>
+              {task.repoUrl && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    const match = task.repoUrl?.match(/github\.com\/([^/]+)\/([^/]+?)(\.git)?$/)
+                    const owner = match?.[1]
+                    const repo = match?.[2]
+                    if (owner && repo) {
+                      window.open(`/repos/${owner}/${repo}`, '_blank')
+                    }
+                  }}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Go to Repository
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setShowTryAgainDialog(true)}>
                 <RotateCcw className="h-4 w-4 mr-2" />
