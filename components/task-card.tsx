@@ -41,10 +41,7 @@ export function TaskCard({ task, isSelected = false, onSelect, onClick, showChec
 
   return (
     <Card
-      className={cn(
-        'transition-colors hover:bg-accent cursor-pointer p-0',
-        isSelected && 'ring-2 ring-primary',
-      )}
+      className={cn('transition-colors hover:bg-accent cursor-pointer p-0', isSelected && 'ring-2 ring-primary')}
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
           return

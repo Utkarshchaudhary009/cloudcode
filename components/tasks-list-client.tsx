@@ -21,8 +21,6 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { TaskCard } from './task-card'
 
-
-
 export function TasksListClient() {
   const { refreshTasks } = useTasks()
   const router = useRouter()
@@ -209,8 +207,6 @@ export function TasksListClient() {
       setIsStopping(false)
     }
   }
-
-
 
   const selectedProcessingTasks = Array.from(selectedTasks).filter((taskId) => {
     const task = tasks.find((t) => t.id === taskId)
