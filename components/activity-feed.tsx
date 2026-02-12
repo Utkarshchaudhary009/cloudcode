@@ -51,7 +51,7 @@ import { sessionAtom } from '@/lib/atoms/session'
 
 import type { Session } from '@/lib/session/types'
 
-import { DataTable, Column } from '@/components/data-table'
+
 
 import { PRStatusIcon } from '@/components/pr-status-icon'
 
@@ -547,146 +547,7 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
 
 
-  // Define columns for Task Table
 
-  const taskColumns: Column<FeedItem>[] = [
-
-    {
-
-      header: 'Task',
-
-      cell: (item) => (
-
-        <div>
-
-          <Link href={item.href} className="font-medium hover:underline truncate block max-w-[300px]">
-
-            {item.title}
-
-          </Link>
-
-        </div>
-
-      ),
-
-    },
-
-    {
-
-      header: 'Repository',
-
-      cell: (item) => (
-
-        item.repoName ? (
-
-          <Link
-
-            href={`/repos/${item.repoName}`}
-
-            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:underline transition-colors"
-
-          >
-
-            <GitBranch className="h-3 w-3" />
-
-            <span className="text-xs hidden sm:inline">{item.repoName}</span>
-            <span className="text-xs inline sm:hidden">{item.repoName.split('/')[1]}</span>
-
-          </Link>
-
-        ) : <span className="text-muted-foreground">-</span>
-
-      ),
-
-    },
-
-    {
-
-      header: 'Status',
-
-      cell: (item) => (
-
-        <StatusDot status={item.status || 'pending'} />
-
-      ),
-
-    },
-
-    {
-
-      header: 'PR Status',
-
-      cell: (item) => (
-
-        item.prUrl ? (
-
-          <div className="flex items-center gap-1.5">
-
-            <PRStatusIcon status={item.prStatus as any || 'open'} className="h-4 w-4" />
-
-            <a
-
-              href={item.prUrl}
-
-              target="_blank"
-
-              rel="noopener noreferrer"
-
-              className="text-xs text-muted-foreground hover:text-foreground hover:underline"
-
-            >
-
-              #{item.prNumber}
-
-            </a>
-
-          </div>
-
-        ) : <span className="text-muted-foreground text-xs">-</span>
-
-      ),
-
-    },
-
-    {
-
-      header: 'Created',
-
-      cell: (item) => (
-
-        <span className="text-xs text-muted-foreground whitespace-nowrap">
-
-          {item.createdAt.toLocaleDateString()}
-
-        </span>
-
-      ),
-
-    },
-
-    {
-
-      header: 'Actions',
-
-      cell: (item) => (
-
-        <Button variant="ghost" size="sm" asChild>
-
-          <Link href={item.href}>
-
-            <Eye className="h-4 w-4" />
-
-          </Link>
-
-        </Button>
-
-      ),
-
-      className: 'w-[50px]',
-
-    },
-
-  ]
 
 
 
@@ -700,7 +561,7 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
   return (
 
-    <div className={cn('w-full max-w-xl mx-auto', className)}>
+    <div className={cn('w-full max-w-lg mx-auto', className)}>
 
       {/* Search Bar */}
 
@@ -824,20 +685,6 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
         </div>
 
-      ) : activeTab === 'tasks' ? (
-
-        // Table View for Tasks
-
-        <DataTable
-
-          data={filteredItems}
-
-          columns={taskColumns}
-
-          emptyMessage={searchQuery ? `No tasks match "${searchQuery}"` : 'No tasks found.'}
-
-        />
-
       ) : filteredItems.length === 0 ? (
 
         <Card>
@@ -870,7 +717,7 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
                 <h3 className="text-xs font-medium text-muted-foreground mb-3 px-1">{label}</h3>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
 
                   {groupItems.map((item) => {
 
