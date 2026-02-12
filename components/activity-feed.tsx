@@ -734,71 +734,71 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
       <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1">
 
-        {tabs.map((tab) => {
+                {tabs.map((tab) => {
 
-          const Icon = tab.icon
+                  const Icon = tab.icon
 
-          const isActive = activeTab === tab.id
+                  const isActive = activeTab === tab.id
 
-          const count =
+                  
 
-            tab.id === 'all'
+                  // Calculate unfinished/active count based on tab type
 
-              ? items.length
+                  let count = 0
 
-              : items.filter((i) => {
+                  
 
-                  if (tab.id === 'tasks') return i.type === 'task'
+                  if (tab.id === 'tasks') {
 
-                  if (tab.id === 'code-review') return i.type === 'review'
+                    count = items.filter(i => i.type === 'task' && (i.status === 'pending' || i.status === 'processing')).length
 
-                  if (tab.id === 'vercel') return i.type === 'vercel-fix'
+                  } else if (tab.id === 'code-review') {
 
-                  if (tab.id === 'scheduled') return i.type === 'scheduled'
+                    count = items.filter(i => i.type === 'review' && (i.status === 'pending' || i.status === 'in_progress')).length
 
-                  if (tab.id === 'repos') return i.type === 'repo'
+                  } else if (tab.id === 'vercel') {
 
-                  return false
+                    count = items.filter(i => i.type === 'vercel-fix' && (i.status === 'pending' || i.status === 'fixing')).length
 
-                }).length
+                  }
 
+        
 
+                  return (
 
-          return (
+                    <Button
 
-            <Button
+                      key={tab.id}
 
-              key={tab.id}
+                      variant={isActive ? 'secondary' : 'ghost'}
 
-              variant={isActive ? 'secondary' : 'ghost'}
+                      size="sm"
 
-              size="sm"
+                      onClick={() => setActiveTab(tab.id)}
 
-              onClick={() => setActiveTab(tab.id)}
+                      className={cn('h-8 px-3 text-xs gap-1.5 flex-shrink-0', isActive && 'bg-accent')}
 
-              className={cn('h-8 px-3 text-xs gap-1.5 flex-shrink-0', isActive && 'bg-accent')}
+                    >
 
-            >
+                      <Icon className="h-3.5 w-3.5" />
 
-              <Icon className="h-3.5 w-3.5" />
+                      {tab.label}
 
-              {tab.label}
+                      {count > 0 && (
 
-              {count > 0 && (
+                        <Badge variant="destructive" className="ml-1 h-4 px-1.5 text-[10px] rounded-full min-w-[1.25rem] justify-center">
 
-                <Badge variant="outline" className="ml-1 h-4 px-1 text-[10px]">
+                          {count}
 
-                  {count}
+                        </Badge>
 
-                </Badge>
+                      )}
 
-              )}
+                    </Button>
 
-            </Button>
+                  )
 
-          )
-
-        })}
+                })}
 
       </div>
 

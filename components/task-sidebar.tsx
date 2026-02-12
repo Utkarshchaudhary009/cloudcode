@@ -404,7 +404,7 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
                     </p>
                   ) : (
                     <>
-                      {displayedRepos.slice(0, 10).map((repo) => {
+                      {displayedRepos.map((repo) => {
                         const repoPath = `/repos/${repo.owner}/${repo.name}`
                         const isActive = pathname === repoPath || pathname.startsWith(repoPath + '/')
 
@@ -429,13 +429,6 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
                           </Link>
                         )
                       })}
-                      {displayedRepos.length > 10 && (
-                        <Link href="/code-review" onClick={handleLinkClick}>
-                          <p className="text-xs text-muted-foreground text-center py-1 hover:text-foreground">
-                            View all {displayedRepos.length}+ repos →
-                          </p>
-                        </Link>
-                      )}
                       {displayedHasMore && (
                         <div ref={loadMoreRef} className="py-1 flex justify-center">
                           {(isSearching ? searchLoading : reposLoading) && (
