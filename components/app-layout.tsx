@@ -12,6 +12,7 @@ import { getSidebarWidth, setSidebarWidth, getSidebarOpen, setSidebarOpen } from
 import { nanoid } from 'nanoid'
 import { ConnectorsProvider } from '@/components/connectors-provider'
 import { SharedHeader } from '@/components/shared-header'
+import { cn } from '@/lib/utils'
 
 interface AppLayoutProps {
   children: React.ReactNode
