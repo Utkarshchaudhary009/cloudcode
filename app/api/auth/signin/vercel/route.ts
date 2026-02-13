@@ -7,11 +7,18 @@ import { getSessionFromReq } from '@/lib/session/server'
 async function getVercelAuthUrl(req: NextRequest) {
   const session = await getSessionFromReq(req)
 
-  const client = new OAuth2Client(
-    process.env.NEXT_PUBLIC_VERCEL_CLIENT_ID ?? '',
-    process.env.VERCEL_CLIENT_SECRET ?? '',
-    `${req.nextUrl.origin}/api/auth/callback/vercel`,
-  )
+  const clientId = process.env.NEXT_PUBLIC_VERCEL_CLIENT_ID
+  const clientSecret = process.env.VERCEL_CLIENT_SECRET
+
+  if (!clientId || !clientSecret) {
+    console.error('[Vercel Signin] Missing Vercel environment variables', {
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret,
+    })
+    throw new Error('Vercel configuration missing on server')
+  }
+
+  const client = new OAuth2Client(clientId, clientSecret, `${req.nextUrl.origin}/api/auth/callback/vercel`)
 
   const state = generateState()
   const verifier = generateCodeVerifier()

@@ -70,7 +70,7 @@ export default function VercelReviewPage() {
   }, [])
 
   const buildProjectsUrl = useCallback((scope?: VercelScope) => {
-    if (scope?.id) {
+    if (scope?.id && scope.type === 'team') {
       return `/api/vercel/projects?teamId=${scope.id}`
     }
     return '/api/vercel/projects'
@@ -88,10 +88,13 @@ export default function VercelReviewPage() {
     async (scopeId: string, currentScopes: VercelScope[]) => {
       setLoading(true)
       try {
+        console.log('[VercelReview] Fetching projects for scope:', scopeId, 'Scopes:', currentScopes.length)
         if (scopeId === 'all') {
           if (currentScopes.length === 0) {
+            console.log('[VercelReview] No scopes, fetching default projects')
             const res = await fetch('/api/vercel/projects')
             const data = await res.json()
+            console.log('[VercelReview] Default projects response:', data)
             if (data.needsVercelAuth) {
               setNeedsVercelAuth(true)
               setProjects([])
@@ -103,12 +106,16 @@ export default function VercelReviewPage() {
             }
             return
           }
+          console.log('[VercelReview] Fetching projects for all scopes')
           const responses = await Promise.all(
             currentScopes.map(async (scope) => {
               try {
                 const res = await fetch(buildProjectsUrl(scope))
-                return res.json()
+                const data = await res.json()
+                console.log(`[VercelReview] Scope ${scope.slug} response:`, data)
+                return data
               } catch (e) {
+                console.error(`[VercelReview] Scope ${scope.slug} fetch error:`, e)
                 return { success: false, error: 'Network error' }
               }
             }),
@@ -122,6 +129,7 @@ export default function VercelReviewPage() {
             combined.forEach((p) => {
               if (!unique.has(p.id)) unique.set(p.id, p)
             })
+            console.log('[VercelReview] Combined unique projects:', unique.size)
             setProjects(sortProjects([...unique.values()]))
             setNeedsVercelAuth(false)
 
@@ -131,8 +139,10 @@ export default function VercelReviewPage() {
           }
         } else {
           const scope = currentScopes.find((s) => s.id === scopeId)
+          console.log('[VercelReview] Fetching projects for single scope:', scope?.slug)
           const res = await fetch(buildProjectsUrl(scope))
           const data = await res.json()
+          console.log('[VercelReview] Single scope response:', data)
           if (data.needsVercelAuth) {
             setNeedsVercelAuth(true)
             setProjects([])
@@ -144,6 +154,7 @@ export default function VercelReviewPage() {
           }
         }
       } catch (error) {
+        console.error('[VercelReview] fetchProjects error:', error)
         toast.error('Failed to load projects')
       } finally {
         setLoading(false)
@@ -165,16 +176,28 @@ export default function VercelReviewPage() {
   const handleConnectVercel = async () => {
     setConnectingVercel(true)
     try {
+      console.log('[VercelReview] Initiating connection...')
       const res = await fetch('/api/auth/signin/vercel?next=/vercel-review', {
         method: 'POST',
       })
+      
+      if (!res.ok) {
+        const errorText = await res.text()
+        console.error('[VercelReview] Connection API error:', res.status, errorText)
+        toast.error(`Failed to connect: ${res.statusText}`)
+        return
+      }
+
       const data = await res.json()
+      console.log('[VercelReview] Connection API response:', data)
+
       if (data?.url) {
         window.location.href = data.url
         return
       }
-      toast.error('Failed to start Vercel connection')
+      toast.error('Failed to start Vercel connection: No URL returned')
     } catch (error) {
+      console.error('[VercelReview] Connection error:', error)
       toast.error('Failed to start Vercel connection')
     } finally {
       setConnectingVercel(false)
@@ -291,7 +314,7 @@ export default function VercelReviewPage() {
                 ) : (
                   <KeyRound className="h-4 w-4 mr-2" />
                 )}
-                Connect Vercel
+                  Connect Vercel
               </Button>
             </CardContent>
           </Card>
