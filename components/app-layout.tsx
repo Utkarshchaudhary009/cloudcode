@@ -46,9 +46,13 @@ export const useTasks = () => {
 }
 
 function SidebarLoader({ width }: { width: number }) {
+  const isCollapsed = width < 100
   return (
     <div
-      className="h-full border-r bg-background px-2 md:px-3 pt-3 md:pt-5.5 pb-3 md:pb-4 overflow-y-auto"
+      className={cn(
+        'h-full border-r bg-background px-2 md:px-3 pt-3 md:pt-5.5 pb-3 md:pb-4',
+        isCollapsed ? 'overflow-hidden' : 'overflow-y-auto',
+      )}
       style={{ width: `${width}px` }}
     >
       <div className="mb-3 md:mb-4">

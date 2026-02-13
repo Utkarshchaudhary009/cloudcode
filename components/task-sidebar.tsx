@@ -284,7 +284,7 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
   return (
     <div
       className={cn(
-        'pb-12 min-h-screen border-r bg-background transition-all duration-300 ease-in-out flex flex-col',
+        'pb-12 h-full border-r bg-background transition-all duration-300 ease-in-out flex flex-col',
         isCollapsed ? 'w-[60px]' : 'w-72',
       )}
       style={{ width: isCollapsed ? 60 : width }}
@@ -338,7 +338,7 @@ export function TaskSidebar({ tasks, width = 288 }: TaskSidebarProps) {
       </div>
 
       {/* Repos Section */}
-      <div className="flex-1 overflow-y-auto px-2 md:px-3">
+      <div className={cn('flex-1 px-2 md:px-3', isCollapsed ? 'overflow-hidden' : 'overflow-y-auto')}>
         {isCollapsed ? (
           <TooltipProvider delayDuration={0}>
             <Tooltip>

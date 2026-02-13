@@ -401,7 +401,7 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
   }
 
   return (
-    <div className={cn('w-full max-w-lg mx-auto', className)}>
+    <div className={cn('w-full max-w-2xl mx-auto', className)}>
       {/* Search Bar */}
 
       <div className="relative mb-6">
@@ -426,7 +426,7 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
       {/* Tabs */}
 
-      <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1">
+      <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1 no-scrollbar">
         {tabs.map((tab) => {
           const Icon = tab.icon
 
@@ -456,7 +456,7 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
               variant={isActive ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setActiveTab(tab.id)}
-              className={cn('h-8 px-3 text-xs gap-1.5 flex-shrink-0', isActive && 'bg-accent')}
+              className={cn('h-8 px-4 text-xs gap-1.5 flex-shrink-0', isActive && 'bg-accent')}
             >
               <Icon className="h-3.5 w-3.5" />
 
