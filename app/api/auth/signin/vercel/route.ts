@@ -27,7 +27,7 @@ async function getVercelAuthUrl(req: NextRequest) {
     state,
     CodeChallengeMethod.S256,
     verifier,
-    [], // Vercel uses default scopes
+    ['user', 'team', 'project', 'deployment'],
   )
 
   const store = await cookies()
