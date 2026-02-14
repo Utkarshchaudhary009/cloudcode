@@ -540,7 +540,7 @@ chmod 600 ~/.local/share/opencode/config.json ~/.config/opencode/opencode.json`
       executionPrompt,
       logger,
       modelFlag,
-      sessionFlags,
+      "",
       envVars,
     )
 
