@@ -63,3 +63,4 @@ Thumbs.db
 opensrc/
 .env*.local
 .agent/
+scripts/dump_db.ts
