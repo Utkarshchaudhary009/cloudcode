@@ -59,6 +59,11 @@ export default function VercelReviewPage() {
         return
       }
       const data = await res.json()
+      if (data.needsVercelAuth) {
+        setNeedsVercelAuth(true)
+        setScopes([])
+        return
+      }
       if (Array.isArray(data.scopes)) {
         setScopes(data.scopes)
       }

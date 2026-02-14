@@ -387,3 +387,15 @@ button {
     padding: 2px 4px;
   }
 }
+
+7d0a3d5c188c6f60.js:1 
+ GET https://cloudcode1.vercel.app/api/vercel/teams 401 (Unauthorized)
+7d0a3d5c188c6f60.js:1 [VercelReview] Fetching projects for scope: all Scopes: 0
+7d0a3d5c188c6f60.js:1 [VercelReview] No scopes, fetching default projects
+7d0a3d5c188c6f60.js:1 [VercelReview] Default projects response: 
+{success: false, error: 'Vercel connection required', needsVercelAuth: true, projects: Array(0)}
+7d0a3d5c188c6f60.js:1 [VercelReview] Initiating connection...
+7d0a3d5c188c6f60.js:1 [VercelReview] Connection API response: 
+{url: 'https://vercel.com/oauth/authorize?response_type=c…E60tkdVZrmt58s&scope=user+team+project+deployment'}
+﻿
+

@@ -32,7 +32,13 @@ export async function GET() {
     }
 
     if (!vercelToken) {
-      return NextResponse.json({ error: 'No Vercel token found' }, { status: 401 })
+      console.log('[api/vercel/teams] No Vercel token found for user:', session.user.id)
+      return NextResponse.json({ 
+        scopes: [], 
+        needsVercelAuth: true,
+        success: false,
+        error: 'Vercel connection required' 
+      })
     }
 
     // Fetch user info and teams
