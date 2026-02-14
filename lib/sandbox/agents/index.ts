@@ -68,7 +68,8 @@ export async function executeAgentInSandbox(
     )
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error during agent execution'
-    await logger.error(`Agent execution failed: ${errorMessage}`)
+    await logger.error('Agent execution failed')
+    console.error('Agent execution failed:', errorMessage)
     return {
       success: false,
       error: errorMessage,

@@ -1,10 +1,16 @@
 import { Sandbox } from '@vercel/sandbox'
-import { runCommandInSandbox, runInProject, PROJECT_DIR } from '../commands'
+import { runCommandInSandbox, runInProject, PROJECT_DIR, CommandResult } from '../commands'
 import { AgentExecutionResult } from '../types'
 import { TaskLogger } from '@/lib/utils/task-logger'
 import { connectors } from '@/lib/db/schema'
 
 type Connector = typeof connectors.$inferSelect
+
+const DEFAULT_OPENCODE_MODEL = 'opencode/big-pickle'
+
+interface OpenCodeRunResult extends CommandResult {
+  sessionId?: string
+}
 
 // Helper function to run command and log it in project directory
 async function runAndLogCommand(sandbox: Sandbox, command: string, args: string[], logger: TaskLogger) {
@@ -44,11 +50,18 @@ async function runOpenCodeRun(
   logger: TaskLogger,
   modelFlag = '',
   sessionFlags = '',
-) {
+  env?: Record<string, string>,
+): Promise<OpenCodeRunResult> {
   await logger.info('Starting OpenCode run')
 
+  const envExports = env
+    ? Object.entries(env)
+        .map(([k, v]) => `export ${k}='${v.replace(/'/g, "'\\''")}'`)
+        .join('; ') + '; '
+    : ''
+
   const escapedPrompt = prompt.replace(/"/g, '\\"')
-  const fullCommand = `${opencodeCmdToUse} run --quiet${modelFlag}${sessionFlags} "${escapedPrompt}"`
+  const fullCommand = `${envExports}${opencodeCmdToUse} run --format json${modelFlag}${sessionFlags} "${escapedPrompt}"`
 
   await logger.command('Executing OpenCode command')
   const executeResult = await runCommandInSandbox(sandbox, 'sh', ['-c', fullCommand])
@@ -57,20 +70,42 @@ async function runOpenCodeRun(
   const stderr = executeResult.error || ''
 
   if (stdout && stdout.trim()) {
-    await logger.info(`OpenCode command stdout (${stdout.length} chars): ${stdout.trim().substring(0, 200)}...`)
+    console.log('OpenCode command completed with output')
   }
 
   if (stderr && stderr.trim()) {
-    await logger.info(`OpenCode command stderr: ${stderr.trim().substring(0, 500)}`)
+    console.error('OpenCode command stderr received')
   }
 
   if (!executeResult.success) {
-    await logger.error(`OpenCode command failed with exit code ${executeResult.exitCode}`)
+    await logger.error('OpenCode command failed')
   } else {
     await logger.info('OpenCode run completed successfully')
   }
 
-  return executeResult
+  // Extract session ID from JSON output
+  let extractedSessionId: string | undefined
+  try {
+    const lines = stdout.split('\n').filter((line) => line.trim())
+    for (const line of lines) {
+      try {
+        const jsonLine = JSON.parse(line)
+        if (jsonLine.sessionID) {
+          extractedSessionId = jsonLine.sessionID
+          break
+        }
+      } catch {
+        // Not a JSON line, continue
+      }
+    }
+  } catch {
+    // Ignore parsing errors
+  }
+
+  return {
+    ...executeResult,
+    sessionId: extractedSessionId,
+  }
 }
 
 export async function executeOpenCodeInSandbox(
@@ -83,7 +118,6 @@ export async function executeOpenCodeInSandbox(
   sessionId?: string,
   apiKeys?: Record<string, string>,
 ): Promise<AgentExecutionResult> {
-  const authSetupCommands: string[] = []
   try {
     await logger.info('Starting OpenCode agent execution')
 
@@ -145,7 +179,7 @@ export async function executeOpenCodeInSandbox(
         console.error('OpenCode CLI installation failed')
         return {
           success: false,
-          error: `Failed to install OpenCode CLI: ${installResult.error || 'Unknown error'}`,
+          error: 'Failed to install OpenCode CLI',
           cliName: 'opencode',
           changesDetected: false,
         }
@@ -203,23 +237,17 @@ export async function executeOpenCodeInSandbox(
     // Configure OpenCode settings (MCP servers and providers)
     await logger.info('Configuring OpenCode settings')
 
-    // Create OpenCode opencode.json configuration file
-    // Define types for configuration
     type MCPConfig =
       | { type: 'local'; command: string[]; enabled: boolean; environment?: Record<string, string> }
       | { type: 'remote'; url: string; enabled: boolean; headers?: Record<string, string> }
-
-    type ProviderConfig = { apiKey?: string; baseUrl?: string }
 
     const opencodeConfig: {
       $schema: string
       model?: string
       mcp: Record<string, MCPConfig>
-      provider: Record<string, ProviderConfig>
     } = {
       $schema: 'https://opencode.ai/config.json',
       mcp: {},
-      provider: {},
     }
 
     // Extract provider and model if provided in model/provider format
@@ -236,8 +264,8 @@ export async function executeOpenCodeInSandbox(
     if (selectedModel) {
       opencodeConfig.model = selectedModel
     } else if (getApiKey('OPENCODE_API_KEY')) {
-      // Fallback to a sensible OpenCode Zen default if no model selected
-      opencodeConfig.model = 'opencode/gpt-5.2-codex'
+      // Fallback to a sensible OpenCode default if no model selected
+      opencodeConfig.model = DEFAULT_OPENCODE_MODEL
     }
 
     // Configure MCP servers if provided
@@ -294,101 +322,127 @@ export async function executeOpenCodeInSandbox(
       }
     }
 
-    // Configure Providers (Authentication) via config file
-    // This avoids passing secrets via command arguments
+    const envVars: Record<string, string> = {}
 
-    // OpenAI and OpenAI-Compatible
     const openaiKey = getApiKey('OPENAI_API_KEY')
     if (openaiKey) {
-      opencodeConfig.provider.openai = {
-        apiKey: openaiKey,
-        ...(getApiKey('OPENAI_BASE_URL') ? { baseUrl: getApiKey('OPENAI_BASE_URL') } : {}),
-      }
+      envVars.OPENAI_API_KEY = openaiKey
+      const baseUrl = getApiKey('OPENAI_BASE_URL')
+      if (baseUrl) envVars.OPENAI_BASE_URL = baseUrl
       await logger.info('Configured OpenAI provider')
     }
 
-    // Anthropic and Anthropic-Compatible
     const anthropicKey = getApiKey('ANTHROPIC_API_KEY')
     if (anthropicKey) {
-      opencodeConfig.provider.anthropic = {
-        apiKey: anthropicKey,
-        ...(getApiKey('ANTHROPIC_BASE_URL') ? { baseUrl: getApiKey('ANTHROPIC_BASE_URL') } : {}),
-      }
+      envVars.ANTHROPIC_API_KEY = anthropicKey
+      const baseUrl = getApiKey('ANTHROPIC_BASE_URL')
+      if (baseUrl) envVars.ANTHROPIC_BASE_URL = baseUrl
       await logger.info('Configured Anthropic provider')
     }
 
-    // Google/Gemini
     const googleKey = getApiKey('GOOGLE_API_KEY') ?? getApiKey('GEMINI_API_KEY')
     if (googleKey) {
-      opencodeConfig.provider.google = { apiKey: googleKey }
+      envVars.GOOGLE_API_KEY = googleKey
       await logger.info('Configured Google provider')
     }
 
-    // Google Vertex (formerly Vertex AI)
     const vertexProject = getApiKey('GOOGLE_VERTEX_PROJECT') || getApiKey('VERTEXAI_PROJECT')
     if (vertexProject) {
-      opencodeConfig.provider['google-vertex'] = { apiKey: vertexProject }
+      envVars.GOOGLE_VERTEX_PROJECT = vertexProject
       await logger.info('Configured Google Vertex provider')
     }
 
-    // Other providers
-    if (getApiKey('GROQ_API_KEY')) {
-      opencodeConfig.provider.groq = { apiKey: getApiKey('GROQ_API_KEY')! }
+    const groqKey = getApiKey('GROQ_API_KEY')
+    if (groqKey) {
+      envVars.GROQ_API_KEY = groqKey
       await logger.info('Configured Groq provider')
     }
-    if (getApiKey('OPENROUTER_API_KEY')) {
-      opencodeConfig.provider.openrouter = { apiKey: getApiKey('OPENROUTER_API_KEY')! }
+    const openrouterKey = getApiKey('OPENROUTER_API_KEY')
+    if (openrouterKey) {
+      envVars.OPENROUTER_API_KEY = openrouterKey
       await logger.info('Configured OpenRouter provider')
     }
-    if (getApiKey('VERCEL_API_KEY')) {
-      opencodeConfig.provider.vercel = { apiKey: getApiKey('VERCEL_API_KEY')! }
+    const vercelKey = getApiKey('VERCEL_API_KEY')
+    if (vercelKey) {
+      envVars.VERCEL_API_KEY = vercelKey
       await logger.info('Configured Vercel AI Gateway provider')
     }
-    if (getApiKey('SYNTHETIC_API_KEY')) {
-      opencodeConfig.provider.synthetic = { apiKey: getApiKey('SYNTHETIC_API_KEY')! }
+    const syntheticKey = getApiKey('SYNTHETIC_API_KEY')
+    if (syntheticKey) {
+      envVars.SYNTHETIC_API_KEY = syntheticKey
       await logger.info('Configured Synthetic provider')
     }
-    if (getApiKey('ZAI_API_KEY')) {
-      opencodeConfig.provider.zai = { apiKey: getApiKey('ZAI_API_KEY')! }
+    const zaiKey = getApiKey('ZAI_API_KEY')
+    if (zaiKey) {
+      envVars.ZAI_API_KEY = zaiKey
       await logger.info('Configured Z.ai provider')
     }
-    if (getApiKey('HF_TOKEN')) {
-      opencodeConfig.provider.huggingface = { apiKey: getApiKey('HF_TOKEN')! }
+    const hfToken = getApiKey('HF_TOKEN')
+    if (hfToken) {
+      envVars.HF_TOKEN = hfToken
       await logger.info('Configured Hugging Face provider')
     }
-    if (getApiKey('CEREBRAS_API_KEY')) {
-      opencodeConfig.provider.cerebras = { apiKey: getApiKey('CEREBRAS_API_KEY')! }
+    const cerebrasKey = getApiKey('CEREBRAS_API_KEY')
+    if (cerebrasKey) {
+      envVars.CEREBRAS_API_KEY = cerebrasKey
       await logger.info('Configured Cerebras provider')
     }
-    if (getApiKey('AWS_ACCESS_KEY_ID')) {
-      opencodeConfig.provider.bedrock = { apiKey: getApiKey('AWS_ACCESS_KEY_ID')! }
+    const awsKey = getApiKey('AWS_ACCESS_KEY_ID')
+    if (awsKey) {
+      envVars.AWS_ACCESS_KEY_ID = awsKey
+      const secretKey = getApiKey('AWS_SECRET_ACCESS_KEY')
+      if (secretKey) envVars.AWS_SECRET_ACCESS_KEY = secretKey
+      const region = getApiKey('AWS_REGION')
+      if (region) envVars.AWS_REGION = region
       await logger.info('Configured Amazon Bedrock provider')
     }
-    if (getApiKey('AZURE_OPENAI_API_KEY')) {
-      opencodeConfig.provider.azure = { apiKey: getApiKey('AZURE_OPENAI_API_KEY')! }
+    const azureKey = getApiKey('AZURE_OPENAI_API_KEY')
+    if (azureKey) {
+      envVars.AZURE_OPENAI_API_KEY = azureKey
       await logger.info('Configured Azure OpenAI provider')
     }
-    if (getApiKey('MINIMAX_API_KEY')) {
-      opencodeConfig.provider.minimax = { apiKey: getApiKey('MINIMAX_API_KEY')! }
+    const minimaxKey = getApiKey('MINIMAX_API_KEY')
+    if (minimaxKey) {
+      envVars.MINIMAX_API_KEY = minimaxKey
       await logger.info('Configured MiniMax provider')
+    }
+    const cohereKey = getApiKey('COHERE_API_KEY')
+    if (cohereKey) {
+      envVars.COHERE_API_KEY = cohereKey
+      await logger.info('Configured Cohere provider')
+    }
+    const deepseekKey = getApiKey('DEEPSEEK_API_KEY')
+    if (deepseekKey) {
+      envVars.DEEPSEEK_API_KEY = deepseekKey
+      await logger.info('Configured DeepSeek provider')
+    }
+    const moonshotKey = getApiKey('MOONSHOT_API_KEY')
+    if (moonshotKey) {
+      envVars.MOONSHOT_API_KEY = moonshotKey
+      await logger.info('Configured Moonshot provider')
+    }
+    const zhipuKey = getApiKey('ZHIPU_API_KEY')
+    if (zhipuKey) {
+      envVars.ZHIPU_API_KEY = zhipuKey
+      await logger.info('Configured Zhipu provider')
     }
 
     const opencodeKey = getApiKey('OPENCODE_API_KEY')
     if (opencodeKey) {
-      opencodeConfig.provider.opencode = { apiKey: opencodeKey }
+      envVars.OPENCODE_API_KEY = opencodeKey
       await logger.info('Configured OpenCode provider')
     }
 
     // Write the opencode.json file to the OpenCode config directory (not project directory)
     const opencodeConfigJson = JSON.stringify(opencodeConfig, null, 2)
-    const createConfigCmd = `mkdir -p ~/.opencode ~/.config/opencode && 
-cat > ~/.opencode/config.json << 'EOF'
+    const createConfigCmd = `mkdir -p ~/.local/share/opencode ~/.config/opencode && 
+cat > ~/.local/share/opencode/config.json << 'EOF'
 ${opencodeConfigJson}
 EOF
 cat > ~/.config/opencode/opencode.json << 'EOF'
 ${opencodeConfigJson}
 EOF
-chmod 600 ~/.opencode/config.json ~/.config/opencode/opencode.json`
+chmod 600 ~/.local/share/opencode/config.json ~/.config/opencode/opencode.json`
 
     await logger.info('Creating OpenCode configuration file')
     const configResult = await runCommandInSandbox(sandbox, 'sh', ['-c', createConfigCmd])
@@ -397,7 +451,7 @@ chmod 600 ~/.opencode/config.json ~/.config/opencode/opencode.json`
       await logger.info('OpenCode configuration file created successfully')
 
       // Verify the file was created (without logging sensitive contents)
-      const verifyConfig = await runCommandInSandbox(sandbox, 'test', ['-f', '~/.opencode/config.json'])
+      const verifyConfig = await runCommandInSandbox(sandbox, 'test', ['-f', '~/.local/share/opencode/config.json'])
       if (verifyConfig.success) {
         await logger.info('OpenCode configuration verified')
       }
@@ -460,7 +514,7 @@ chmod 600 ~/.opencode/config.json ~/.config/opencode/opencode.json`
       instruction,
     ].join('\n')
 
-    const planResult = await runOpenCodeRun(sandbox, opencodeCmdToUse, planPrompt, logger, modelFlag)
+    const planResult = await runOpenCodeRun(sandbox, opencodeCmdToUse, planPrompt, logger, modelFlag, '', envVars)
 
     if (!planResult.success) {
       return {
@@ -487,6 +541,7 @@ chmod 600 ~/.opencode/config.json ~/.config/opencode/opencode.json`
       logger,
       modelFlag,
       sessionFlags,
+      envVars,
     )
 
     const stdout = executeResult.output || ''
@@ -510,7 +565,7 @@ chmod 600 ~/.opencode/config.json ~/.config/opencode/opencode.json`
       instruction,
     ].join('\n')
 
-    const reviewResult = await runOpenCodeRun(sandbox, opencodeCmdToUse, reviewPrompt, logger, modelFlag)
+    const reviewResult = await runOpenCodeRun(sandbox, opencodeCmdToUse, reviewPrompt, logger, modelFlag, '', envVars)
 
     if (!reviewResult.success) {
       return {
@@ -524,17 +579,8 @@ chmod 600 ~/.opencode/config.json ~/.config/opencode/opencode.json`
 
     // OpenCode execution completed
 
-    // Extract session ID from output if present (for resumption)
-    let extractedSessionId: string | undefined
-    try {
-      // Look for session ID in output (format may vary)
-      const sessionMatch = stdout?.match(/(?:session[_\s-]?id|Session)[:\s]+([a-f0-9-]+)/i)
-      if (sessionMatch) {
-        extractedSessionId = sessionMatch[1]
-      }
-    } catch {
-      // Ignore parsing errors
-    }
+    // Use session ID extracted from JSON output
+    const extractedSessionId = executeResult.sessionId
 
     // Check if any files were modified by OpenCode
     const gitStatusCheck = await runAndLogCommand(sandbox, 'git', ['status', '--porcelain'], logger)
