@@ -168,7 +168,8 @@ const extractModels = (data: unknown): Array<{ id: string; providerId: string; l
       entry.name,
       normalizeLabel(entry.displayName, normalizeLabel(entry.display_name, normalizeLabel(entry.label, id))),
     )
-    return { id, providerId, label }
+    const fullId = id.includes('/') ? id : `${providerId}/${id}`
+    return { id: fullId, providerId, label }
   }
   if (Array.isArray(modelsValue)) {
     return modelsValue
