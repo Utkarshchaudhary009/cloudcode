@@ -6,6 +6,7 @@ import { getSessionFromReq } from '@/lib/session/server'
 
 async function getVercelAuthUrl(req: NextRequest) {
   const session = await getSessionFromReq(req)
+  console.log('[Vercel Signin] Session:', session ? { userId: session.user?.id, provider: session.authProvider } : null)
 
   const clientId = process.env.NEXT_PUBLIC_VERCEL_CLIENT_ID
   const clientSecret = process.env.VERCEL_CLIENT_SECRET

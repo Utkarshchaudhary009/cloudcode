@@ -21,6 +21,15 @@ export async function GET(req: NextRequest): Promise<Response> {
   // Determine a safe redirect target for error cases
   const errorRedirect = storedRedirectTo ?? '/'
 
+  console.log('[Vercel Callback] OAuth params:', {
+    hasCode: !!code,
+    hasState: !!state,
+    storedState: storedState ? 'present' : 'missing',
+    storedVerifier: storedVerifier ? 'present' : 'missing',
+    storedRedirectTo: storedRedirectTo ? 'present' : 'missing',
+    storedUserId: storedUserId ? 'present' : 'missing',
+  })
+
   if (!code || !state || !storedState || !storedVerifier || !storedRedirectTo) {
     console.error('[Vercel Callback] Missing required OAuth parameters or cookies')
     const missing = !storedState || !storedVerifier || !storedRedirectTo ? 'oauth_expired' : 'missing_params'
@@ -62,7 +71,7 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   if (storedUserId) {
     // CONNECT FLOW: Add Vercel account to existing GitHub user
-    console.log('[Vercel Callback] Connect flow detected')
+    console.log('[Vercel Callback] Connect flow detected, storedUserId:', storedUserId)
 
     // Fetch Vercel user info to get their Vercel UID
     const vercelUser = await fetchUser(tokens.accessToken())
@@ -127,6 +136,7 @@ export async function GET(req: NextRequest): Promise<Response> {
       }
     } else {
       // No existing Vercel account connection, create a new one
+      console.log('[Vercel Callback] Creating new Vercel account for user:', storedUserId)
       await db.insert(accounts).values({
         id: nanoid(),
         userId: storedUserId,
@@ -137,6 +147,7 @@ export async function GET(req: NextRequest): Promise<Response> {
         expiresAt: expiresAt ?? null,
         username: vercelUser.username,
       })
+      console.log('[Vercel Callback] Vercel account created successfully')
     }
 
     // Clean up cookies
