@@ -1,26 +1,38 @@
 import type { VercelUser } from './types'
 
 export async function fetchUser(accessToken: string): Promise<VercelUser | undefined> {
+  console.log('[fetchUser] Attempting to fetch user from Vercel API')
+
   // Try v2/user endpoint first (returns defaultTeamId which is needed for project listing)
   const response = await fetch('https://api.vercel.com/v2/user', {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: 'no-store',
   })
 
+  console.log('[fetchUser] v2/user response status:', response.status)
+
   if (response.ok) {
     const data = (await response.json()) as unknown
+    console.log('[fetchUser] v2/user response data keys:', Object.keys(data || {}))
     const user = extractUser(data)
     if (user) {
+      console.log('[fetchUser] Successfully extracted user from v2/user')
       return user
     }
+  } else {
+    const errorText = await response.text()
+    console.error('[fetchUser] v2/user failed:', response.status, errorText)
   }
 
   // Fallback to OAuth userinfo endpoint
+  console.log('[fetchUser] Trying OAuth userinfo endpoint')
   const userInfoResponse = await fetch('https://api.vercel.com/login/oauth/userinfo', {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: 'no-store',
   })
+
+  console.log('[fetchUser] userinfo response status:', userInfoResponse.status)
 
   if (userInfoResponse.ok) {
     const userInfo = (await userInfoResponse.json()) as {
@@ -30,8 +42,10 @@ export async function fetchUser(accessToken: string): Promise<VercelUser | undef
       preferred_username?: string
       picture?: string
     }
+    console.log('[fetchUser] userinfo response keys:', Object.keys(userInfo || {}))
 
     if (userInfo.sub && userInfo.preferred_username && userInfo.email) {
+      console.log('[fetchUser] Successfully extracted user from userinfo')
       return {
         uid: userInfo.sub,
         id: userInfo.sub,
@@ -41,6 +55,9 @@ export async function fetchUser(accessToken: string): Promise<VercelUser | undef
         avatar: userInfo.picture ?? undefined,
       }
     }
+  } else {
+    const errorText = await userInfoResponse.text()
+    console.error('[fetchUser] userinfo failed:', userInfoResponse.status, errorText)
   }
 
   console.error('Failed to fetch user from all endpoints')
