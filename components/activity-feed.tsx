@@ -42,7 +42,7 @@ import { PRStatusIcon } from '@/components/pr-status-icon'
 import { TaskCard } from './task-card'
 import { Task } from '@/lib/db/schema'
 
-type FeedTab = 'all' | 'tasks' | 'code-review' | 'scheduled' | 'repos'
+type FeedTab = 'all' | 'tasks' | 'scheduled' | 'repos'
 
 interface FeedItem {
   id: string
@@ -124,8 +124,6 @@ const tabs: { id: FeedTab; label: string; icon: React.ComponentType<{ className?
   { id: 'repos', label: 'Repositories', icon: GitBranch },
 
   { id: 'tasks', label: 'Tasks', icon: ListTodo },
-
-  { id: 'code-review', label: 'Code Review', icon: GitPullRequest },
 
   { id: 'scheduled', label: 'Scheduled', icon: Clock },
 ]
@@ -304,8 +302,6 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
         tasks: 'task',
 
-        'code-review': 'review',
-
         scheduled: 'scheduled',
 
         repos: 'repo',
@@ -409,10 +405,6 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
           if (tab.id === 'tasks') {
             count = items.filter(
               (i) => i.type === 'task' && (i.status === 'pending' || i.status === 'processing'),
-            ).length
-          } else if (tab.id === 'code-review') {
-            count = items.filter(
-              (i) => i.type === 'review' && (i.status === 'pending' || i.status === 'in_progress'),
             ).length
           }
 

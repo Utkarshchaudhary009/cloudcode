@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
 export default function IntegrationsPage() {
-  redirect('/code-review')
+  redirect('/settings')
 }

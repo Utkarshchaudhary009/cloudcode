@@ -10,17 +10,6 @@ import { encrypt } from '@/lib/crypto'
 export async function GET(req: NextRequest): Promise<Response> {
   const code = req.nextUrl.searchParams.get('code')
   const state = req.nextUrl.searchParams.get('state')
-  const installationId = req.nextUrl.searchParams.get('installation_id')
-
-  // If this is an installation callback, redirect to the install handler
-  if (installationId) {
-    const installCallbackUrl = new URL('/api/github/install/callback', req.url)
-    req.nextUrl.searchParams.forEach((value, key) => {
-      installCallbackUrl.searchParams.set(key, value)
-    })
-    return Response.redirect(installCallbackUrl)
-  }
-
   const cookieStore = await cookies()
 
   // Check if this is a sign-in flow or connect flow
