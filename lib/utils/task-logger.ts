@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { db } from '@/lib/db/client'
 import { tasks } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'

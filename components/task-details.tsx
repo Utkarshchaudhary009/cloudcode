@@ -1,6 +1,6 @@
 'use client'
 
-import { Task, Connector } from '@/lib/db/schema'
+import type { Task, Connector } from '@/lib/db/types'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {

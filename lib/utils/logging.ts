@@ -1,4 +1,4 @@
-import { LogEntry } from '@/lib/db/schema'
+import type { LogEntry } from '@/lib/db/types'
 
 export type { LogEntry }
 

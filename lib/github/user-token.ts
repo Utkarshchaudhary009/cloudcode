@@ -55,3 +55,40 @@ export async function getUserGitHubToken(req?: NextRequest): Promise<string | nu
     return null
   }
 }
+
+/**
+ * Get the GitHub access token for a specific user ID
+ * Returns null if user hasn't connected GitHub
+ *
+ * @param userId - The user ID to get the token for
+ */
+export async function getGitHubTokenByUserId(userId: string): Promise<string | null> {
+  try {
+    // First check if user has GitHub as a connected account
+    const account = await db
+      .select({ accessToken: accounts.accessToken })
+      .from(accounts)
+      .where(and(eq(accounts.userId, userId), eq(accounts.provider, 'github')))
+      .limit(1)
+
+    if (account[0]?.accessToken) {
+      return decrypt(account[0].accessToken)
+    }
+
+    // Fall back to checking if user signed in with GitHub (primary account)
+    const user = await db
+      .select({ accessToken: users.accessToken })
+      .from(users)
+      .where(and(eq(users.id, userId), eq(users.provider, 'github')))
+      .limit(1)
+
+    if (user[0]?.accessToken) {
+      return decrypt(user[0].accessToken)
+    }
+
+    return null
+  } catch (error) {
+    console.error('Error fetching GitHub token by user ID:', error)
+    return null
+  }
+}

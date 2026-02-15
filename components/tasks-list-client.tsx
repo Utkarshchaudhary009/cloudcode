@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Task } from '@/lib/db/schema'
+import type { Task } from '@/lib/db/types'
 import { useTasks } from '@/components/app-layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'

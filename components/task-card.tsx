@@ -1,6 +1,6 @@
 'use client'
 
-import { Task } from '@/lib/db/schema'
+import type { Task } from '@/lib/db/types'
 import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'

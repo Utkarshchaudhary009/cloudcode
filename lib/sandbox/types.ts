@@ -1,5 +1,5 @@
 import { Sandbox } from '@vercel/sandbox'
-import { LogEntry } from '@/lib/db/schema'
+import { LogEntry } from '@/lib/db/types'
 
 export interface SandboxConfig {
   taskId: string
