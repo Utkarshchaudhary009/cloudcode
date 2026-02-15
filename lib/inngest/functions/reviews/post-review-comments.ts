@@ -1,9 +1,6 @@
 import { inngest } from '../../client'
-import { db } from '@/lib/db/client'
-import { accounts } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
-import { decrypt } from '@/lib/crypto'
 import { Octokit } from '@octokit/rest'
+import { resolveGitHubAccessToken, parseGitHubRepoUrl } from '@/lib/utils/github'
 
 export const postReviewComments = inngest.createFunction(
   {
@@ -14,21 +11,21 @@ export const postReviewComments = inngest.createFunction(
   async ({ event, step }: { event: any; step: any }) => {
     const { reviewId, userId, repoUrl, prNumber, findings } = event.data
 
-    const account = await step.run('get-github-account', async () => {
-      const accountsResult = await db.select().from(accounts).where(eq(accounts.userId, userId)).limit(1)
-      return accountsResult[0]
+    const accessToken = await step.run('get-access-token', async () => {
+      return resolveGitHubAccessToken({ userId, repoUrl })
     })
 
-    if (!account) {
-      throw new Error('GitHub account not found')
+    if (!accessToken) {
+      throw new Error('GitHub access token not available')
     }
 
-    const accessToken = decrypt(account.accessToken)
-    const octokit = new Octokit({
-      auth: accessToken,
-    })
+    const octokit = new Octokit({ auth: accessToken })
 
-    const [owner, repo] = repoUrl.split('/').slice(-2)
+    const parsed = parseGitHubRepoUrl(repoUrl)
+    if (!parsed) {
+      throw new Error('Invalid repository URL')
+    }
+    const { owner, repo } = parsed
 
     const { data: pr } = await octokit.rest.pulls.get({
       owner,

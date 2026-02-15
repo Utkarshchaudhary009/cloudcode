@@ -1,9 +1,9 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle, XCircle, AlertTriangle, Info, FileText } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { FileText } from 'lucide-react'
+import { getSeverityIcon, getSeverityColor } from '@/lib/utils/review'
 
 interface ReviewFindingCardProps {
   finding: {
@@ -16,35 +16,13 @@ interface ReviewFindingCardProps {
 }
 
 export function ReviewFindingCard({ finding }: ReviewFindingCardProps) {
-  const getSeverityIcon = () => {
-    switch (finding.severity) {
-      case 'error':
-        return <XCircle className="h-4 w-4 text-destructive" />
-      case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-yellow-600" />
-      case 'info':
-        return <Info className="h-4 w-4 text-blue-600" />
-    }
-  }
-
-  const getSeverityColor = () => {
-    switch (finding.severity) {
-      case 'error':
-        return 'destructive'
-      case 'warning':
-        return 'secondary'
-      case 'info':
-        return 'outline'
-    }
-  }
-
   return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-base">
-            {getSeverityIcon()}
-            <Badge variant={getSeverityColor()} className="uppercase">
+            {getSeverityIcon(finding.severity)}
+            <Badge variant={getSeverityColor(finding.severity)} className="uppercase">
               {finding.severity}
             </Badge>
           </CardTitle>

@@ -41,32 +41,52 @@ async function createAppJwt() {
 }
 
 async function listInstallationRepos(installationId: number) {
-  const jwt = await createAppJwt()
-  const appOctokit = new Octokit({ auth: jwt })
-  const installationToken = await appOctokit.request('POST /app/installations/{installation_id}/access_tokens', {
-    installation_id: installationId,
-  })
+  try {
+    console.log('[GitHub Install] Creating JWT for installation:', installationId)
+    const jwt = await createAppJwt()
 
-  const installationOctokit = new Octokit({ auth: installationToken.data.token })
-  const repositories: InstallationRepo[] = []
+    const appOctokit = new Octokit({ auth: jwt })
+    console.log('[GitHub Install] Requesting installation access token')
 
-  let page = 1
-  while (true) {
-    const response = await installationOctokit.request('GET /installation/repositories', {
-      per_page: 100,
-      page,
+    const installationToken = await appOctokit.request('POST /app/installations/{installation_id}/access_tokens', {
+      installation_id: installationId,
     })
 
-    repositories.push(...response.data.repositories)
+    if (!installationToken.data.token) {
+      console.error('[GitHub Install] No token in installation access token response')
+      return []
+    }
+    console.log('[GitHub Install] Installation access token obtained')
 
-    if (response.data.repositories.length < 100) {
-      break
+    const installationOctokit = new Octokit({ auth: installationToken.data.token })
+    const repositories: InstallationRepo[] = []
+
+    let page = 1
+    while (true) {
+      console.log(`[GitHub Install] Fetching repos page ${page}`)
+      const response = await installationOctokit.request('GET /installation/repositories', {
+        per_page: 100,
+        page,
+      })
+
+      console.log(
+        `[GitHub Install] Page ${page}: ${response.data.repositories.length} repos, total_count: ${response.data.total_count}`,
+      )
+      repositories.push(...response.data.repositories)
+
+      if (response.data.repositories.length < 100) {
+        break
+      }
+
+      page += 1
     }
 
-    page += 1
+    console.log(`[GitHub Install] Total repositories fetched: ${repositories.length}`)
+    return repositories
+  } catch (error) {
+    console.error('[GitHub Install] Error in listInstallationRepos:', error)
+    return []
   }
-
-  return repositories
 }
 
 function buildRepoUrl(repo: InstallationRepo) {
@@ -135,12 +155,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(fallbackRedirect)
     }
 
+    console.log('[GitHub Install] Processing callback', {
+      installationId: installationIdParam,
+      hasState: !!stateParam,
+    })
+
     const state = await decryptJWE<InstallState>(stateParam)
     if (!state?.userId) {
-      console.warn('Invalid or expired state in GitHub callback')
+      console.warn('[GitHub Install] Invalid or expired state in GitHub callback')
       fallbackRedirect.searchParams.set('installation', 'error')
       return NextResponse.redirect(fallbackRedirect)
     }
+
+    console.log('[GitHub Install] State decrypted successfully', {
+      userId: state.userId,
+      repoUrl: state.repoUrl,
+      autoReviewEnabled: state.autoReviewEnabled,
+    })
 
     const installationId = Number(installationIdParam)
     if (!Number.isFinite(installationId)) {
@@ -150,10 +181,19 @@ export async function GET(request: NextRequest) {
     }
 
     const repositories = await listInstallationRepos(installationId)
-    const repoUrls = repositories.map(buildRepoUrl).filter(Boolean)
-    const repoUrlList = repoUrls.length > 0 ? repoUrls : [state.repoUrl].filter(Boolean)
+    console.log(`[GitHub Install] listInstallationRepos returned ${repositories.length} repos`)
 
-    await Promise.all(
+    const repoUrls = repositories.map(buildRepoUrl).filter(Boolean)
+    console.log(`[GitHub Install] Built ${repoUrls.length} repo URLs from API:`, repoUrls)
+
+    const repoUrlList = repoUrls.length > 0 ? repoUrls : [state.repoUrl].filter(Boolean)
+    console.log(`[GitHub Install] Final repoUrlList (${repoUrlList.length}):`, repoUrlList)
+
+    if (repoUrlList.length === 0) {
+      console.error('[GitHub Install] No repos to insert - both API response and state.repoUrl are empty')
+    }
+
+    const insertResults = await Promise.all(
       repoUrlList.map((repoUrl) =>
         upsertInstallationRepo(
           state.userId,
@@ -164,6 +204,7 @@ export async function GET(request: NextRequest) {
         ),
       ),
     )
+    console.log(`[GitHub Install] Inserted/updated ${repoUrlList.length} installation records`)
 
     const redirectUrl = new URL(state.returnPath || '/settings/integrations', request.url)
     redirectUrl.searchParams.set('installation', 'success')
@@ -173,7 +214,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.redirect(redirectUrl)
   } catch (error) {
-    console.error('Error in GitHub installation callback:', error)
+    console.error('[GitHub Install] Error in GitHub installation callback:', error)
+    console.error('[GitHub Install] Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     const fallbackRedirect = new URL('/settings/integrations', request.url)
     fallbackRedirect.searchParams.set('installation', 'error')
     return NextResponse.redirect(fallbackRedirect)

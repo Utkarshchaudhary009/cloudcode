@@ -11,7 +11,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   const code = req.nextUrl.searchParams.get('code')
   const state = req.nextUrl.searchParams.get('state')
   const installationId = req.nextUrl.searchParams.get('installation_id')
-  
+
   // If this is an installation callback, redirect to the install handler
   if (installationId) {
     const installCallbackUrl = new URL('/api/github/install/callback', req.url)

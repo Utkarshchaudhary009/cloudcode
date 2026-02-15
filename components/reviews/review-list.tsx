@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { ReviewScoreBadge } from './review-score-badge'
 import { useRouter } from 'next/navigation'
-import { ExternalLink, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import Link from 'next/link'
+import { getStatusIcon, getStatusColor } from '@/lib/utils/review'
 
 export function ReviewList() {
   const router = useRouter()
@@ -27,32 +28,6 @@ export function ReviewList() {
       console.error('Error fetching reviews')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle2 className="h-4 w-4 text-green-600" />
-      case 'in_progress':
-        return <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-      case 'error':
-        return <AlertCircle className="h-4 w-4 text-destructive" />
-      default:
-        return null
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'default'
-      case 'in_progress':
-        return 'secondary'
-      case 'error':
-        return 'destructive'
-      default:
-        return 'outline'
     }
   }
 

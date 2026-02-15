@@ -27,10 +27,12 @@ export async function GET(req: NextRequest) {
       }
     } else {
       // Revoke Vercel token - fetch from database
+      // Note: Integration tokens are long-lived; revocation endpoint is for OIDC tokens
+      // Users can also revoke access from Vercel dashboard
       try {
         const tokenData = await getOAuthToken(session.user.id, 'vercel')
         if (tokenData) {
-          await fetch('https://vercel.com/api/login/oauth/token/revoke', {
+          await fetch('https://api.vercel.com/login/oauth/token/revoke', {
             method: 'POST',
             body: new URLSearchParams({ token: tokenData.accessToken }),
             headers: {

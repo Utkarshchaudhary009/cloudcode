@@ -51,7 +51,13 @@ export async function GET(req: NextRequest): Promise<Response> {
   let tokens: OAuth2Tokens
 
   try {
-    tokens = await client.validateAuthorizationCode('https://api.vercel.com/login/oauth/token', code, storedVerifier)
+    // Use Vercel Integration API token endpoint (v2/oauth/access_token) instead of OIDC endpoint
+    // This returns tokens with proper API scopes (user, team, project, deployment)
+    tokens = await client.validateAuthorizationCode(
+      'https://api.vercel.com/v2/oauth/access_token',
+      code,
+      storedVerifier,
+    )
   } catch (error) {
     console.error('[Vercel Callback] Authorization code validation failed:', error)
     return Response.redirect(new URL(`${errorRedirect}?error=token_exchange_failed`, req.nextUrl.origin))

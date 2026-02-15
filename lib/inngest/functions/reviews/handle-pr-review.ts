@@ -28,6 +28,13 @@ export const handlePrReview = inngest.createFunction(
       return { message: 'Review already exists', reviewId: existingReview.id }
     }
 
+    const rules = await step.run('fetch-rules', async () => {
+      return await db
+        .select()
+        .from(reviewRules)
+        .where(and(eq(reviewRules.userId, userId), eq(reviewRules.enabled, true)))
+    })
+
     const reviewId = await step.run('create-review', async () => {
       const id = nanoid()
       await db.insert(reviews).values({
@@ -42,74 +49,86 @@ export const handlePrReview = inngest.createFunction(
         headBranch,
         status: 'in_progress',
         startedAt: new Date(),
+        reviewRules: rules.length > 0 ? rules : null,
       })
       return id
     })
 
-    const diff = await step.run('fetch-diff', async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/github/diff`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, repoUrl, prNumber, installationId }),
-      })
-      if (!response.ok) {
-        throw new Error('Failed to fetch diff')
-      }
-      return response.json()
-    })
-
-    const rules = await step.run('fetch-rules', async () => {
-      return await db
-        .select()
-        .from(reviewRules)
-        .where(and(eq(reviewRules.userId, userId), eq(reviewRules.enabled, true)))
-    })
-
-    const findings = await step.run('ai-review', async () => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reviews/analyze`,
-        {
+    try {
+      const diff = await step.run('fetch-diff', async () => {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/github/diff`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            diff,
-            rules,
-            repoUrl,
-            prTitle,
-          }),
-        },
-      )
-      if (!response.ok) {
-        throw new Error('Failed to analyze review')
-      }
-      return response.json()
-    })
-
-    await step.run('save-findings', async () => {
-      await db
-        .update(reviews)
-        .set({
-          status: 'completed',
-          summary: findings.summary,
-          findings: findings.items,
-          score: findings.score,
-          completedAt: new Date(),
-          updatedAt: new Date(),
+          body: JSON.stringify({ userId, repoUrl, prNumber, installationId }),
         })
-        .where(eq(reviews.id, reviewId))
-    })
+        if (!response.ok) {
+          throw new Error('Failed to fetch diff')
+        }
+        return response.json()
+      })
 
-    await step.sendEvent('post-comments', {
-      name: 'review/post-comments',
-      data: {
-        reviewId,
-        userId,
-        repoUrl,
-        prNumber,
-        findings: findings.items,
-      },
-    })
+      const findings = await step.run('ai-review', async () => {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reviews/analyze`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              diff,
+              rules,
+              repoUrl,
+              prTitle,
+            }),
+          },
+        )
+        if (!response.ok) {
+          throw new Error('Failed to analyze review')
+        }
+        return response.json()
+      })
 
-    return { reviewId, findingsCount: findings.items?.length || 0, score: findings.score }
+      await step.run('save-findings', async () => {
+        await db
+          .update(reviews)
+          .set({
+            status: 'completed',
+            summary: findings.summary,
+            findings: findings.items,
+            score: findings.score,
+            completedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(reviews.id, reviewId))
+      })
+
+      await step.sendEvent('post-comments', {
+        name: 'review/post-comments',
+        data: {
+          reviewId,
+          userId,
+          repoUrl,
+          prNumber,
+          findings: findings.items,
+        },
+      })
+
+      return { reviewId, findingsCount: findings.items?.length || 0, score: findings.score }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      console.error('[PR Review] Error processing review:', errorMessage)
+
+      await step.run('mark-error', async () => {
+        await db
+          .update(reviews)
+          .set({
+            status: 'error',
+            error: errorMessage,
+            updatedAt: new Date(),
+          })
+          .where(eq(reviews.id, reviewId))
+      })
+
+      throw error
+    }
   },
 )

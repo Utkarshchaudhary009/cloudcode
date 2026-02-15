@@ -16,7 +16,6 @@ import {
   Loader2,
   ListTodo,
   GitPullRequest,
-  Zap,
   Clock,
   CheckCircle2,
   AlertCircle,
@@ -43,12 +42,12 @@ import { PRStatusIcon } from '@/components/pr-status-icon'
 import { TaskCard } from './task-card'
 import { Task } from '@/lib/db/schema'
 
-type FeedTab = 'all' | 'tasks' | 'code-review' | 'vercel' | 'scheduled' | 'repos'
+type FeedTab = 'all' | 'tasks' | 'code-review' | 'scheduled' | 'repos'
 
 interface FeedItem {
   id: string
 
-  type: 'task' | 'review' | 'vercel-fix' | 'scheduled' | 'repo'
+  type: 'task' | 'review' | 'scheduled' | 'repo'
 
   title: string
 
@@ -127,8 +126,6 @@ const tabs: { id: FeedTab; label: string; icon: React.ComponentType<{ className?
   { id: 'tasks', label: 'Tasks', icon: ListTodo },
 
   { id: 'code-review', label: 'Code Review', icon: GitPullRequest },
-
-  { id: 'vercel', label: 'Vercel', icon: Zap },
 
   { id: 'scheduled', label: 'Scheduled', icon: Clock },
 ]
@@ -223,28 +220,6 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
           }))
         }),
 
-        fetch('/api/vercel/build-fixes').then(async (res) => {
-          if (!res.ok) throw new Error('Failed to fetch build fixes')
-
-          const data = await res.json()
-
-          return (data.fixes || []).map((fix: any) => ({
-            id: fix.id,
-
-            type: 'vercel-fix' as const,
-
-            title: fix.projectName || 'Build Fix',
-
-            subtitle: fix.status,
-
-            status: fix.status,
-
-            createdAt: fix.createdAt ? new Date(fix.createdAt) : new Date(),
-
-            href: `/vercel-fixes/${fix.id}`,
-          }))
-        }),
-
         fetch('/api/scheduled-tasks').then(async (res) => {
           if (!res.ok) throw new Error('Failed to fetch scheduled tasks')
 
@@ -331,8 +306,6 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
         'code-review': 'review',
 
-        vercel: 'vercel-fix',
-
         scheduled: 'scheduled',
 
         repos: 'repo',
@@ -384,9 +357,6 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
 
       case 'review':
         return GitPullRequest
-
-      case 'vercel-fix':
-        return Zap
 
       case 'scheduled':
         return Clock
@@ -443,10 +413,6 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
           } else if (tab.id === 'code-review') {
             count = items.filter(
               (i) => i.type === 'review' && (i.status === 'pending' || i.status === 'in_progress'),
-            ).length
-          } else if (tab.id === 'vercel') {
-            count = items.filter(
-              (i) => i.type === 'vercel-fix' && (i.status === 'pending' || i.status === 'fixing'),
             ).length
           }
 
@@ -521,8 +487,6 @@ export function ActivityFeed({ className, user: propUser }: ActivityFeedProps) {
                                 item.type === 'task' && 'bg-blue-500/10 text-blue-500',
 
                                 item.type === 'review' && 'bg-purple-500/10 text-purple-500',
-
-                                item.type === 'vercel-fix' && 'bg-orange-500/10 text-orange-500',
 
                                 item.type === 'scheduled' && 'bg-green-500/10 text-green-500',
 

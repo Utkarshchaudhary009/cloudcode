@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { useRouter } from 'next/navigation'
 import { RepoSelector } from '@/components/repo-selector'
+import { parseGitHubRepoUrl } from '@/lib/utils/github'
 
 interface ReviewRuleFormProps {
   rule?: any
@@ -33,13 +34,12 @@ export function ReviewRuleForm({ rule: initialRule, ruleId, onSuccess }: ReviewR
     enabled: initialRule?.enabled ?? true,
   })
 
-  // Parse existing repo URL to owner/repo
   useEffect(() => {
     if (formData.repoUrl) {
-      const match = formData.repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/)
-      if (match) {
-        setSelectedOwner(match[1])
-        setSelectedRepo(match[2].replace('.git', ''))
+      const parsed = parseGitHubRepoUrl(formData.repoUrl)
+      if (parsed) {
+        setSelectedOwner(parsed.owner)
+        setSelectedRepo(parsed.repo)
       }
     }
   }, [])
@@ -65,11 +65,10 @@ export function ReviewRuleForm({ rule: initialRule, ruleId, onSuccess }: ReviewR
         filePatterns: data.rule.filePatterns || [],
         enabled: data.rule.enabled ?? true,
       })
-      // Parse repo URL
-      const match = data.rule.repoUrl?.match(/github\.com\/([^\/]+)\/([^\/]+)/)
-      if (match) {
-        setSelectedOwner(match[1])
-        setSelectedRepo(match[2].replace('.git', ''))
+      const parsed = parseGitHubRepoUrl(data.rule.repoUrl)
+      if (parsed) {
+        setSelectedOwner(parsed.owner)
+        setSelectedRepo(parsed.repo)
       }
     } catch (error) {
       console.error('Error fetching rule:', error)

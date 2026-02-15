@@ -18,7 +18,6 @@ import {
   Home,
   ListTodo,
   GitPullRequest,
-  Zap,
   ChevronDown,
   ChevronRight,
   FolderGit2,
@@ -67,7 +66,6 @@ const mainNavItems = [
   { href: '/', icon: Home, label: 'Home', exact: true },
   { href: '/tasks', icon: ListTodo, label: 'Tasks' },
   { href: '/code-review', icon: GitPullRequest, label: 'Code Review' },
-  { href: '/vercel-review', icon: Zap, label: 'Vercel Review' },
   { href: '/scheduled-tasks', icon: Clock, label: 'Scheduled Tasks' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]

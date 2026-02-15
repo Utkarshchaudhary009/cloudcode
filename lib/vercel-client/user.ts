@@ -1,9 +1,13 @@
 import type { VercelUser } from './types'
 
+/**
+ * Fetch user info from Vercel API using an Integration/OAuth access token.
+ * Uses the /v2/user endpoint which works with API-scoped tokens (user, team, project, deployment).
+ * Note: This is for Vercel Integration OAuth, not OIDC "Sign in with Vercel".
+ */
 export async function fetchUser(accessToken: string): Promise<VercelUser | undefined> {
-  console.log('[fetchUser] Attempting to fetch user from Vercel API')
+  console.log('[fetchUser] Fetching user from Vercel API v2/user')
 
-  // Try v2/user endpoint first (returns defaultTeamId which is needed for project listing)
   const response = await fetch('https://api.vercel.com/v2/user', {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: 'no-store',
@@ -11,56 +15,22 @@ export async function fetchUser(accessToken: string): Promise<VercelUser | undef
 
   console.log('[fetchUser] v2/user response status:', response.status)
 
-  if (response.ok) {
-    const data = (await response.json()) as unknown
-    console.log('[fetchUser] v2/user response data keys:', Object.keys(data || {}))
-    const user = extractUser(data)
-    if (user) {
-      console.log('[fetchUser] Successfully extracted user from v2/user')
-      return user
-    }
-  } else {
+  if (!response.ok) {
     const errorText = await response.text()
     console.error('[fetchUser] v2/user failed:', response.status, errorText)
+    return undefined
   }
 
-  // Fallback to OAuth userinfo endpoint
-  console.log('[fetchUser] Trying OAuth userinfo endpoint')
-  const userInfoResponse = await fetch('https://api.vercel.com/login/oauth/userinfo', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}` },
-    cache: 'no-store',
-  })
+  const data = (await response.json()) as unknown
+  console.log('[fetchUser] v2/user response data keys:', Object.keys(data || {}))
 
-  console.log('[fetchUser] userinfo response status:', userInfoResponse.status)
-
-  if (userInfoResponse.ok) {
-    const userInfo = (await userInfoResponse.json()) as {
-      sub?: string
-      email?: string
-      name?: string
-      preferred_username?: string
-      picture?: string
-    }
-    console.log('[fetchUser] userinfo response keys:', Object.keys(userInfo || {}))
-
-    if (userInfo.sub && userInfo.preferred_username && userInfo.email) {
-      console.log('[fetchUser] Successfully extracted user from userinfo')
-      return {
-        uid: userInfo.sub,
-        id: userInfo.sub,
-        username: userInfo.preferred_username,
-        email: userInfo.email,
-        name: userInfo.name ?? undefined,
-        avatar: userInfo.picture ?? undefined,
-      }
-    }
-  } else {
-    const errorText = await userInfoResponse.text()
-    console.error('[fetchUser] userinfo failed:', userInfoResponse.status, errorText)
+  const user = extractUser(data)
+  if (user) {
+    console.log('[fetchUser] Successfully extracted user')
+    return user
   }
 
-  console.error('Failed to fetch user from all endpoints')
+  console.error('[fetchUser] Failed to extract user from response')
   return undefined
 }
 
