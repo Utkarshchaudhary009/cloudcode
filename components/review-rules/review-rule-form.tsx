@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { useRouter } from 'next/navigation'
 import { RepoSelector } from '@/components/repo-selector'
-import { parseGitHubRepoUrl } from '@/lib/utils/github'
+import { parseGitHubRepoUrl } from '@/lib/utils/github-utils'
 
 interface ReviewRuleFormProps {
   rule?: any

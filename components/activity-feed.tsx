@@ -40,7 +40,7 @@ import type { Session } from '@/lib/session/types'
 import { PRStatusIcon } from '@/components/pr-status-icon'
 
 import { TaskCard } from './task-card'
-import { Task } from '@/lib/db/schema'
+import type { Task } from '@/lib/db/types'
 
 type FeedTab = 'all' | 'tasks' | 'scheduled' | 'repos'
 

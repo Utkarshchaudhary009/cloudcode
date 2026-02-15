@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { createConnector, updateConnector, deleteConnector, toggleConnectorStatus } from '@/lib/actions/connectors'
-import type { Connector } from '@/lib/db/schema'
+import type { Connector } from '@/lib/db/types'
 import { useActionState } from 'react'
 import { toast } from 'sonner'
 import { useEffect, useState, useRef } from 'react'
