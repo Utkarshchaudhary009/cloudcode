@@ -45,10 +45,7 @@ export async function upsertUser(
   }
 
   // Second check: Is this a GitHub account already connected to an existing user via accounts table?
-  // This prevents duplicate accounts when someone:
-  // 1. Signs in with Vercel
-  // 2. Connects GitHub
-  // 3. Later signs in directly with GitHub
+  // This prevents duplicate accounts when someone connects GitHub then later signs in directly with GitHub
   if (provider === 'github') {
     const existingAccount = await db
       .select({ userId: accounts.userId })
@@ -59,36 +56,6 @@ export async function upsertUser(
     if (existingAccount.length > 0) {
       console.log(
         `[upsertUser] GitHub account (${externalId}) is already connected to user ${existingAccount[0].userId}. Using existing user.`,
-      )
-
-      // Update the existing user's last login
-      await db
-        .update(users)
-        .set({
-          updatedAt: new Date(),
-          lastLoginAt: new Date(),
-        })
-        .where(eq(users.id, existingAccount[0].userId))
-
-      return existingAccount[0].userId
-    }
-  }
-
-  // Third check: Is this a Vercel account already connected to an existing user via accounts table?
-  // This prevents duplicate accounts when someone:
-  // 1. Signs in with GitHub
-  // 2. Connects Vercel
-  // 3. Later signs in directly with Vercel
-  if (provider === 'vercel') {
-    const existingAccount = await db
-      .select({ userId: accounts.userId })
-      .from(accounts)
-      .where(and(eq(accounts.provider, 'vercel'), eq(accounts.externalUserId, externalId)))
-      .limit(1)
-
-    if (existingAccount.length > 0) {
-      console.log(
-        `[upsertUser] Vercel account (${externalId}) is already connected to user ${existingAccount[0].userId}. Using existing user.`,
       )
 
       // Update the existing user's last login
@@ -130,7 +97,7 @@ export async function getUserById(userId: string) {
 /**
  * Get user by auth provider and external ID
  */
-export async function getUserByExternalId(provider: 'github' | 'vercel', externalId: string) {
+export async function getUserByExternalId(provider: 'github', externalId: string) {
   const result = await db
     .select()
     .from(users)

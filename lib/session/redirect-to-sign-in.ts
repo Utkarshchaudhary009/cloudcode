@@ -1,6 +1,6 @@
 export async function redirectToSignIn(): Promise<void> {
   const response = await fetch(
-    `/api/auth/signin/vercel?${new URLSearchParams({
+    `/api/auth/signin/github?${new URLSearchParams({
       next: window.location.pathname,
     }).toString()}`,
     { method: 'POST' },

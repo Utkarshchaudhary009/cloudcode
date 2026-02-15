@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { pgTable, text, timestamp, integer, jsonb, boolean, uniqueIndex } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 import { openCodeProviderSchema } from '@/lib/opencode/provider-schema'
@@ -18,7 +20,7 @@ export const users = pgTable(
     id: text('id').primaryKey(), // Internal user ID (we generate this)
     // Primary OAuth account info (how they signed in)
     provider: text('provider', {
-      enum: ['github', 'vercel'],
+      enum: ['github'],
     }).notNull(), // Primary auth provider
     externalId: text('external_id').notNull(), // External ID from OAuth provider
     accessToken: text('access_token').notNull(), // Encrypted OAuth access token
@@ -41,7 +43,7 @@ export const users = pgTable(
 
 export const insertUserSchema = z.object({
   id: z.string().optional(), // Auto-generated if not provided
-  provider: z.enum(['github', 'vercel']),
+  provider: z.enum(['github']),
   externalId: z.string().min(1, 'External ID is required'),
   accessToken: z.string(),
   refreshToken: z.string().optional(),
@@ -57,7 +59,7 @@ export const insertUserSchema = z.object({
 
 export const selectUserSchema = z.object({
   id: z.string(),
-  provider: z.enum(['github', 'vercel']),
+  provider: z.enum(['github']),
   externalId: z.string(),
   accessToken: z.string(),
   refreshToken: z.string().nullable(),
@@ -264,7 +266,7 @@ export const accounts = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }), // Foreign key to users table
     provider: text('provider', {
-      enum: ['github', 'vercel'],
+      enum: ['github'],
     })
       .notNull()
       .default('github'),
@@ -286,7 +288,7 @@ export const accounts = pgTable(
 export const insertAccountSchema = z.object({
   id: z.string().optional(),
   userId: z.string(),
-  provider: z.enum(['github', 'vercel']).default('github'),
+  provider: z.enum(['github']).default('github'),
   externalUserId: z.string().min(1, 'External user ID is required'),
   accessToken: z.string(),
   refreshToken: z.string().optional(),
@@ -300,7 +302,7 @@ export const insertAccountSchema = z.object({
 export const selectAccountSchema = z.object({
   id: z.string(),
   userId: z.string(),
-  provider: z.enum(['github', 'vercel']),
+  provider: z.enum(['github']),
   externalUserId: z.string(),
   accessToken: z.string(),
   refreshToken: z.string().nullable(),
