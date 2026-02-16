@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import type { DeploymentProvider } from '@/lib/integrations/types'
-import { getProviderMetadata } from '@/lib/integrations/registry'
+import { getProviderMetadata } from '@/lib/integrations/metadata'
 
 interface StepIntroductionProps {
   provider: DeploymentProvider

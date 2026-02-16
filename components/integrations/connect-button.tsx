@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { TokenWizardModal } from '@/components/integrations/token-wizard/token-wizard-modal'
 import type { DeploymentProvider } from '@/lib/integrations/types'
-import { getProviderMetadata } from '@/lib/integrations/registry'
+import { getProviderMetadata } from '@/lib/integrations/metadata'
 
 interface ConnectButtonProps {
   provider: DeploymentProvider
