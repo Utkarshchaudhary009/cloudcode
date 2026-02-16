@@ -100,7 +100,11 @@ export function ProjectsTab() {
               createdAt: new Date().toISOString(),
             },
           ])
-          toast.success('Monitoring enabled')
+          if (data.webhookCreated === false) {
+            toast.warning('Monitoring enabled but webhook creation failed. Check your Vercel token permissions.')
+          } else {
+            toast.success('Monitoring enabled')
+          }
         } else {
           if (!project.subscriptionId) return
 

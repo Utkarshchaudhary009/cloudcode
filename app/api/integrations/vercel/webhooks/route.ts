@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
   }
 
-  console.log('Webhook received', { eventType: payload.type })
+  console.log('Webhook received')
 
   if (!isDeploymentFailure(payload)) {
     return NextResponse.json({ received: true, action: 'ignored' })
@@ -85,6 +85,6 @@ export async function POST(req: NextRequest) {
     },
   )
 
-  console.log('Fix queued', { fixId })
+  console.log('Fix queued')
   return NextResponse.json({ received: true, action: 'queued', fixId })
 }

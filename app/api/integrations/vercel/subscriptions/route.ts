@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     webhookSecret,
   })
 
-  return NextResponse.json({ success: true, id })
+  return NextResponse.json({ success: true, id, webhookCreated: !!webhookId })
 }
 
 export async function DELETE(req: NextRequest) {
