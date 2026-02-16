@@ -9,7 +9,9 @@ import { findMatchingRule } from '@/lib/integrations/vercel/deployment/rules'
 import { decrypt } from '@/lib/crypto'
 import { nanoid } from 'nanoid'
 import { inngest } from '@/lib/inngest/client'
+import { processTaskInternal } from '@/lib/tasks/processor'
 import type { FixStatus, ErrorType } from '@/lib/integrations/types'
+import { getMaxSandboxDuration } from '@/lib/db/settings'
 
 async function getSubscriptionWithIntegration(subscriptionId: string) {
   const subs = await db.select().from(subscriptions).where(eq(subscriptions.id, subscriptionId))
@@ -117,6 +119,70 @@ export const handleDeploymentFailure = inngest.createFunction(
 
       return id
     })
+
+    const maxDuration = await step.run('get-max-duration', async () => {
+      return getMaxSandboxDuration(subscription.userId)
+    })
+
+    const result = await step.run('process-fix-task', async () => {
+      return processTaskInternal({
+        taskId,
+        userId: subscription.userId,
+        prompt: taskPrompt,
+        repoUrl: `https://github.com/${subscription.githubRepoFullName}`,
+        maxDuration,
+        selectedProvider: 'opencode',
+        isDeploymentFix: true,
+        deploymentId: fixId,
+      })
+    })
+
+    if (result.success && result.prUrl) {
+      await inngest.send({
+        name: 'deployment-fix/completed',
+        data: {
+          deploymentId: fixId,
+          taskId,
+          success: true,
+          prUrl: result.prUrl,
+          prNumber: result.prNumber,
+        },
+      })
+
+      return {
+        success: true,
+        action: 'pr_created',
+        taskId,
+        prUrl: result.prUrl,
+        prNumber: result.prNumber,
+        analysis,
+      }
+    }
+
+    if (!result.success) {
+      await updateDeploymentStatus(fixId, 'failed', {
+        errorMessage: result.error || 'Task processing failed',
+        completedAt: new Date(),
+      })
+
+      await inngest.send({
+        name: 'deployment-fix/completed',
+        data: {
+          deploymentId: fixId,
+          taskId,
+          success: false,
+          error: result.error,
+        },
+      })
+
+      return {
+        success: false,
+        action: 'failed',
+        taskId,
+        error: result.error,
+        analysis,
+      }
+    }
 
     return {
       success: true,

@@ -28,4 +28,14 @@ export type Events = {
       fixDetails: string
     }
   }
+  'deployment-fix/completed': {
+    data: {
+      deploymentId: string
+      taskId: string
+      success: boolean
+      prUrl?: string
+      prNumber?: number
+      error?: string
+    }
+  }
 }
