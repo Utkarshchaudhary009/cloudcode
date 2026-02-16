@@ -10,7 +10,7 @@ interface WizardProgressProps {
 
 export function WizardProgress({ steps, currentStep }: WizardProgressProps) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-center sm:justify-between px-2 sm:px-0">
       {steps.map((step, index) => (
         <div key={step} className="flex items-center">
           <div
@@ -27,14 +27,14 @@ export function WizardProgress({ steps, currentStep }: WizardProgressProps) {
           </div>
           <span
             className={cn(
-              'ml-2 text-sm hidden sm:inline',
+              'ml-2 text-sm hidden md:inline',
               index === currentStep ? 'font-medium' : 'text-muted-foreground',
             )}
           >
             {step}
           </span>
           {index < steps.length - 1 && (
-            <div className={cn('mx-4 h-0.5 w-8 sm:w-16', index < currentStep ? 'bg-primary' : 'bg-muted')} />
+            <div className={cn('mx-4 h-0.5 w-8 lg:w-16', index < currentStep ? 'bg-primary' : 'bg-muted')} />
           )}
         </div>
       ))}

@@ -65,3 +65,4 @@ opensrc/
 .agent/
 scripts/dump_db.ts
 githubintegration.md
+plan-vercel.md

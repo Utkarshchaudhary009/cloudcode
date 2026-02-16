@@ -16,7 +16,7 @@ interface TokenWizardModalProps {
   onSuccess?: (username: string) => void
 }
 
-const STEPS = ['Introduction', 'Create Token', 'Paste Token', 'Verify']
+const STEPS = ['Intro', 'Create', 'Paste', 'Verify']
 
 export function TokenWizardModal({ open, onOpenChange, provider, onSuccess }: TokenWizardModalProps) {
   const [currentStep, setCurrentStep] = useState(0)
@@ -78,14 +78,14 @@ export function TokenWizardModal({ open, onOpenChange, provider, onSuccess }: To
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Connect to {providerName}</DialogTitle>
+      <DialogContent className="!max-w-[calc(100vw-2rem)] sm:!max-w-[90vw] md:!max-w-[800px] lg:!max-w-[900px] max-h-[95vh] overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-lg sm:text-xl lg:text-2xl">Connect to {providerName}</DialogTitle>
         </DialogHeader>
 
         <WizardProgress steps={STEPS} currentStep={currentStep} />
 
-        <div className="mt-6">
+        <div className="mt-4 sm:mt-6 lg:mt-8">
           {currentStep === 0 && <StepIntroduction provider={provider} onContinue={() => setCurrentStep(1)} />}
           {currentStep === 1 && <StepCreateToken provider={provider} onContinue={() => setCurrentStep(2)} />}
           {currentStep === 2 && (

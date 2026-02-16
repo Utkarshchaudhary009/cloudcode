@@ -20,6 +20,8 @@ import {
   ChevronDown,
   ChevronRight,
   FolderGit2,
+  Plug,
+  Rocket,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
@@ -65,6 +67,8 @@ const mainNavItems = [
   { href: '/', icon: Home, label: 'Home', exact: true },
   { href: '/tasks', icon: ListTodo, label: 'Tasks' },
   { href: '/scheduled-tasks', icon: Clock, label: 'Scheduled Tasks' },
+  { href: '/integrations', icon: Plug, label: 'Integrations' },
+  { href: '/deployments', icon: Rocket, label: 'Deployments' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 

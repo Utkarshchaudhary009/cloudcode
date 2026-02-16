@@ -20,7 +20,7 @@ export function StepVerify({ username, onDone }: StepVerifyProps) {
         <p className="text-sm text-muted-foreground mt-2">Connected to {username ? `@${username}` : 'your account'}</p>
       </div>
 
-      <Button onClick={onDone} className="w-full">
+      <Button onClick={onDone} className="w-full sm:w-auto">
         Done
       </Button>
     </div>

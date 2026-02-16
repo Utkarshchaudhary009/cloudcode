@@ -10,7 +10,7 @@ interface StepCreateTokenProps {
 }
 
 const PROVIDER_LINKS: Record<DeploymentProvider, string> = {
-  vercel: 'https://vercel.com/account/tokens/new?name=Cloudcode-AutoFix',
+  vercel: 'https://vercel.com/account/settings/tokens',
   cloudflare: 'https://dash.cloudflare.com/profile/api-tokens',
   render: 'https://dashboard.render.com/api-keys',
 }
@@ -62,7 +62,7 @@ export function StepCreateToken({ provider, onContinue }: StepCreateTokenProps) 
             Grant <strong>{instructions.note}</strong> access
           </li>
           <li>Set an expiration (or none for permanent)</li>
-          <li>Copy the token - you won't see it again!</li>
+          <li>Copy the token - you will not see it again!</li>
         </ul>
       </div>
 

@@ -30,37 +30,38 @@ export function ConnectionCard({
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <div>
-            <CardTitle className="text-lg">{name}</CardTitle>
-            <CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between pb-2 gap-2">
+          <div className="min-w-0">
+            <CardTitle className="text-base sm:text-lg">{name}</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               {connected ? 'Monitor and auto-fix deployments' : 'Connect to get started'}
             </CardDescription>
           </div>
-          {connected ? (
-            <Badge variant="secondary" className="gap-1">
-              <CheckCircle2 className="h-3 w-3" />
-              Connected
-            </Badge>
-          ) : (
-            <Badge variant="outline">Not connected</Badge>
-          )}
+          <Badge
+            variant={connected ? 'secondary' : 'outline'}
+            className={`gap-1 text-xs flex-shrink-0 ${connected ? 'text-green-600 dark:text-green-400' : ''}`}
+          >
+            {connected && <CheckCircle2 className="h-3 w-3" />}
+            {connected ? 'Connected' : 'Not connected'}
+          </Badge>
         </CardHeader>
         <CardContent>
           {connected ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">as</span>
-                <span className="font-medium">@{username}</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">as</span>
+                <span className="font-medium truncate">@{username}</span>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setWizardOpen(true)}>
-                  <RefreshCw className="h-4 w-4 mr-1" />
-                  Reconnect
+                <Button variant="outline" size="sm" onClick={() => setWizardOpen(true)} className="flex-1 sm:flex-none">
+                  <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                  <span className="sm:hidden">Reconnect</span>
+                  <span className="hidden sm:inline">Reconnect</span>
                 </Button>
-                <Button variant="ghost" size="sm" onClick={onDisconnect}>
-                  <Unplug className="h-4 w-4 mr-1" />
-                  Disconnect
+                <Button variant="ghost" size="sm" onClick={onDisconnect} className="flex-1 sm:flex-none">
+                  <Unplug className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                  <span className="sm:hidden">Disconnect</span>
+                  <span className="hidden sm:inline">Disconnect</span>
                 </Button>
               </div>
             </div>

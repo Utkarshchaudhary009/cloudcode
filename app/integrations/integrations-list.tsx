@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { ConnectionCard } from '@/components/integrations/connection-card'
+import { Loader2 } from 'lucide-react'
 import type { DeploymentProvider } from '@/lib/integrations/types'
 
 interface ConnectionStatus {
@@ -60,11 +61,15 @@ export function IntegrationsList() {
   }
 
   if (loading) {
-    return <div className="text-muted-foreground">Loading integrations...</div>
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
       {PROVIDERS.map((provider) => {
         const connection = connections[provider.id]
         return (

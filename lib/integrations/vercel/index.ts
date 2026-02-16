@@ -28,7 +28,7 @@ export const vercelProvider: TokenProvider = {
   name: 'Vercel',
 
   token: {
-    createUrl: 'https://vercel.com/account/tokens/new?name=Cloudcode-AutoFix',
+    createUrl: 'https://vercel.com/account/settings/tokens',
     scopes: ['deployment', 'project', 'user'],
   },
 
