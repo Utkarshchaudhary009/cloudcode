@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { pgTable, text, timestamp, integer, jsonb, boolean, uniqueIndex } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, integer, jsonb, boolean, uniqueIndex, index } from 'drizzle-orm/pg-core'
 import type {
   LogEntry,
   User,
@@ -26,6 +26,14 @@ import type {
   InsertReviewRule,
   UserConnection,
   InsertUserConnection,
+  Integration,
+  InsertIntegration,
+  Subscription,
+  InsertSubscription,
+  Deployment,
+  InsertDeployment,
+  FixRule,
+  InsertFixRule,
 } from './types'
 
 export type {
@@ -53,6 +61,14 @@ export type {
   InsertReviewRule,
   UserConnection,
   InsertUserConnection,
+  Integration,
+  InsertIntegration,
+  Subscription,
+  InsertSubscription,
+  Deployment,
+  InsertDeployment,
+  FixRule,
+  InsertFixRule,
 }
 
 export {
@@ -77,6 +93,14 @@ export {
   selectReviewSchema,
   insertReviewRuleSchema,
   selectReviewRuleSchema,
+  insertIntegrationSchema,
+  selectIntegrationSchema,
+  insertSubscriptionSchema,
+  selectSubscriptionSchema,
+  insertDeploymentSchema,
+  selectDeploymentSchema,
+  insertFixRuleSchema,
+  selectFixRuleSchema,
 } from './types'
 
 // Users table - user profile and primary OAuth account
@@ -398,5 +422,130 @@ export const reviewRules = pgTable(
   },
   (table) => ({
     userIdIdx: uniqueIndex('review_rules_user_name_idx').on(table.userId, table.name),
+  }),
+)
+
+// Integrations table - API token connections for deployment platforms (Vercel, Cloudflare, Render, etc.)
+export const integrations = pgTable(
+  'integrations',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    provider: text('provider', {
+      enum: ['vercel', 'cloudflare', 'render'],
+    }).notNull(),
+    externalUserId: text('external_user_id').notNull(),
+    accessToken: text('access_token').notNull(),
+    refreshToken: text('refresh_token'),
+    expiresAt: timestamp('expires_at'),
+    username: text('username').notNull(),
+    teamId: text('team_id'),
+    tokenCreatedAt: timestamp('token_created_at'),
+    tokenNote: text('token_note'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userProviderUnique: uniqueIndex('integrations_user_provider_idx').on(table.userId, table.provider),
+  }),
+)
+
+// Subscriptions table - Links deployment platform projects to GitHub repos with fix settings
+export const subscriptions = pgTable(
+  'subscriptions',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    integrationId: text('integration_id')
+      .notNull()
+      .references(() => integrations.id, { onDelete: 'cascade' }),
+    platformProjectId: text('platform_project_id').notNull(),
+    platformProjectName: text('platform_project_name').notNull(),
+    webhookId: text('webhook_id'),
+    webhookSecret: text('webhook_secret'),
+    githubRepoFullName: text('github_repo_full_name').notNull(),
+    autoFixEnabled: boolean('auto_fix_enabled').default(true).notNull(),
+    fixBranchPrefix: text('fix_branch_prefix').default('fix/deployment-'),
+    maxFixAttempts: integer('max_fix_attempts').default(3),
+    notifyOnFix: boolean('notify_on_fix').default(true),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userProjectUnique: uniqueIndex('subscriptions_user_project_idx').on(
+      table.userId,
+      table.integrationId,
+      table.platformProjectId,
+    ),
+  }),
+)
+
+// Fix rules table - User-defined rules to customize or skip specific error patterns
+export const fixRules = pgTable(
+  'fix_rules',
+  {
+    id: text('id').primaryKey(),
+    subscriptionId: text('subscription_id').references(() => subscriptions.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    errorPattern: text('error_pattern').notNull(),
+    errorType: text('error_type', {
+      enum: ['typescript', 'dependency', 'config', 'runtime', 'build', 'other'],
+    }),
+    skipFix: boolean('skip_fix').default(false),
+    customPrompt: text('custom_prompt'),
+    priority: integer('priority').default(0),
+    enabled: boolean('enabled').default(true).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    subscriptionIdx: index('fix_rules_subscription_idx').on(table.subscriptionId),
+  }),
+)
+
+// Deployments table - Tracks only fix-related data for failed deployments
+export const deployments = pgTable(
+  'deployments',
+  {
+    id: text('id').primaryKey(),
+    subscriptionId: text('subscription_id')
+      .notNull()
+      .references(() => subscriptions.id, { onDelete: 'cascade' }),
+    platformDeploymentId: text('platform_deployment_id').notNull(),
+    webhookDeliveryId: text('webhook_delivery_id'),
+    fixStatus: text('fix_status', {
+      enum: ['pending', 'analyzing', 'fixing', 'reviewing', 'pr_created', 'merged', 'failed', 'skipped'],
+    })
+      .notNull()
+      .default('pending'),
+    fixAttemptNumber: integer('fix_attempt_number').default(1),
+    version: integer('version').default(1).notNull(),
+    matchedRuleId: text('matched_rule_id').references(() => fixRules.id, { onDelete: 'set null' }),
+    errorType: text('error_type', {
+      enum: ['typescript', 'dependency', 'config', 'runtime', 'build', 'other'],
+    }),
+    errorMessage: text('error_message'),
+    errorContext: text('error_context'),
+    taskId: text('task_id').references(() => tasks.id, { onDelete: 'set null' }),
+    prUrl: text('pr_url'),
+    prNumber: integer('pr_number'),
+    fixBranchName: text('fix_branch_name'),
+    fixSummary: text('fix_summary'),
+    fixDetails: text('fix_details'),
+    logs: text('logs'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    startedAt: timestamp('started_at'),
+    completedAt: timestamp('completed_at'),
+  },
+  (table) => ({
+    subscriptionIdx: index('deployments_subscription_idx').on(table.subscriptionId),
+    platformDeploymentUnique: uniqueIndex('deployments_platform_deployment_idx').on(table.platformDeploymentId),
+    webhookDeliveryUnique: uniqueIndex('deployments_webhook_delivery_idx').on(table.webhookDeliveryId),
+    fixStatusIdx: index('deployments_fix_status_idx').on(table.fixStatus),
   }),
 )

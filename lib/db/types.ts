@@ -451,3 +451,165 @@ export type InsertReviewRule = z.infer<typeof insertReviewRuleSchema>
 // Keep legacy export for backwards compatibility during migration
 export type UserConnection = Account
 export type InsertUserConnection = InsertAccount
+
+// Integrations schemas
+export const insertIntegrationSchema = z.object({
+  id: z.string().optional(),
+  userId: z.string().min(1, 'User ID is required'),
+  provider: z.enum(['vercel', 'cloudflare', 'render']),
+  externalUserId: z.string().min(1, 'External user ID is required'),
+  accessToken: z.string().min(1, 'Access token is required'),
+  refreshToken: z.string().optional(),
+  expiresAt: z.date().optional(),
+  username: z.string().min(1, 'Username is required'),
+  teamId: z.string().optional(),
+  tokenCreatedAt: z.date().optional(),
+  tokenNote: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+})
+
+export const selectIntegrationSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  provider: z.enum(['vercel', 'cloudflare', 'render']),
+  externalUserId: z.string(),
+  accessToken: z.string(),
+  refreshToken: z.string().nullable(),
+  expiresAt: z.date().nullable(),
+  username: z.string(),
+  teamId: z.string().nullable(),
+  tokenCreatedAt: z.date().nullable(),
+  tokenNote: z.string().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+export type Integration = z.infer<typeof selectIntegrationSchema>
+export type InsertIntegration = z.infer<typeof insertIntegrationSchema>
+
+// Subscriptions schemas
+export const insertSubscriptionSchema = z.object({
+  id: z.string().optional(),
+  userId: z.string().min(1, 'User ID is required'),
+  integrationId: z.string().min(1, 'Integration ID is required'),
+  platformProjectId: z.string().min(1, 'Platform project ID is required'),
+  platformProjectName: z.string().min(1, 'Platform project name is required'),
+  webhookId: z.string().optional(),
+  webhookSecret: z.string().optional(),
+  githubRepoFullName: z.string().min(1, 'GitHub repo full name is required'),
+  autoFixEnabled: z.boolean().default(true),
+  fixBranchPrefix: z.string().optional(),
+  maxFixAttempts: z.number().int().positive().default(3),
+  notifyOnFix: z.boolean().default(true),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+})
+
+export const selectSubscriptionSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  integrationId: z.string(),
+  platformProjectId: z.string(),
+  platformProjectName: z.string(),
+  webhookId: z.string().nullable(),
+  webhookSecret: z.string().nullable(),
+  githubRepoFullName: z.string(),
+  autoFixEnabled: z.boolean(),
+  fixBranchPrefix: z.string().nullable(),
+  maxFixAttempts: z.number().int().nullable(),
+  notifyOnFix: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+export type Subscription = z.infer<typeof selectSubscriptionSchema>
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>
+
+// Fix rules schemas
+export const insertFixRuleSchema = z.object({
+  id: z.string().optional(),
+  subscriptionId: z.string().optional(),
+  name: z.string().min(1, 'Name is required'),
+  errorPattern: z.string().min(1, 'Error pattern is required'),
+  errorType: z.enum(['typescript', 'dependency', 'config', 'runtime', 'build', 'other']).optional(),
+  skipFix: z.boolean().default(false),
+  customPrompt: z.string().optional(),
+  priority: z.number().int().default(0),
+  enabled: z.boolean().default(true),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+})
+
+export const selectFixRuleSchema = z.object({
+  id: z.string(),
+  subscriptionId: z.string().nullable(),
+  name: z.string(),
+  errorPattern: z.string(),
+  errorType: z.enum(['typescript', 'dependency', 'config', 'runtime', 'build', 'other']).nullable(),
+  skipFix: z.boolean(),
+  customPrompt: z.string().nullable(),
+  priority: z.number().int().nullable(),
+  enabled: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+export type FixRule = z.infer<typeof selectFixRuleSchema>
+export type InsertFixRule = z.infer<typeof insertFixRuleSchema>
+
+// Deployments schemas
+export const insertDeploymentSchema = z.object({
+  id: z.string().optional(),
+  subscriptionId: z.string().min(1, 'Subscription ID is required'),
+  platformDeploymentId: z.string().min(1, 'Platform deployment ID is required'),
+  webhookDeliveryId: z.string().optional(),
+  fixStatus: z
+    .enum(['pending', 'analyzing', 'fixing', 'reviewing', 'pr_created', 'merged', 'failed', 'skipped'])
+    .default('pending'),
+  fixAttemptNumber: z.number().int().positive().default(1),
+  version: z.number().int().positive().default(1),
+  matchedRuleId: z.string().optional(),
+  errorType: z.enum(['typescript', 'dependency', 'config', 'runtime', 'build', 'other']).optional(),
+  errorMessage: z.string().optional(),
+  errorContext: z.string().optional(),
+  taskId: z.string().optional(),
+  prUrl: z.string().url().optional().or(z.literal('')),
+  prNumber: z.number().int().positive().optional(),
+  fixBranchName: z.string().optional(),
+  fixSummary: z.string().optional(),
+  fixDetails: z.string().optional(),
+  logs: z.string().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+  startedAt: z.date().optional(),
+  completedAt: z.date().optional(),
+})
+
+export const selectDeploymentSchema = z.object({
+  id: z.string(),
+  subscriptionId: z.string(),
+  platformDeploymentId: z.string(),
+  webhookDeliveryId: z.string().nullable(),
+  fixStatus: z.enum(['pending', 'analyzing', 'fixing', 'reviewing', 'pr_created', 'merged', 'failed', 'skipped']),
+  fixAttemptNumber: z.number().int().nullable(),
+  version: z.number().int(),
+  matchedRuleId: z.string().nullable(),
+  errorType: z.enum(['typescript', 'dependency', 'config', 'runtime', 'build', 'other']).nullable(),
+  errorMessage: z.string().nullable(),
+  errorContext: z.string().nullable(),
+  taskId: z.string().nullable(),
+  prUrl: z.string().nullable(),
+  prNumber: z.number().int().nullable(),
+  fixBranchName: z.string().nullable(),
+  fixSummary: z.string().nullable(),
+  fixDetails: z.string().nullable(),
+  logs: z.string().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  startedAt: z.date().nullable(),
+  completedAt: z.date().nullable(),
+})
+
+export type Deployment = z.infer<typeof selectDeploymentSchema>
+export type InsertDeployment = z.infer<typeof insertDeploymentSchema>

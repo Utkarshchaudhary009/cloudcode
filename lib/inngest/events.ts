@@ -10,4 +10,13 @@ export type Events = {
       selectedModel?: string
     }
   }
+  'deployment-failure/received': {
+    data: {
+      fixId: string
+      subscriptionId: string
+      deploymentId: string
+      projectId: string
+      webhookDeliveryId: string
+    }
+  }
 }
