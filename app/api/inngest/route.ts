@@ -6,6 +6,7 @@ import {
   scheduledTasksDispatcher12pm,
   scheduledTasksDispatcher9pm,
   executeScheduledTask,
+  handleDeploymentFailure,
 } from '@/lib/inngest/functions'
 
 export const { GET, POST, PUT } = serve({
@@ -16,5 +17,6 @@ export const { GET, POST, PUT } = serve({
     scheduledTasksDispatcher12pm,
     scheduledTasksDispatcher9pm,
     executeScheduledTask,
+    handleDeploymentFailure,
   ],
 })

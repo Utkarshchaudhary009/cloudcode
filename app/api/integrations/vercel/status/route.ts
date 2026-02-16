@@ -11,9 +11,11 @@ export async function GET() {
   const connection = await getConnection(session.user.id, 'vercel')
 
   return NextResponse.json({
+    id: connection?.id,
     connected: !!connection,
     provider: 'vercel',
     username: connection?.username,
     connectedAt: connection?.createdAt,
+    teamId: connection?.teamId,
   })
 }

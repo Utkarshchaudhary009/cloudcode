@@ -1,53 +1,49 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { ExternalLink } from 'lucide-react'
+import { ArrowLeft, ExternalLink } from 'lucide-react'
 import type { DeploymentProvider } from '@/lib/integrations/types'
+import { getProviderMetadata } from '@/lib/integrations/registry'
 
 interface StepCreateTokenProps {
   provider: DeploymentProvider
   onContinue: () => void
+  onBack?: () => void
 }
 
-const PROVIDER_LINKS: Record<DeploymentProvider, string> = {
-  vercel: 'https://vercel.com/account/settings/tokens',
-  cloudflare: 'https://dash.cloudflare.com/profile/api-tokens',
-  render: 'https://dashboard.render.com/api-keys',
-}
+export function StepCreateToken({ provider, onContinue, onBack }: StepCreateTokenProps) {
+  const info = getProviderMetadata(provider)
 
-const PROVIDER_INSTRUCTIONS: Record<DeploymentProvider, { name: string; note: string }> = {
-  vercel: {
-    name: 'Vercel',
-    note: 'Full Account',
-  },
-  cloudflare: {
-    name: 'Cloudflare',
-    note: 'Edit Cloudflare Workers',
-  },
-  render: {
-    name: 'Render',
-    note: 'Read/Write access',
-  },
-}
-
-export function StepCreateToken({ provider, onContinue }: StepCreateTokenProps) {
-  const createUrl = PROVIDER_LINKS[provider]
-  const instructions = PROVIDER_INSTRUCTIONS[provider]
+  if (!info) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold">Provider Not Available</h3>
+          <p className="text-sm text-muted-foreground mt-2">This provider is not yet implemented.</p>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={onContinue} variant="outline">
+            Close
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
       <div className="text-center">
         <h3 className="text-lg font-semibold">Create an API Token</h3>
         <p className="text-sm text-muted-foreground mt-2">
-          Click the button below to create a new API token for {instructions.name}.
+          Click the button below to create a new API token for {info.name}.
         </p>
       </div>
 
       <div className="flex justify-center">
         <Button asChild size="lg">
-          <a href={createUrl} target="_blank" rel="noopener noreferrer">
+          <a href={info.tokenCreateUrl} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="mr-2 h-4 w-4" />
-            Create {instructions.name} Token
+            Create {info.name} Token
           </a>
         </Button>
       </div>
@@ -59,14 +55,20 @@ export function StepCreateToken({ provider, onContinue }: StepCreateTokenProps) 
             Name it something like <code className="bg-background px-1 rounded">Cloudcode-AutoFix</code>
           </li>
           <li>
-            Grant <strong>{instructions.note}</strong> access
+            Grant <strong>{info.tokenNote}</strong> access
           </li>
           <li>Set an expiration (or none for permanent)</li>
           <li>Copy the token - you will not see it again!</li>
         </ul>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-between">
+        {onBack && (
+          <Button onClick={onBack} variant="outline">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        )}
         <Button onClick={onContinue} variant="outline">
           I have created the token
         </Button>

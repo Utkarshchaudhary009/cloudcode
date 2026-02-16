@@ -22,6 +22,7 @@ export function RepoLayout({ owner, repo, children }: RepoLayoutProps) {
     { name: 'Commits', href: `/repos/${owner}/${repo}/commits` },
     { name: 'Issues', href: `/repos/${owner}/${repo}/issues` },
     { name: 'Pull Requests', href: `/repos/${owner}/${repo}/pull-requests` },
+    { name: 'Deployments', href: `/repos/${owner}/${repo}/deployments` },
   ]
 
   const handleNewTask = () => {

@@ -2,29 +2,26 @@
 
 import { Button } from '@/components/ui/button'
 import type { DeploymentProvider } from '@/lib/integrations/types'
+import { getProviderMetadata } from '@/lib/integrations/registry'
 
 interface StepIntroductionProps {
   provider: DeploymentProvider
   onContinue: () => void
 }
 
-const PROVIDER_INFO: Record<DeploymentProvider, { name: string; description: string }> = {
-  vercel: {
-    name: 'Vercel',
-    description: 'Connect your Vercel account to monitor deployments and automatically fix build errors.',
-  },
-  cloudflare: {
-    name: 'Cloudflare',
-    description: 'Connect your Cloudflare account to monitor deployments and automatically fix build errors.',
-  },
-  render: {
-    name: 'Render',
-    description: 'Connect your Render account to monitor deployments and automatically fix build errors.',
-  },
-}
-
 export function StepIntroduction({ provider, onContinue }: StepIntroductionProps) {
-  const info = PROVIDER_INFO[provider]
+  const info = getProviderMetadata(provider)
+
+  if (!info) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold">Provider Not Available</h3>
+          <p className="text-sm text-muted-foreground mt-2">This provider is not yet implemented.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

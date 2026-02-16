@@ -19,4 +19,13 @@ export type Events = {
       webhookDeliveryId: string
     }
   }
+  'deployment-fix/create-pr': {
+    data: {
+      deploymentId: string
+      repoFullName: string
+      branchName: string
+      fixSummary: string
+      fixDetails: string
+    }
+  }
 }

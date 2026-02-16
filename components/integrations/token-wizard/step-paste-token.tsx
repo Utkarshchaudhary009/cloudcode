@@ -2,17 +2,27 @@
 
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 
 interface StepPasteTokenProps {
   token: string
   onChange: (value: string) => void
   error: string | null
   loading: boolean
+  progressMessage: string | null
   onConnect: () => void
+  onBack?: () => void
 }
 
-export function StepPasteToken({ token, onChange, error, loading, onConnect }: StepPasteTokenProps) {
+export function StepPasteToken({
+  token,
+  onChange,
+  error,
+  loading,
+  progressMessage,
+  onConnect,
+  onBack,
+}: StepPasteTokenProps) {
   const isValidFormat = token.length > 10
 
   return (
@@ -43,9 +53,22 @@ export function StepPasteToken({ token, onChange, error, loading, onConnect }: S
             {error}
           </div>
         )}
+
+        {progressMessage && !error && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {progressMessage}
+          </div>
+        )}
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-between">
+        {onBack && (
+          <Button onClick={onBack} variant="outline">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        )}
         <Button onClick={onConnect} disabled={!token || !isValidFormat || loading}>
           {loading ? (
             <>

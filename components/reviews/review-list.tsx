@@ -54,7 +54,7 @@ export function ReviewList() {
                 Review Rules
               </Button>
             </Link>
-            <Link href="/settings/integrations">
+            <Link href="/integrations">
               <Button size="sm">Connect GitHub</Button>
             </Link>
           </div>
@@ -96,7 +96,7 @@ export function ReviewList() {
               findings and a summary here.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
-              <Link href="/settings/integrations">
+              <Link href="/integrations">
                 <Button size="sm">Connect GitHub</Button>
               </Link>
               <Link href="/settings/review-rules">

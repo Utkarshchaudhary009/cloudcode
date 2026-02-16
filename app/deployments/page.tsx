@@ -1,10 +1,8 @@
-import { Metadata } from 'next'
-import { DeploymentsDashboard } from './deployments-dashboard'
+'use client'
 
-export const metadata: Metadata = {
-  title: 'Deployments | Cloudcode',
-  description: 'Monitor deployments and auto-fix failures',
-}
+import { DeploymentsDashboard } from './deployments-dashboard'
+import { ProjectsTab } from '@/components/deployments/projects-tab'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export default function DeploymentsPage() {
   return (
@@ -17,7 +15,27 @@ export default function DeploymentsPage() {
           </p>
         </div>
 
-        <DeploymentsDashboard />
+        <Tabs defaultValue="deployments" className="w-full">
+          <TabsList className="mb-4 sm:mb-6">
+            <TabsTrigger value="deployments">Deployments</TabsTrigger>
+            <TabsTrigger value="projects">Projects</TabsTrigger>
+            <TabsTrigger value="rules">Rules</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="deployments">
+            <DeploymentsDashboard />
+          </TabsContent>
+
+          <TabsContent value="projects">
+            <ProjectsTab />
+          </TabsContent>
+
+          <TabsContent value="rules">
+            <div className="flex items-center justify-center py-12">
+              <p className="text-sm sm:text-base text-muted-foreground">Coming soon</p>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

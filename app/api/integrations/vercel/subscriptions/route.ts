@@ -16,14 +16,18 @@ export async function GET() {
 
   const userSubs = await db
     .select({
-      subscription: subscriptions,
-      integration: integrations,
+      id: subscriptions.id,
+      platformProjectId: subscriptions.platformProjectId,
+      platformProjectName: subscriptions.platformProjectName,
+      githubRepoFullName: subscriptions.githubRepoFullName,
+      webhookId: subscriptions.webhookId,
+      createdAt: subscriptions.createdAt,
     })
     .from(subscriptions)
     .innerJoin(integrations, eq(subscriptions.integrationId, integrations.id))
     .where(eq(integrations.userId, session.user.id))
 
-  return NextResponse.json({ subscriptions: userSubs.map((s) => s.subscription) })
+  return NextResponse.json({ subscriptions: userSubs })
 }
 
 export async function POST(req: NextRequest) {
@@ -33,16 +37,23 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { integrationId, platformProjectId, platformProjectName, githubRepoFullName, autoFixEnabled, teamId } = body
+  const { platformProjectId, platformProjectName, githubRepoFullName, autoFixEnabled, teamId } = body
 
-  const ints = await db
+  if (!platformProjectId || !platformProjectName || !githubRepoFullName) {
+    return NextResponse.json(
+      { error: 'platformProjectId, platformProjectName, and githubRepoFullName are required' },
+      { status: 400 },
+    )
+  }
+
+  const userIntegrations = await db
     .select()
     .from(integrations)
-    .where(and(eq(integrations.id, integrationId), eq(integrations.userId, session.user.id)))
+    .where(and(eq(integrations.userId, session.user.id), eq(integrations.provider, 'vercel')))
 
-  const integration = ints[0]
+  const integration = userIntegrations[0]
   if (!integration) {
-    return NextResponse.json({ error: 'Integration not found' }, { status: 404 })
+    return NextResponse.json({ error: 'Vercel integration not found' }, { status: 404 })
   }
 
   const { decrypt: decryptToken } = await import('@/lib/crypto')
@@ -68,7 +79,7 @@ export async function POST(req: NextRequest) {
   await db.insert(subscriptions).values({
     id,
     userId: session.user.id,
-    integrationId,
+    integrationId: integration.id,
     platformProjectId,
     platformProjectName,
     githubRepoFullName,

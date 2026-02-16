@@ -9,6 +9,14 @@ export interface TokenProvider {
   validateToken(accessToken: string, teamId?: string): Promise<ProviderUser>
 }
 
+export interface ProviderMetadata {
+  id: DeploymentProvider
+  name: string
+  description: string
+  tokenCreateUrl: string
+  tokenNote: string
+}
+
 export interface ProviderUser {
   externalId: string
   username: string

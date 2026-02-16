@@ -18,16 +18,63 @@ interface TokenWizardModalProps {
 
 const STEPS = ['Intro', 'Create', 'Paste', 'Verify']
 
+interface StreamMessage {
+  type: string
+  message?: string
+  valid?: boolean
+  username?: string
+  projectCount?: number
+  error?: string
+}
+
+async function readStreamResponse(
+  response: Response,
+  onProgress: (message: string) => void,
+): Promise<StreamMessage | null> {
+  const reader = response.body?.getReader()
+  if (!reader) return null
+
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let lastMessage: StreamMessage | null = null
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() || ''
+
+    for (const line of lines) {
+      if (!line.trim()) continue
+      try {
+        const message = JSON.parse(line) as StreamMessage
+        lastMessage = message
+        if (message.type === 'progress' && message.message) {
+          onProgress(message.message)
+        }
+      } catch {
+        // Skip malformed JSON
+      }
+    }
+  }
+
+  return lastMessage
+}
+
 export function TokenWizardModal({ open, onOpenChange, provider, onSuccess }: TokenWizardModalProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [token, setToken] = useState('')
   const [verifying, setVerifying] = useState(false)
   const [username, setUsername] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [progressMessage, setProgressMessage] = useState<string | null>(null)
 
   const handlePaste = async () => {
     setVerifying(true)
     setError(null)
+    setProgressMessage(null)
 
     try {
       const res = await fetch(`/api/integrations/${provider}/token/validate`, {
@@ -35,10 +82,17 @@ export function TokenWizardModal({ open, onOpenChange, provider, onSuccess }: To
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
       })
-      const data = await res.json()
 
-      if (!data.valid) {
-        setError(data.error || 'Invalid token')
+      const result = await readStreamResponse(res, setProgressMessage)
+
+      if (!result || result.type === 'error') {
+        setError(result?.error || 'Invalid token')
+        setVerifying(false)
+        return
+      }
+
+      if (!result.valid) {
+        setError('Invalid token')
         setVerifying(false)
         return
       }
@@ -56,13 +110,14 @@ export function TokenWizardModal({ open, onOpenChange, provider, onSuccess }: To
         return
       }
 
-      setUsername(data.username)
+      setUsername(result.username || null)
       setCurrentStep(3)
-      onSuccess?.(data.username)
+      onSuccess?.(result.username || '')
     } catch {
       setError('Failed to verify token')
     } finally {
       setVerifying(false)
+      setProgressMessage(null)
     }
   }
 
@@ -72,6 +127,7 @@ export function TokenWizardModal({ open, onOpenChange, provider, onSuccess }: To
     setToken('')
     setUsername(null)
     setError(null)
+    setProgressMessage(null)
   }
 
   const providerName = provider.charAt(0).toUpperCase() + provider.slice(1)
@@ -87,14 +143,22 @@ export function TokenWizardModal({ open, onOpenChange, provider, onSuccess }: To
 
         <div className="mt-4 sm:mt-6 lg:mt-8">
           {currentStep === 0 && <StepIntroduction provider={provider} onContinue={() => setCurrentStep(1)} />}
-          {currentStep === 1 && <StepCreateToken provider={provider} onContinue={() => setCurrentStep(2)} />}
+          {currentStep === 1 && (
+            <StepCreateToken
+              provider={provider}
+              onContinue={() => setCurrentStep(2)}
+              onBack={() => setCurrentStep(0)}
+            />
+          )}
           {currentStep === 2 && (
             <StepPasteToken
               token={token}
               onChange={setToken}
               error={error}
               loading={verifying}
+              progressMessage={progressMessage}
               onConnect={handlePaste}
+              onBack={() => setCurrentStep(1)}
             />
           )}
           {currentStep === 3 && <StepVerify username={username} onDone={handleDone} />}
