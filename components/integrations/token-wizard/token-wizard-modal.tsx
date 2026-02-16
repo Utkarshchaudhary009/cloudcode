@@ -16,7 +16,13 @@ interface TokenWizardModalProps {
   onSuccess?: (username: string) => void
 }
 
-const STEPS = ['Intro', 'Create', 'Paste', 'Verify']
+const STEPS = ['Intro', 'Create', 'Connect', 'Done']
+
+interface Team {
+  id: string
+  name: string
+  slug: string
+}
 
 interface StreamMessage {
   type: string
@@ -25,6 +31,7 @@ interface StreamMessage {
   username?: string
   projectCount?: number
   error?: string
+  teams?: Team[]
 }
 
 async function readStreamResponse(
@@ -70,6 +77,11 @@ export function TokenWizardModal({ open, onOpenChange, provider, onSuccess }: To
   const [username, setUsername] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [progressMessage, setProgressMessage] = useState<string | null>(null)
+  const [teams, setTeams] = useState<Team[]>([])
+  const [connecting, setConnecting] = useState(false)
+  const [isVerified, setIsVerified] = useState(false)
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
+  const [selectedTeamSlug, setSelectedTeamSlug] = useState<string | null>(null)
 
   const handlePaste = async () => {
     setVerifying(true)
@@ -97,27 +109,44 @@ export function TokenWizardModal({ open, onOpenChange, provider, onSuccess }: To
         return
       }
 
-      const saveRes = await fetch(`/api/integrations/${provider}/connect`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      })
-      const saveData = await saveRes.json()
-
-      if (!saveData.success) {
-        setError(saveData.error || 'Failed to save token')
-        setVerifying(false)
-        return
-      }
-
       setUsername(result.username || null)
-      setCurrentStep(3)
-      onSuccess?.(result.username || '')
+      setTeams(result.teams || [])
+      setIsVerified(true) // Show the dropdown on the same screen
     } catch {
       setError('Failed to verify token')
     } finally {
       setVerifying(false)
       setProgressMessage(null)
+    }
+  }
+
+  const handleFinalConnect = async () => {
+    setConnecting(true)
+    setError(null)
+
+    try {
+      const saveRes = await fetch(`/api/integrations/${provider}/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          teamId: selectedTeamId,
+          teamSlug: selectedTeamSlug,
+        }),
+      })
+      const saveData = await saveRes.json()
+
+      if (!saveData.success) {
+        setError(saveData.error || 'Failed to save token')
+        return
+      }
+
+      setCurrentStep(3) // Move to "Done" (StepVerify)
+      onSuccess?.(username || '')
+    } catch {
+      setError('Failed to connect')
+    } finally {
+      setConnecting(false)
     }
   }
 
@@ -128,6 +157,10 @@ export function TokenWizardModal({ open, onOpenChange, provider, onSuccess }: To
     setUsername(null)
     setError(null)
     setProgressMessage(null)
+    setTeams([])
+    setIsVerified(false)
+    setSelectedTeamId(null)
+    setSelectedTeamSlug(null)
   }
 
   const providerName = provider.charAt(0).toUpperCase() + provider.slice(1)
@@ -155,10 +188,24 @@ export function TokenWizardModal({ open, onOpenChange, provider, onSuccess }: To
               token={token}
               onChange={setToken}
               error={error}
-              loading={verifying}
+              loading={verifying || connecting}
               progressMessage={progressMessage}
               onConnect={handlePaste}
-              onBack={() => setCurrentStep(1)}
+              onBack={() => {
+                if (isVerified) {
+                  setIsVerified(false)
+                } else {
+                  setCurrentStep(1)
+                }
+              }}
+              teams={teams}
+              selectedTeamId={selectedTeamId}
+              onScopeChange={(id, slug) => {
+                setSelectedTeamId(id)
+                setSelectedTeamSlug(slug)
+              }}
+              isVerified={isVerified}
+              onFinalConnect={handleFinalConnect}
             />
           )}
           {currentStep === 3 && <StepVerify username={username} onDone={handleDone} />}

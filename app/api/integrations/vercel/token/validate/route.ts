@@ -58,6 +58,16 @@ export async function POST(req: NextRequest) {
         const userInfo = await provider.validateToken(token)
         send(createStreamMessage('progress', { message: getGreetingMessage(userInfo.username) }))
 
+        // Fetch available teams (including personal account scope)
+        let teams: any[] = []
+        try {
+          const { Vercel } = await import('@vercel/sdk')
+          const teamsResponse = await new Vercel({ bearerToken: token }).teams.getTeams({})
+          teams = Array.isArray(teamsResponse.teams) ? teamsResponse.teams : []
+        } catch (error) {
+          console.error('Failed to fetch teams during validation')
+        }
+
         let projectCount = 0
         try {
           const projects = await listVercelProjects(undefined, token)
@@ -67,7 +77,14 @@ export async function POST(req: NextRequest) {
         }
 
         send(createStreamMessage('progress', { message: getProjectCountMessage(projectCount) }))
-        send(createStreamMessage('complete', { valid: true, username: userInfo.username, projectCount }))
+        send(
+          createStreamMessage('complete', {
+            valid: true,
+            username: userInfo.username,
+            projectCount,
+            teams: teams.map((t) => ({ id: t.id, name: t.name, slug: t.slug })),
+          }),
+        )
         controller.close()
       } catch (error) {
         console.error('Token validation failed')

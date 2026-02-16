@@ -20,6 +20,7 @@ interface ConnectionStatus {
   username?: string
   connectedAt?: string
   teamId?: string | null
+  teamSlug?: string | null
 }
 
 interface Subscription {
@@ -206,6 +207,7 @@ export function IntegrationsList() {
               name={provider.name}
               connected={connection?.connected ?? false}
               username={connection?.username}
+              teamSlug={connection?.teamSlug || undefined}
               onDisconnect={() => handleDisconnect(provider.id)}
               onReconnect={handleReconnect}
             />

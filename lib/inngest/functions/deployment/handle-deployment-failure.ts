@@ -68,7 +68,7 @@ export const handleDeploymentFailure = inngest.createFunction(
     const token = decrypt(integration.accessToken)
 
     const logs = await step.run('fetch-logs', async () => {
-      return getBuildLogs(deploymentId, subscription.teamId ?? undefined, token)
+      return getBuildLogs(deploymentId, integration.teamId ?? undefined, token)
     })
 
     await step.run('save-logs', async () => {

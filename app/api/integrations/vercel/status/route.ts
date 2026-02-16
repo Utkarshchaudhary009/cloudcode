@@ -17,5 +17,6 @@ export async function GET() {
     username: connection?.username,
     connectedAt: connection?.createdAt,
     teamId: connection?.teamId,
+    teamSlug: connection?.teamSlug,
   })
 }

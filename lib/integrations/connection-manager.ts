@@ -26,6 +26,7 @@ export async function connect(
   accessToken: string,
   userInfo: ProviderUser,
   teamId?: string,
+  teamSlug?: string,
 ): Promise<string> {
   const existing = await getConnection(userId, provider)
 
@@ -39,6 +40,7 @@ export async function connect(
         externalUserId: userInfo.externalId,
         username: userInfo.username,
         teamId: teamId ?? null,
+        teamSlug: teamSlug ?? null,
         updatedAt: new Date(),
       })
       .where(eq(integrations.id, existing.id))
@@ -55,6 +57,7 @@ export async function connect(
     externalUserId: userInfo.externalId,
     username: userInfo.username,
     teamId: teamId ?? null,
+    teamSlug: teamSlug ?? null,
   })
 
   return id

@@ -15,6 +15,7 @@ interface VercelConnection {
   connected: boolean
   username?: string
   teamId?: string
+  teamSlug?: string
 }
 
 export function ProjectsTab() {
@@ -185,11 +186,7 @@ export function ProjectsTab() {
                 isMonitored={project.isMonitored}
                 subscriptionId={project.subscriptionId}
                 onToggle={(enabled) => handleToggle(project, enabled)}
-                externalUrl={
-                  connection.teamId
-                    ? `https://vercel.com/${connection.teamId}/${project.name}`
-                    : `https://vercel.com/${project.name}`
-                }
+                externalUrl={`https://vercel.com/${connection.teamSlug || connection.username}/${project.name}`}
               />
             </div>
           ))

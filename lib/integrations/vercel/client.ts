@@ -4,6 +4,33 @@ import { Vercel } from '@vercel/sdk'
 import type { Events } from '@vercel/sdk/models/createwebhookop'
 import { getUserVercelToken } from './token'
 
+export interface VercelDeployment {
+  id: string
+  name: string
+  url: string
+  state: 'BUILDING' | 'ERROR' | 'READY' | 'QUEUED' | 'CANCELED'
+  target: 'production' | 'preview'
+  projectId: string
+  createdAt: number
+  inspectorUrl?: string
+  meta?: {
+    githubCommitSha?: string
+    githubCommitMessage?: string
+    githubRepoFullName?: string
+  }
+}
+
+export interface ListDeploymentsOptions {
+  projectId?: string
+  projectIds?: string[]
+  limit?: number
+  since?: number
+  state?: string
+  target?: string
+  teamId?: string
+  token?: string
+}
+
 interface LogEvent {
   type: string
   text?: string
@@ -110,4 +137,46 @@ export async function createProjectWebhook(options: CreateWebhookOptions): Promi
 export async function deleteProjectWebhook(webhookId: string, teamId?: string, token?: string) {
   const client = await getVercelClient(token)
   return client.webhooks.deleteWebhook({ id: webhookId, teamId })
+}
+
+export async function listVercelDeployments(options: ListDeploymentsOptions): Promise<{
+  deployments: VercelDeployment[]
+  pagination: { next?: number }
+}> {
+  const client = await getVercelClient(options.token)
+
+  const response = await client.deployments.getDeployments({
+    teamId: options.teamId,
+    projectId: options.projectId,
+    projectIds: options.projectIds,
+    limit: options.limit ?? 20,
+    since: options.since,
+    state: options.state,
+    target: options.target,
+  })
+
+  const deployments: VercelDeployment[] = (response.deployments ?? []).map((d) => ({
+    id: d.uid,
+    name: d.name,
+    url: d.url ?? '',
+    state: (d.state ?? 'QUEUED') as VercelDeployment['state'],
+    target: (d.target ?? 'preview') as VercelDeployment['target'],
+    projectId: d.projectId ?? '',
+    createdAt: d.created ?? Date.now(),
+    inspectorUrl: d.inspectorUrl ?? undefined,
+    meta: d.meta
+      ? {
+          githubCommitSha: d.meta.githubCommitSha,
+          githubCommitMessage: d.meta.githubCommitMessage,
+          githubRepoFullName: d.meta.githubRepoFullName,
+        }
+      : undefined,
+  }))
+
+  return {
+    deployments,
+    pagination: {
+      next: response.pagination?.next ?? undefined,
+    },
+  }
 }

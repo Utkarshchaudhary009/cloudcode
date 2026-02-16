@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listVercelProjects } from '@/lib/integrations/vercel/client'
 import { getServerSession } from '@/lib/session/get-server-session'
-import { getDecryptedToken } from '@/lib/integrations/connection-manager'
+import { getDecryptedToken, getConnection } from '@/lib/integrations/connection-manager'
 import type { VercelProject } from '@/lib/types/projects'
 
 export async function GET(req: NextRequest) {
@@ -10,13 +10,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const token = await getDecryptedToken(session.user.id, 'vercel')
-  if (!token) {
+  const connection = await getConnection(session.user.id, 'vercel')
+  if (!connection) {
     return NextResponse.json({ error: 'Vercel not connected' }, { status: 400 })
   }
 
+  const token = await getDecryptedToken(session.user.id, 'vercel')
+  if (!token) {
+    return NextResponse.json({ error: 'Token retrieval failed' }, { status: 500 })
+  }
+
   const { searchParams } = new URL(req.url)
-  const teamId = searchParams.get('teamId') ?? undefined
+  const teamId = searchParams.get('teamId') ?? connection.teamId ?? undefined
 
   try {
     const projects = await listVercelProjects(teamId, token)

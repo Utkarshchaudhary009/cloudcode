@@ -13,6 +13,7 @@ interface ConnectionCardProps {
   name: string
   connected: boolean
   username?: string
+  teamSlug?: string
   onDisconnect?: () => void
   onReconnect?: () => void
 }
@@ -22,6 +23,7 @@ export function ConnectionCard({
   name,
   connected,
   username,
+  teamSlug,
   onDisconnect,
   onReconnect,
 }: ConnectionCardProps) {
@@ -51,6 +53,12 @@ export function ConnectionCard({
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">as</span>
                 <span className="font-medium truncate">@{username}</span>
+                {teamSlug && teamSlug !== username && (
+                  <>
+                    <span className="text-muted-foreground">in</span>
+                    <span className="font-medium truncate">{teamSlug}</span>
+                  </>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setWizardOpen(true)} className="flex-1 sm:flex-none">

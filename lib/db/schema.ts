@@ -442,6 +442,7 @@ export const integrations = pgTable(
     expiresAt: timestamp('expires_at'),
     username: text('username').notNull(),
     teamId: text('team_id'),
+    teamSlug: text('team_slug'),
     tokenCreatedAt: timestamp('token_created_at'),
     tokenNote: text('token_note'),
     createdAt: timestamp('created_at').defaultNow().notNull(),

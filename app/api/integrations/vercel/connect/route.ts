@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { token, teamId } = body
+  const { token, teamId, teamSlug } = body
 
   if (!token || token.length < 10) {
     return NextResponse.json({ error: 'Valid token is required' }, { status: 400 })
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid token or token expired' }, { status: 400 })
   }
 
-  await connect(session.user.id, 'vercel', token, userInfo, teamId)
+  await connect(session.user.id, 'vercel', token, userInfo, teamId, teamSlug)
 
   return NextResponse.json({
     success: true,
