@@ -36,6 +36,7 @@ export function DeploymentsTab({ projectId, repoFullName }: DeploymentsTabProps)
       params.set('limit', '20')
       if (since) params.set('since', String(since))
       if (projectId) params.set('projectId', projectId)
+      if (repoFullName) params.set('repo', repoFullName)
       if (filter && FILTER_STATES[filter]) {
         params.set('state', FILTER_STATES[filter]!)
       }
@@ -49,7 +50,7 @@ export function DeploymentsTab({ projectId, repoFullName }: DeploymentsTabProps)
 
       return data
     },
-    [projectId],
+    [projectId, repoFullName],
   )
 
   const loadInitial = useCallback(async () => {
@@ -166,10 +167,6 @@ export function DeploymentsTab({ projectId, repoFullName }: DeploymentsTabProps)
     )
   }
 
-  const filteredDeployments = repoFullName
-    ? deployments.filter((d) => d.githubRepoFullName === repoFullName)
-    : deployments
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-1 px-3 py-2 border-b border-border/50">
@@ -187,7 +184,7 @@ export function DeploymentsTab({ projectId, repoFullName }: DeploymentsTabProps)
       </div>
 
       <div className="flex-1 overflow-auto">
-        {filteredDeployments.length === 0 ? (
+        {deployments.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 gap-4">
             <Rocket className="size-12 text-muted-foreground" />
             <h3 className="text-lg font-semibold">No Deployments Found</h3>
@@ -197,7 +194,7 @@ export function DeploymentsTab({ projectId, repoFullName }: DeploymentsTabProps)
           </div>
         ) : (
           <>
-            {filteredDeployments.map((deployment) => (
+            {deployments.map((deployment) => (
               <MinimalDeploymentRow key={deployment.id} deployment={deployment} />
             ))}
 

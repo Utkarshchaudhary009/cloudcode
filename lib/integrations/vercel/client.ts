@@ -44,9 +44,18 @@ export async function getVercelClient(token?: string): Promise<Vercel> {
   return new Vercel({ bearerToken: vercelToken })
 }
 
-export async function listVercelProjects(teamId?: string, token?: string) {
+export async function listVercelProjects(
+  teamId?: string,
+  token?: string,
+  options?: { repo?: string; repoId?: string; repoUrl?: string },
+) {
   const client = await getVercelClient(token)
-  const response = await client.projects.getProjects({ teamId })
+  const response = await client.projects.getProjects({
+    teamId,
+    repo: options?.repo,
+    repoId: options?.repoId,
+    repoUrl: options?.repoUrl,
+  })
   if (Array.isArray(response)) {
     return response
   }

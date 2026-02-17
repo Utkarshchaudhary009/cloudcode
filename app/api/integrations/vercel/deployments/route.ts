@@ -36,10 +36,40 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const limit = parseInt(searchParams.get('limit') ?? '20', 10)
   const since = searchParams.get('since') ? parseInt(searchParams.get('since')!, 10) : undefined
-  const projectId = searchParams.get('projectId') ?? undefined
+  let projectId = searchParams.get('projectId') ?? undefined
+  const repo = searchParams.get('repo') ?? undefined
   const state = searchParams.get('state') ?? undefined
   const target = searchParams.get('target') ?? undefined
   const teamId = connection.teamId ?? undefined
+
+  // If repo is provided but projectId is not, try to resolve projectId
+  if (repo && !projectId) {
+    // 1. Check subscriptions (fastest)
+    const subscription = await db.query.subscriptions.findFirst({
+      where: and(eq(subscriptions.userId, session.user.id), eq(subscriptions.githubRepoFullName, repo)),
+    })
+
+    if (subscription) {
+      projectId = subscription.platformProjectId
+    } else {
+      // 2. Fallback: Check Vercel Projects (slower but covers non-monitored projects)
+      // We need to import listVercelProjects if not available or assume it's there
+      // Note: listVercelProjects is already imported at the top
+      try {
+        const { listVercelProjects } = await import('@/lib/integrations/vercel/client')
+        // 2. Fallback: Check Vercel Projects using optimized filter
+        const projects = await listVercelProjects(teamId, token, { repo })
+
+        if (projects.length > 0) {
+          // Cast safely as the unified response type might vary
+          const project = projects[0] as any
+          projectId = project.id
+        }
+      } catch (err) {
+        console.warn('Failed to lookup project by repo', err)
+      }
+    }
+  }
 
   try {
     const { deployments: vercelDeployments, pagination } = await listVercelDeployments({
@@ -53,10 +83,29 @@ export async function GET(req: NextRequest) {
     })
 
     const deploymentIds = vercelDeployments.map((d) => d.id)
-    const projectIds = [...new Set(vercelDeployments.map((d) => d.projectId))]
+
+    // Also filter local deployments by the resolved projectId if we have one,
+    // or just rely on the Vercel IDs which are now filtered.
+    // The existing logic joins on subscriptions and checks platformDeploymentId.
+
+    // We already filtered Vercel deployments (if we found a projectId).
+    // If we didn't find a projectId for the repo, vercelDeployments will optionally be ALL deployments (if projectId is undefined),
+    // or empty/specific if we did.
+
+    // BUT if we couldn't resolve projectId from repo, we might still be returning ALL deployments for the user/team.
+    // We should probably filter the results by githubRepoFullName manually if projectId lookup failed but repo was requested.
+
+    let filteredVercelDeployments = vercelDeployments
+    if (repo && !projectId) {
+      // We requested a repo, but couldn't find a project ID to filter by API.
+      // Filter the results manually.
+      filteredVercelDeployments = vercelDeployments.filter((d) => d.meta?.githubRepoFullName === repo)
+    }
+
+    const finalDeploymentIds = filteredVercelDeployments.map((d) => d.id)
 
     const localDeployments =
-      deploymentIds.length > 0
+      finalDeploymentIds.length > 0
         ? await db
             .select({
               deployment: deployments,
@@ -65,13 +114,16 @@ export async function GET(req: NextRequest) {
             .from(deployments)
             .innerJoin(subscriptions, eq(deployments.subscriptionId, subscriptions.id))
             .where(
-              and(eq(subscriptions.userId, session.user.id), inArray(deployments.platformDeploymentId, deploymentIds)),
+              and(
+                eq(subscriptions.userId, session.user.id),
+                inArray(deployments.platformDeploymentId, finalDeploymentIds),
+              ),
             )
         : []
 
     const localMap = new Map(localDeployments.map((r) => [r.deployment.platformDeploymentId, r]))
 
-    const merged: MergedDeployment[] = vercelDeployments.map((d) => {
+    const merged: MergedDeployment[] = filteredVercelDeployments.map((d) => {
       const local = localMap.get(d.id)
       const inspectorUrl = buildInspectorUrl(d, teamId)
 
@@ -96,7 +148,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ deployments: merged, pagination })
   } catch (error) {
-    console.error('Failed to list deployments')
+    console.error('Failed to list deployments', error)
     return NextResponse.json({ error: 'Failed to list deployments' }, { status: 500 })
   }
 }
